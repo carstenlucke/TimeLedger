@@ -19,14 +19,18 @@ export class DatabaseManager {
   constructor() {
     // Create app data directory if it doesn't exist
     const userDataPath = app.getPath('userData');
+    console.log('User data path:', userDataPath);
     if (!fs.existsSync(userDataPath)) {
       fs.mkdirSync(userDataPath, { recursive: true });
     }
 
     this.dbPath = path.join(userDataPath, 'db.sqlite');
+    console.log('Database path:', this.dbPath);
     this.db = new Database(this.dbPath);
     this.db.pragma('journal_mode = WAL');
+    console.log('Database opened, initializing tables...');
     this.initialize();
+    console.log('Database initialization complete');
   }
 
   public getDbPath(): string {

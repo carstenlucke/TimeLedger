@@ -10,13 +10,17 @@ let backupIntervalId: NodeJS.Timeout | null = null;
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
 function createWindow(): void {
+  const preloadPath = path.join(__dirname, '../preload/index.js');
+  console.log('Preload path:', preloadPath);
+  console.log('Preload exists:', require('fs').existsSync(preloadPath));
+  
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     minWidth: 800,
     minHeight: 600,
     webPreferences: {
-      preload: path.join(__dirname, '../preload/index.js'),
+      preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
     },

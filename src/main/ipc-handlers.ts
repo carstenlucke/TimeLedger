@@ -17,7 +17,13 @@ export function setupIpcHandlers(): void {
 
   // Project handlers
   ipcMain.handle(IPC_CHANNELS.PROJECT_CREATE, async (_, input: ProjectInput) => {
-    return db.createProject(input);
+    try {
+      console.log('Creating project:', input);
+      return db.createProject(input);
+    } catch (error) {
+      console.error('Error creating project:', error);
+      throw error;
+    }
   });
 
   ipcMain.handle(IPC_CHANNELS.PROJECT_UPDATE, async (_, id: number, input: Partial<ProjectInput>) => {
@@ -29,7 +35,15 @@ export function setupIpcHandlers(): void {
   });
 
   ipcMain.handle(IPC_CHANNELS.PROJECT_GET_ALL, async () => {
-    return db.getAllProjects();
+    try {
+      console.log('Fetching all projects...');
+      const projects = db.getAllProjects();
+      console.log(`Found ${projects.length} projects`);
+      return projects;
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      throw error;
+    }
   });
 
   ipcMain.handle(IPC_CHANNELS.PROJECT_GET_BY_ID, async (_, id: number) => {

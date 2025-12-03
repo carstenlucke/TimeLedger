@@ -1,5 +1,5 @@
 import fs from 'fs';
-import type { ProjectReport, TimeEntry } from '../shared/types';
+import type { ProjectReport } from '../shared/types';
 
 export class ExportManager {
   /**

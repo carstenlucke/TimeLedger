@@ -19,11 +19,15 @@ const Projects: React.FC = () => {
   const loadProjects = async () => {
     try {
       setIsLoading(true);
+      console.log('Projects: Starting to load projects...');
+      console.log('Projects: window.api available?', !!window.api);
+      console.log('Projects: window.api.project available?', !!window.api?.project);
       const data = await window.api.project.getAll();
+      console.log('Projects: Loaded projects:', data);
       setProjects(data);
     } catch (error) {
       console.error('Failed to load projects:', error);
-      alert('Failed to load projects');
+      alert('Failed to load projects: ' + (error as Error).message);
     } finally {
       setIsLoading(false);
     }
