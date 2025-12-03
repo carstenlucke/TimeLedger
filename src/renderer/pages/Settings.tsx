@@ -150,7 +150,7 @@ const Settings: React.FC = () => {
         </div>
 
         <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-          <p style={{ fontSize: '14px', margin: 0 }}>
+          <p style={{ fontSize: '14px', margin: 0, color: '#333' }}>
             <strong>Note:</strong> Backups are created automatically every hour and when you close the app.
           </p>
         </div>

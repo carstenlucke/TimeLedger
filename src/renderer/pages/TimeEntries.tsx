@@ -138,6 +138,23 @@ const TimeEntries: React.FC = () => {
     resetForm();
   };
 
+  const handleOverlayMouseDown = (e: React.MouseEvent) => {
+    // Track if mousedown was on the overlay
+    if (e.target === e.currentTarget) {
+      (e.currentTarget as HTMLElement).dataset.mousedownOnOverlay = 'true';
+    } else {
+      (e.currentTarget as HTMLElement).dataset.mousedownOnOverlay = 'false';
+    }
+  };
+
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    // Only close if both mousedown and click were on the overlay itself
+    const overlay = e.currentTarget as HTMLElement;
+    if (e.target === e.currentTarget && overlay.dataset.mousedownOnOverlay === 'true') {
+      handleCloseModal();
+    }
+  };
+
   const getProjectName = (projectId: number): string => {
     const project = projects.find((p) => p.id === projectId);
     return project ? project.name : 'Unknown';
@@ -235,8 +252,12 @@ const TimeEntries: React.FC = () => {
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="modal-overlay"
+          onMouseDown={handleOverlayMouseDown}
+          onClick={handleOverlayClick}
+        >
+          <div className="modal">
             <div className="modal-header">
               <h2>{editingEntry ? 'Edit Time Entry' : 'New Time Entry'}</h2>
             </div>
