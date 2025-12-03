@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import type { TimeEntry, TimeEntryInput, Project } from '../../shared/types';
+import { useNotification } from '../context/NotificationContext';
 
 const TimeEntries: React.FC = () => {
+  const { showNotification, showConfirmation } = useNotification();
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,7 +39,7 @@ const TimeEntries: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to load data:', error);
-      alert('Failed to load data');
+      showNotification('Failed to load data', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -47,7 +49,7 @@ const TimeEntries: React.FC = () => {
     e.preventDefault();
 
     if (formData.project_id === 0) {
-      alert('Please select a project');
+      showNotification('Please select a project', 'warning');
       return;
     }
 
@@ -65,8 +67,10 @@ const TimeEntries: React.FC = () => {
 
       if (editingEntry) {
         await window.api.timeEntry.update(editingEntry.id, dataToSubmit);
+        showNotification('Time entry updated successfully', 'success');
       } else {
         await window.api.timeEntry.create(dataToSubmit);
+        showNotification('Time entry created successfully', 'success');
       }
 
       setShowModal(false);
@@ -75,7 +79,7 @@ const TimeEntries: React.FC = () => {
       await loadData();
     } catch (error) {
       console.error('Failed to save time entry:', error);
-      alert('Failed to save time entry');
+      showNotification('Failed to save time entry', 'error');
     }
   };
 
@@ -106,17 +110,20 @@ const TimeEntries: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this time entry?')) {
-      return;
-    }
-
-    try {
-      await window.api.timeEntry.delete(id);
-      await loadData();
-    } catch (error) {
-      console.error('Failed to delete time entry:', error);
-      alert('Failed to delete time entry');
-    }
+    showConfirmation({
+      message: 'Are you sure you want to delete this time entry?',
+      confirmText: 'Delete',
+      onConfirm: async () => {
+        try {
+          await window.api.timeEntry.delete(id);
+          showNotification('Time entry deleted successfully', 'success');
+          await loadData();
+        } catch (error) {
+          console.error('Failed to delete time entry:', error);
+          showNotification('Failed to delete time entry', 'error');
+        }
+      },
+    });
   };
 
   const handleAddNew = () => {

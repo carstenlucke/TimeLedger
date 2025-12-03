@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import type { Project, ProjectReport, ReportFilter, ExportFormat } from '../../shared/types';
+import { useNotification } from '../context/NotificationContext';
 
 const Reports: React.FC = () => {
+  const { showNotification } = useNotification();
   const [projects, setProjects] = useState<Project[]>([]);
   const [report, setReport] = useState<ProjectReport[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -23,7 +25,7 @@ const Reports: React.FC = () => {
       setProjects(data);
     } catch (error) {
       console.error('Failed to load projects:', error);
-      alert('Failed to load projects');
+      showNotification('Failed to load projects', 'error');
     }
   };
 
@@ -37,9 +39,10 @@ const Reports: React.FC = () => {
       const data = await window.api.report.generate(filterToUse);
       setReport(data);
       setHasGenerated(true);
+      showNotification('Report generated successfully', 'success');
     } catch (error) {
       console.error('Failed to generate report:', error);
-      alert('Failed to generate report');
+      showNotification('Failed to generate report', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -47,18 +50,18 @@ const Reports: React.FC = () => {
 
   const handleExport = async (format: ExportFormat) => {
     if (report.length === 0) {
-      alert('Please generate a report first');
+      showNotification('Please generate a report first', 'warning');
       return;
     }
 
     try {
       const filePath = await window.api.report.export(report, format);
       if (filePath) {
-        alert(`Report exported successfully to ${filePath}`);
+        showNotification(`Report exported successfully to ${filePath}`, 'success');
       }
     } catch (error) {
       console.error('Failed to export report:', error);
-      alert('Failed to export report');
+      showNotification('Failed to export report', 'error');
     }
   };
 

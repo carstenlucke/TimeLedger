@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import type { Project, ProjectInput } from '../../shared/types';
+import { useNotification } from '../context/NotificationContext';
 
 const Projects: React.FC = () => {
+  const { showNotification, showConfirmation } = useNotification();
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -27,7 +29,7 @@ const Projects: React.FC = () => {
       setProjects(data);
     } catch (error) {
       console.error('Failed to load projects:', error);
-      alert('Failed to load projects: ' + (error as Error).message);
+      showNotification('Failed to load projects: ' + (error as Error).message, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -39,8 +41,10 @@ const Projects: React.FC = () => {
     try {
       if (editingProject) {
         await window.api.project.update(editingProject.id, formData);
+        showNotification('Project updated successfully', 'success');
       } else {
         await window.api.project.create(formData);
+        showNotification('Project created successfully', 'success');
       }
 
       setShowModal(false);
@@ -49,7 +53,7 @@ const Projects: React.FC = () => {
       await loadProjects();
     } catch (error) {
       console.error('Failed to save project:', error);
-      alert('Failed to save project');
+      showNotification('Failed to save project', 'error');
     }
   };
 
@@ -64,17 +68,20 @@ const Projects: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this project? All associated time entries will be deleted.')) {
-      return;
-    }
-
-    try {
-      await window.api.project.delete(id);
-      await loadProjects();
-    } catch (error) {
-      console.error('Failed to delete project:', error);
-      alert('Failed to delete project');
-    }
+    showConfirmation({
+      message: 'Are you sure you want to delete this project? All associated time entries will be deleted.',
+      confirmText: 'Delete',
+      onConfirm: async () => {
+        try {
+          await window.api.project.delete(id);
+          showNotification('Project deleted successfully', 'success');
+          await loadProjects();
+        } catch (error) {
+          console.error('Failed to delete project:', error);
+          showNotification('Failed to delete project', 'error');
+        }
+      },
+    });
   };
 
   const handleAddNew = () => {
