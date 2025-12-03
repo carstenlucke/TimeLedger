@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import type { AppSettings, BackupFile } from '../../shared/types';
+import { useNotification } from '../context/NotificationContext';
 
 const Settings: React.FC = () => {
+  const { showNotification, showConfirmation } = useNotification();
   const [settings, setSettings] = useState<AppSettings>({
     backup_directory: undefined,
     last_backup: undefined,
@@ -22,7 +24,7 @@ const Settings: React.FC = () => {
       setSettings(data);
     } catch (error) {
       console.error('Failed to load settings:', error);
-      alert('Failed to load settings');
+      showNotification('Failed to load settings', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -41,52 +43,51 @@ const Settings: React.FC = () => {
     try {
       const dir = await window.api.settings.selectBackupDir();
       if (dir) {
+        showNotification('Backup directory selected successfully', 'success');
         await loadSettings();
         await loadBackups();
       }
     } catch (error) {
       console.error('Failed to select backup directory:', error);
-      alert('Failed to select backup directory');
+      showNotification('Failed to select backup directory', 'error');
     }
   };
 
   const handleCreateBackup = async () => {
     if (!settings.backup_directory) {
-      alert('Please select a backup directory first');
+      showNotification('Please select a backup directory first', 'warning');
       return;
     }
 
     try {
       setIsCreatingBackup(true);
       const backupPath = await window.api.backup.create();
-      alert(`Backup created successfully: ${backupPath}`);
+      showNotification(`Backup created successfully: ${backupPath}`, 'success');
       await loadSettings();
       await loadBackups();
     } catch (error) {
       console.error('Failed to create backup:', error);
-      alert('Failed to create backup');
+      showNotification('Failed to create backup', 'error');
     } finally {
       setIsCreatingBackup(false);
     }
   };
 
   const handleRestoreBackup = async (backupPath: string) => {
-    if (
-      !confirm(
-        'Are you sure you want to restore this backup? This will replace your current data. The application will need to restart after restoration.'
-      )
-    ) {
-      return;
-    }
-
-    try {
-      await window.api.backup.restore(backupPath);
-      alert('Backup restored successfully. Please restart the application.');
-      // The app should be manually restarted
-    } catch (error) {
-      console.error('Failed to restore backup:', error);
-      alert('Failed to restore backup');
-    }
+    showConfirmation({
+      message:
+        'Are you sure you want to restore this backup? This will replace your current data. The application will need to restart after restoration.',
+      confirmText: 'Restore',
+      onConfirm: async () => {
+        try {
+          await window.api.backup.restore(backupPath);
+          showNotification('Backup restored successfully. Please restart the application.', 'success');
+        } catch (error) {
+          console.error('Failed to restore backup:', error);
+          showNotification('Failed to restore backup', 'error');
+        }
+      },
+    });
   };
 
   const formatDate = (date: Date | string): string => {
