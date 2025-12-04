@@ -98,7 +98,7 @@ export class ExportManager {
           // Project header
           doc.fontSize(14).text(project.project_name, { underline: true });
           if (project.client_name) {
-            doc.fontSize(10).text(`Kunde: ${project.client_name}`, { color: '#666666' });
+            doc.fontSize(10).fillColor('#666666').text(`Kunde: ${project.client_name}`).fillColor('#000000');
           }
           doc.moveDown(0.5);
 
