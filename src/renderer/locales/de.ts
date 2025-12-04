@@ -151,6 +151,11 @@ export const de: TranslationKeys = {
   settings: {
     title: 'Einstellungen',
     subtitle: 'Verwalten Sie Anwendungseinstellungen und Backups',
+    appearance: 'Darstellung',
+    theme: 'Theme',
+    themeLabel: 'Farbschema',
+    lightMode: 'Hell',
+    darkMode: 'Dunkel',
     backupConfig: 'Backup-Konfiguration',
     backupDirectory: 'Backup-Verzeichnis',
     selectDirectory: 'Verzeichnis auswählen',
