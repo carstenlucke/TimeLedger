@@ -10,7 +10,8 @@ A simple desktop time tracking application for freelancers and side projects. Bu
 - **Project Management**: Create and manage projects with optional hourly rates and client names
 - **Manual Time Entry**: Track time with either duration or start/end times
 - **Reporting**: Generate detailed reports by date range and project
-- **Export**: Export reports as CSV or JSON
+- **Export**: Export reports as CSV, JSON, or PDF
+- **Dark/Light Theme**: Toggle between dark and light themes for comfortable viewing
 - **Automatic Backups**: Hourly automatic backups and backup on app exit
 - **Cloud Sync**: Store backups in iCloud, Dropbox, OneDrive, or any synced folder
 - **Cross-Platform**: Works on macOS, Windows, and Linux
@@ -125,7 +126,7 @@ This ensures your data is automatically backed up to the cloud.
 2. Select date range
 3. Optionally filter by specific projects
 4. Click **Generate Report**
-5. Export as CSV or JSON if needed
+5. Export as CSV, JSON, or PDF if needed
 
 ### Managing Backups
 
@@ -223,7 +224,6 @@ This project is licensed under the MIT License.
 ## Roadmap
 
 Future enhancements may include:
-- Dark mode
 - Keyboard shortcuts
 - Invoice generation
 - Timer mode (in addition to manual entry)

@@ -35,7 +35,16 @@ TimeLedger has four main sections accessible from the sidebar:
 1. **Projects**: Manage your projects and clients
 2. **Time Entries**: Record your working hours
 3. **Reports**: View and export time tracking reports
-4. **Settings**: Configure backups and view app information
+4. **Settings**: Configure backups, change theme, and view app information
+
+### Customizing the Theme
+
+TimeLedger supports both light and dark themes:
+
+1. Go to **Settings**
+2. Find the **Theme** section
+3. Click the toggle button to switch between light and dark mode
+4. Your preference is automatically saved and will persist across app restarts
 
 ## Managing Projects
 
@@ -153,7 +162,7 @@ The report shows:
 
 ### Exporting Reports
 
-After generating a report, you can export it:
+After generating a report, you can export it in three formats:
 
 1. Click **Export CSV** for spreadsheet-compatible format
    - Opens in Excel, Google Sheets, etc.
@@ -161,6 +170,10 @@ After generating a report, you can export it:
 2. Click **Export JSON** for structured data
    - Useful for custom processing or integrations
    - Machine-readable format
+3. Click **Export PDF** for professional reports
+   - Ready-to-share format
+   - Includes formatted summary and detailed breakdowns
+   - Perfect for client deliverables
 
 **CSV Format:**
 - Individual time entries with all details
@@ -171,6 +184,12 @@ After generating a report, you can export it:
 - Complete structured data
 - Includes all project and entry information
 - Preserves data types and relationships
+
+**PDF Format:**
+- Professional, formatted report
+- Includes summary cards and per-project breakdowns
+- Print-ready for client presentations
+- Automatically saved to your Downloads folder
 
 ## Backups and Data Safety
 
@@ -249,8 +268,9 @@ If you need to restore your data:
 
 1. **Weekly reviews**: Generate weekly reports to stay on top of work
 2. **Invoice preparation**: Run reports before creating invoices
-3. **Export regularly**: Keep CSV backups of major milestones
+3. **Export regularly**: Keep CSV/PDF backups of major milestones
 4. **Date ranges**: Use consistent periods (weekly, monthly)
+5. **PDF for clients**: Use PDF export for professional client-facing reports
 
 ### Data Safety
 
@@ -287,8 +307,8 @@ While TimeLedger doesn't have custom shortcuts yet, you can use:
 2. Set date range to last week
 3. Select client's project(s)
 4. Generate Report
-5. Export as CSV
-6. Use data to create invoice
+5. Export as PDF or CSV
+6. Send PDF to client or use data to create invoice
 
 ### Monthly Review
 
@@ -302,7 +322,7 @@ While TimeLedger doesn't have custom shortcuts yet, you can use:
 ### Project Completion
 
 1. Generate final report for project
-2. Export as CSV and JSON
+2. Export as PDF for client and CSV/JSON for records
 3. Create manual backup
 4. Review all time entries for accuracy
 5. Archive or delete project

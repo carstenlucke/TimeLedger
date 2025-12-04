@@ -28,6 +28,7 @@ This guide provides detailed information for developers working on TimeLedger.
    - Vite
    - better-sqlite3
    - electron-builder
+   - PDFKit (for PDF export)
 
 3. Verify installation:
    ```bash
@@ -101,6 +102,49 @@ Return Result
 Renderer Updates UI
 ```
 
+## Key Features Architecture
+
+### Theme System
+
+TimeLedger implements a light/dark theme system using React Context:
+
+**Implementation:**
+- `src/renderer/context/ThemeContext.tsx`: Context provider with theme state
+- Theme preference stored in `localStorage`
+- Default theme: dark
+- CSS variables defined in `styles.css` using `[data-theme="light"]` and `[data-theme="dark"]` selectors
+- Theme toggle available in Settings page
+
+**Usage in components:**
+```typescript
+import { useTheme } from '../context/ThemeContext';
+
+const MyComponent = () => {
+  const { theme, toggleTheme } = useTheme();
+  // Use theme or toggleTheme
+};
+```
+
+### PDF Export
+
+PDF export uses PDFKit to generate professional reports:
+
+**Implementation:**
+- `src/main/export.ts`: Contains `exportReportAsPDF()` function
+- Generates formatted reports with summary and detailed breakdowns
+- Saves to user's Downloads folder
+- File naming: `timeledger-report-YYYY-MM-DD.pdf`
+
+**Features:**
+- Summary cards with total hours and value
+- Per-project breakdowns with detailed entries
+- Professional formatting with proper spacing
+- Supports theme colors (but generates print-friendly PDFs)
+
+**Dependencies:**
+- `pdfkit`: PDF generation library
+- `@types/pdfkit`: TypeScript definitions
+
 ### Database Schema
 
 #### Projects Table
@@ -154,6 +198,7 @@ CREATE TABLE settings (
 - **TypeScript**: All components are typed
 - **Props interfaces**: Define interface for component props
 - **Hooks**: useState, useEffect for state and side effects
+- **Context API**: Used for theme, internationalization, and notifications
 
 ### File Organization
 
@@ -163,14 +208,15 @@ src/
 │   ├── index.ts       # Entry point, window management
 │   ├── database.ts    # Database operations
 │   ├── backup.ts      # Backup/restore
-│   ├── export.ts      # Export to CSV/JSON
+│   ├── export.ts      # Export to CSV/JSON/PDF
 │   └── ipc-handlers.ts # IPC communication
 ├── renderer/          # Frontend
 │   ├── pages/         # Page components
 │   ├── components/    # Reusable components
+│   ├── context/       # React contexts (Theme, I18n, Notifications)
 │   ├── App.tsx        # Main app component
 │   ├── index.tsx      # React entry point
-│   └── styles.css     # Global styles
+│   └── styles.css     # Global styles with theme variables
 ├── preload/           # IPC bridge
 │   └── index.ts       # Context bridge setup
 └── shared/            # Shared code
@@ -315,6 +361,11 @@ SELECT * FROM time_entries;
 2. Add format to `ExportFormat` type
 3. Update IPC handler
 4. Add export button in UI
+
+**Current formats:**
+- CSV: Tabular format for spreadsheets
+- JSON: Structured data format
+- PDF: Professional reports using PDFKit
 
 ## Performance Optimization
 
