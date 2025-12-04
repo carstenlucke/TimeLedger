@@ -149,6 +149,11 @@ export const en = {
   settings: {
     title: 'Settings',
     subtitle: 'Manage application settings and backups',
+    appearance: 'Appearance',
+    theme: 'Theme',
+    themeLabel: 'Color Scheme',
+    lightMode: 'Light',
+    darkMode: 'Dark',
     backupConfig: 'Backup Configuration',
     backupDirectory: 'Backup Directory',
     selectDirectory: 'Select Directory',

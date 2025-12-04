@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import TimeEntries from './pages/TimeEntries';
@@ -6,6 +6,7 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import { NotificationProvider } from './context/NotificationContext';
 import { I18nProvider, useI18n } from './context/I18nContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { NotificationContainer } from './components/NotificationContainer';
 import { ConfirmationDialog } from './components/ConfirmationDialog';
 
@@ -36,6 +37,26 @@ const AppContent: React.FC = () => {
     }
   };
 
+  // Listen for navigation events from main process (e.g., menu shortcuts)
+  useEffect(() => {
+    const cleanup = window.api.onNavigate((path: string) => {
+      // Convert path to page
+      if (path === '/settings') {
+        navigateToPage('settings');
+      } else if (path === '/dashboard') {
+        navigateToPage('dashboard');
+      } else if (path === '/projects') {
+        navigateToPage('projects');
+      } else if (path === '/entries') {
+        navigateToPage('entries');
+      } else if (path === '/reports') {
+        navigateToPage('reports');
+      }
+    });
+
+    return cleanup;
+  }, []);
+
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
@@ -57,6 +78,15 @@ const AppContent: React.FC = () => {
     <AppContext.Provider value={{ navigateToPage }}>
       <div className="app">
         <aside className="sidebar">
+          <div className="sidebar-header">
+            <div className="sidebar-logo">
+              <img src="/icons/icon_128x128.png" alt="TimeLedger" />
+            </div>
+            <div className="sidebar-title">
+              <h1>TimeLedger</h1>
+              <p>Time Tracking</p>
+            </div>
+          </div>
           <nav>
             <a
               href="#"
@@ -66,6 +96,7 @@ const AppContent: React.FC = () => {
                 navigateToPage('dashboard');
               }}
             >
+              <span className="nav-icon">📊</span>
               {t.nav.dashboard}
             </a>
             <a
@@ -76,6 +107,7 @@ const AppContent: React.FC = () => {
                 navigateToPage('projects');
               }}
             >
+              <span className="nav-icon">📁</span>
               {t.nav.projects}
             </a>
             <a
@@ -86,6 +118,7 @@ const AppContent: React.FC = () => {
                 navigateToPage('entries');
               }}
             >
+              <span className="nav-icon">⏱️</span>
               {t.nav.timeEntries}
             </a>
             <a
@@ -96,6 +129,7 @@ const AppContent: React.FC = () => {
                 navigateToPage('reports');
               }}
             >
+              <span className="nav-icon">📈</span>
               {t.nav.reports}
             </a>
             <a
@@ -106,6 +140,7 @@ const AppContent: React.FC = () => {
                 navigateToPage('settings');
               }}
             >
+              <span className="nav-icon">⚙️</span>
               {t.nav.settings}
             </a>
           </nav>
@@ -120,11 +155,13 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <I18nProvider>
-      <NotificationProvider>
-        <AppContent />
-      </NotificationProvider>
-    </I18nProvider>
+    <ThemeProvider>
+      <I18nProvider>
+        <NotificationProvider>
+          <AppContent />
+        </NotificationProvider>
+      </I18nProvider>
+    </ThemeProvider>
   );
 };
 

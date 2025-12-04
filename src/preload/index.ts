@@ -37,6 +37,16 @@ const IPC_CHANNELS = {
 
 // Define the API that will be exposed to the renderer
 const api = {
+  // Navigation listener
+  onNavigate: (callback: (path: string) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, path: string) => callback(path);
+    ipcRenderer.on('navigate', listener);
+    // Return cleanup function
+    return () => {
+      ipcRenderer.removeListener('navigate', listener);
+    };
+  },
+
   // Project methods
   project: {
     create: (input: any): Promise<any> =>

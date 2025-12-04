@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import type { AppSettings, BackupFile } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n, Locale } from '../context/I18nContext';
+import { useTheme } from '../context/ThemeContext';
 
 const Settings: React.FC = () => {
   const { showNotification, showConfirmation } = useNotification();
   const { t, locale, setLocale } = useI18n();
+  const { theme, toggleTheme } = useTheme();
   const [settings, setSettings] = useState<AppSettings>({
     backup_directory: undefined,
     last_backup: undefined,
@@ -140,6 +142,31 @@ const Settings: React.FC = () => {
       <div className="page-header">
         <h1>{t.settings.title}</h1>
         <p>{t.settings.subtitle}</p>
+      </div>
+
+      <div className="card">
+        <h2>{t.settings.appearance}</h2>
+
+        <div className="form-group">
+          <label>{t.settings.themeLabel}</label>
+          <div className="theme-toggle-container">
+            <span className="theme-toggle-label">
+              {theme === 'dark' ? t.settings.darkMode : t.settings.lightMode}
+            </span>
+            <button
+              type="button"
+              className={`theme-toggle-switch ${theme === 'light' ? 'active' : ''}`}
+              onClick={toggleTheme}
+              role="switch"
+              aria-checked={theme === 'dark'}
+              aria-label={theme === 'dark' ? t.settings.darkMode : t.settings.lightMode}
+            >
+              <span className="theme-toggle-slider">
+                {theme === 'dark' ? '🌙' : '☀️'}
+              </span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="card">
