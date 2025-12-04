@@ -141,6 +141,7 @@ export const de: TranslationKeys = {
     entries: 'Einträge',
     export: 'Exportieren',
     exportCSV: 'Als CSV exportieren',
+    exportJSON: 'Als JSON exportieren',
     exportPDF: 'Als PDF exportieren',
     noRestriction: 'Keine Einschränkung',
     dateRange: 'Zeitraum',

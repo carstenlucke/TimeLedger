@@ -69,7 +69,7 @@ export interface AppSettings {
 }
 
 // Export formats
-export type ExportFormat = 'csv' | 'json';
+export type ExportFormat = 'csv' | 'json' | 'pdf';
 
 // IPC Channel names
 export const IPC_CHANNELS = {

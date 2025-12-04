@@ -205,6 +205,9 @@ const Reports: React.FC = () => {
                 {t.reports.exportCSV}
               </button>
               <button className="btn btn-success" onClick={() => handleExport('json')}>
+                {t.reports.exportJSON}
+              </button>
+              <button className="btn btn-success" onClick={() => handleExport('pdf')}>
                 {t.reports.exportPDF}
               </button>
             </>

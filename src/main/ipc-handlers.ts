@@ -85,22 +85,41 @@ export function setupIpcHandlers(): void {
   });
 
   ipcMain.handle(IPC_CHANNELS.REPORT_EXPORT, async (_, report, format: ExportFormat) => {
-    const content = format === 'csv'
-      ? exportManager.exportToCSV(report)
-      : exportManager.exportToJSON(report);
+    let extension: string;
+    let filterName: string;
 
-    const extension = format === 'csv' ? 'csv' : 'json';
+    if (format === 'csv') {
+      extension = 'csv';
+      filterName = 'CSV';
+    } else if (format === 'json') {
+      extension = 'json';
+      filterName = 'JSON';
+    } else if (format === 'pdf') {
+      extension = 'pdf';
+      filterName = 'PDF';
+    } else {
+      throw new Error(`Unsupported format: ${format}`);
+    }
+
     const result = await dialog.showSaveDialog({
       title: 'Export Report',
       defaultPath: `timeledger-report.${extension}`,
       filters: [
-        { name: format.toUpperCase(), extensions: [extension] },
+        { name: filterName, extensions: [extension] },
         { name: 'All Files', extensions: ['*'] },
       ],
     });
 
     if (!result.canceled && result.filePath) {
-      await exportManager.saveToFile(content, result.filePath);
+      if (format === 'csv') {
+        const content = exportManager.exportToCSV(report);
+        await exportManager.saveToFile(content, result.filePath);
+      } else if (format === 'json') {
+        const content = exportManager.exportToJSON(report);
+        await exportManager.saveToFile(content, result.filePath);
+      } else if (format === 'pdf') {
+        await exportManager.exportToPDF(report, result.filePath);
+      }
       return result.filePath;
     }
 
