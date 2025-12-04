@@ -58,6 +58,7 @@ export const en = {
     lastWeeks: 'Last 10 Calendar Weeks',
     week: 'Week',
     clickToEdit: 'Click to edit',
+    hours: 'hrs',
   },
 
   // Projects

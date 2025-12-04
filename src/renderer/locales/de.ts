@@ -60,6 +60,7 @@ export const de: TranslationKeys = {
     lastWeeks: 'Letzte 10 Kalenderwochen',
     week: 'KW',
     clickToEdit: 'Klicken zum Bearbeiten',
+    hours: 'Std',
   },
 
   // Projects

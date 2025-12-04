@@ -13,14 +13,30 @@ interface WeeklyBarChartProps {
 }
 
 const WeeklyBarChart: React.FC<WeeklyBarChartProps> = ({ data }) => {
-  const { formatNumber } = useI18n();
+  const { t } = useI18n();
 
   if (data.length === 0) {
     return null;
   }
 
+  const formatHoursMinutes = (totalHours: number): string => {
+    const hours = Math.floor(totalHours);
+    const minutes = Math.round((totalHours - hours) * 60);
+
+    if (hours === 0 && minutes === 0) {
+      return '0 Min';
+    } else if (hours === 0) {
+      return `${minutes} Min`;
+    } else if (minutes === 0) {
+      return `${hours} ${t.dashboard.hours}`;
+    } else {
+      return `${hours} ${t.dashboard.hours} ${minutes} Min`;
+    }
+  };
+
   const maxHours = Math.max(...data.map(d => d.hours), 1);
   const chartHeight = 200;
+  const topPadding = 30; // Extra space for labels above bars
   const barWidth = 40;
   const gap = 12;
   const chartWidth = data.length * (barWidth + gap) - gap;
@@ -32,13 +48,13 @@ const WeeklyBarChart: React.FC<WeeklyBarChartProps> = ({ data }) => {
     }}>
       <svg
         width={chartWidth}
-        height={chartHeight + 60}
+        height={chartHeight + topPadding + 60}
         style={{ minWidth: '100%' }}
       >
         {data.map((week, index) => {
           const barHeight = (week.hours / maxHours) * chartHeight;
           const x = index * (barWidth + gap);
-          const y = chartHeight - barHeight;
+          const y = topPadding + chartHeight - barHeight;
 
           return (
             <g key={`${week.year}-${week.weekNumber}`}>
@@ -56,22 +72,22 @@ const WeeklyBarChart: React.FC<WeeklyBarChartProps> = ({ data }) => {
               {week.hours > 0 && (
                 <text
                   x={x + barWidth / 2}
-                  y={y - 5}
+                  y={y - 8}
                   textAnchor="middle"
                   style={{
-                    fontSize: '12px',
+                    fontSize: '11px',
                     fill: 'var(--text-primary)',
                     fontWeight: '600'
                   }}
                 >
-                  {formatNumber(week.hours, 1)}h
+                  {formatHoursMinutes(week.hours)}
                 </text>
               )}
 
               {/* Week label below bar */}
               <text
                 x={x + barWidth / 2}
-                y={chartHeight + 20}
+                y={topPadding + chartHeight + 20}
                 textAnchor="middle"
                 style={{
                   fontSize: '11px',
