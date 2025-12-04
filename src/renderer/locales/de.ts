@@ -72,7 +72,7 @@ export const de: TranslationKeys = {
     createProject: 'Projekt erstellen',
     projectName: 'Projektname',
     clientName: 'Kundenname',
-    hourlyRate: 'Stundensatz ($)',
+    hourlyRate: 'Stundensatz (€)',
     deleteConfirm: 'Sind Sie sicher, dass Sie dieses Projekt löschen möchten? Alle zugehörigen Zeiteinträge werden gelöscht.',
     timeEntries: 'Zeiteinträge',
     client: 'Kunde',
