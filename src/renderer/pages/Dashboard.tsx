@@ -14,10 +14,32 @@ interface WeeklyStat {
 
 interface WeekData {
   weekLabel: string;
-  hours: number;
+  totalHours: number;
   weekNumber: number;
   year: number;
+  projects: Array<{
+    projectId: number;
+    projectName: string;
+    hours: number;
+    color: string;
+  }>;
 }
+
+// Color palette for projects
+const PROJECT_COLORS = [
+  '#3B82F6', // Blue
+  '#10B981', // Green
+  '#F59E0B', // Amber
+  '#EF4444', // Red
+  '#8B5CF6', // Purple
+  '#EC4899', // Pink
+  '#06B6D4', // Cyan
+  '#F97316', // Orange
+  '#6366F1', // Indigo
+  '#14B8A6', // Teal
+  '#84CC16', // Lime
+  '#F43F5E', // Rose
+];
 
 const Dashboard: React.FC = () => {
   const { showNotification } = useNotification();
@@ -52,18 +74,52 @@ const Dashboard: React.FC = () => {
       });
       setRecentEntries(sortedEntries.slice(0, 10));
 
-      // Calculate weekly data for last 10 weeks
+      // Create a color map for projects
+      const projectColorMap = new Map<number, string>();
+      projectsData.forEach((project, index) => {
+        projectColorMap.set(project.id, PROJECT_COLORS[index % PROJECT_COLORS.length]);
+      });
+
+      // Calculate weekly data for last 10 weeks with project breakdown
       const weeks = getLast10Weeks();
       const weeklyStats: WeekData[] = weeks.map(week => {
         const weekEntries = allEntries.filter(
           entry => entry.date >= week.startDate && entry.date <= week.endDate
         );
+
+        // Group by project
+        const projectHoursMap = new Map<number, { name: string; minutes: number }>();
+        weekEntries.forEach(entry => {
+          const project = projectsData.find(p => p.id === entry.project_id);
+          if (project) {
+            const existing = projectHoursMap.get(entry.project_id);
+            if (existing) {
+              existing.minutes += entry.duration_minutes;
+            } else {
+              projectHoursMap.set(entry.project_id, {
+                name: project.name,
+                minutes: entry.duration_minutes,
+              });
+            }
+          }
+        });
+
+        // Convert to projects array
+        const projects = Array.from(projectHoursMap.entries()).map(([projectId, data]) => ({
+          projectId,
+          projectName: data.name,
+          hours: data.minutes / 60,
+          color: projectColorMap.get(projectId) || PROJECT_COLORS[0],
+        }));
+
         const totalMinutes = weekEntries.reduce((sum, entry) => sum + entry.duration_minutes, 0);
+
         return {
           weekLabel: `${t.dashboard.week} ${week.weekNumber}`,
-          hours: totalMinutes / 60,
+          totalHours: totalMinutes / 60,
           weekNumber: week.weekNumber,
           year: week.year,
+          projects,
         };
       });
 
@@ -143,7 +199,7 @@ const Dashboard: React.FC = () => {
       <div className="card">
         <h2>{t.dashboard.lastWeeks}</h2>
 
-        {weeklyData.length === 0 || weeklyData.every(w => w.hours === 0) ? (
+        {weeklyData.length === 0 || weeklyData.every(w => w.totalHours === 0) ? (
           <div className="empty-state">
             <h3>{t.dashboard.noEntriesYet}</h3>
             <p>{t.dashboard.startTracking}</p>
