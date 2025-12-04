@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import type { TimeEntry, Project, ProjectReport } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
+import { AppContext } from '../App';
+import WeeklyBarChart from '../components/WeeklyBarChart';
 
 interface WeeklyStat {
   project_id: number;
@@ -10,11 +12,19 @@ interface WeeklyStat {
   total_value?: number;
 }
 
+interface WeekData {
+  weekLabel: string;
+  hours: number;
+  weekNumber: number;
+  year: number;
+}
+
 const Dashboard: React.FC = () => {
   const { showNotification } = useNotification();
   const { t, formatCurrency, formatNumber } = useI18n();
+  const { navigateToPage } = useContext(AppContext);
   const [recentEntries, setRecentEntries] = useState<TimeEntry[]>([]);
-  const [weeklyStats, setWeeklyStats] = useState<WeeklyStat[]>([]);
+  const [weeklyData, setWeeklyData] = useState<WeekData[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -42,39 +52,22 @@ const Dashboard: React.FC = () => {
       });
       setRecentEntries(sortedEntries.slice(0, 10));
 
-      // Calculate weekly stats (current week: Monday to Sunday)
-      const { startDate, endDate } = getCurrentWeekRange();
-      const weeklyEntries = allEntries.filter(
-        entry => entry.date >= startDate && entry.date <= endDate
-      );
-
-      // Group by project
-      const projectMap = new Map<number, { total_minutes: number; hourly_rate?: number; name: string }>();
-
-      weeklyEntries.forEach(entry => {
-        const existing = projectMap.get(entry.project_id);
-        const project = projectsData.find(p => p.id === entry.project_id);
-
-        if (existing) {
-          existing.total_minutes += entry.duration_minutes;
-        } else if (project) {
-          projectMap.set(entry.project_id, {
-            total_minutes: entry.duration_minutes,
-            hourly_rate: project.hourly_rate,
-            name: project.name,
-          });
-        }
+      // Calculate weekly data for last 10 weeks
+      const weeks = getLast10Weeks();
+      const weeklyStats: WeekData[] = weeks.map(week => {
+        const weekEntries = allEntries.filter(
+          entry => entry.date >= week.startDate && entry.date <= week.endDate
+        );
+        const totalMinutes = weekEntries.reduce((sum, entry) => sum + entry.duration_minutes, 0);
+        return {
+          weekLabel: `${t.dashboard.week} ${week.weekNumber}`,
+          hours: totalMinutes / 60,
+          weekNumber: week.weekNumber,
+          year: week.year,
+        };
       });
 
-      // Convert to stats array
-      const stats: WeeklyStat[] = Array.from(projectMap.entries()).map(([projectId, data]) => ({
-        project_id: projectId,
-        project_name: data.name,
-        total_hours: data.total_minutes / 60,
-        total_value: data.hourly_rate ? (data.total_minutes / 60) * data.hourly_rate : undefined,
-      }));
-
-      setWeeklyStats(stats.sort((a, b) => b.total_hours - a.total_hours));
+      setWeeklyData(weeklyStats);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
       showNotification(t.notifications.loadFailed, 'error');
@@ -83,23 +76,41 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const getCurrentWeekRange = (): { startDate: string; endDate: string } => {
+  const getLast10Weeks = (): Array<{ startDate: string; endDate: string; weekNumber: number; year: number }> => {
+    const weeks = [];
     const today = new Date();
-    const dayOfWeek = today.getDay();
-    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Monday is day 1
 
-    const monday = new Date(today);
-    monday.setDate(today.getDate() + diff);
-    monday.setHours(0, 0, 0, 0);
+    for (let i = 0; i < 10; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - (i * 7));
 
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    sunday.setHours(23, 59, 59, 999);
+      const dayOfWeek = date.getDay();
+      const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Monday is day 1
 
-    return {
-      startDate: monday.toISOString().split('T')[0],
-      endDate: sunday.toISOString().split('T')[0],
-    };
+      const monday = new Date(date);
+      monday.setDate(date.getDate() + diff);
+      monday.setHours(0, 0, 0, 0);
+
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      sunday.setHours(23, 59, 59, 999);
+
+      // Calculate ISO week number
+      const tempDate = new Date(monday);
+      tempDate.setHours(0, 0, 0, 0);
+      tempDate.setDate(tempDate.getDate() + 4 - (tempDate.getDay() || 7));
+      const yearStart = new Date(tempDate.getFullYear(), 0, 1);
+      const weekNumber = Math.ceil((((tempDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+
+      weeks.push({
+        startDate: monday.toISOString().split('T')[0],
+        endDate: sunday.toISOString().split('T')[0],
+        weekNumber,
+        year: monday.getFullYear(),
+      });
+    }
+
+    return weeks.reverse(); // Show oldest to newest
   };
 
   const getProjectName = (projectId: number): string => {
@@ -113,14 +124,8 @@ const Dashboard: React.FC = () => {
     return `${hours}h ${mins}m`;
   };
 
-  const getTotalWeeklyHours = (): number => {
-    return weeklyStats.reduce((sum, stat) => sum + stat.total_hours, 0);
-  };
-
-  const getTotalWeeklyValue = (): number | undefined => {
-    const values = weeklyStats.map(s => s.total_value).filter(v => v !== undefined) as number[];
-    if (values.length === 0) return undefined;
-    return values.reduce((sum, value) => sum + value, 0);
+  const handleEntryClick = (entryId: number) => {
+    navigateToPage('entries', { entryId });
   };
 
   if (isLoading) {
@@ -134,60 +139,26 @@ const Dashboard: React.FC = () => {
         <p>{t.dashboard.subtitle}</p>
       </div>
 
-      {/* Weekly Stats */}
+      {/* Weekly Bar Chart */}
       <div className="card">
-        <h2>{t.dashboard.thisWeek}</h2>
-        <p style={{ color: 'var(--text-tertiary)', fontSize: '14px', marginBottom: '16px' }}>
-          {getCurrentWeekRange().startDate} - {getCurrentWeekRange().endDate}
-        </p>
+        <h2>{t.dashboard.lastWeeks}</h2>
 
-        {weeklyStats.length === 0 ? (
+        {weeklyData.length === 0 || weeklyData.every(w => w.hours === 0) ? (
           <div className="empty-state">
-            <h3>{t.dashboard.noEntriesThisWeek}</h3>
+            <h3>{t.dashboard.noEntriesYet}</h3>
             <p>{t.dashboard.startTracking}</p>
           </div>
         ) : (
-          <>
-            <div className="stats-grid">
-              <div className="stat-card">
-                <h3>{t.dashboard.totalHours}</h3>
-                <div className="value">{formatNumber(getTotalWeeklyHours(), 2)}</div>
-              </div>
-              {getTotalWeeklyValue() !== undefined && (
-                <div className="stat-card">
-                  <h3>{t.dashboard.totalRevenue}</h3>
-                  <div className="value">{formatCurrency(getTotalWeeklyValue()!)}</div>
-                </div>
-              )}
-            </div>
-
-            <div className="table-container" style={{ marginTop: '16px' }}>
-              <table>
-                <thead>
-                  <tr>
-                    <th>{t.common.project}</th>
-                    <th>{t.dashboard.totalHours}</th>
-                    <th>{t.dashboard.revenue}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {weeklyStats.map((stat) => (
-                    <tr key={stat.project_id}>
-                      <td>{stat.project_name}</td>
-                      <td>{formatNumber(stat.total_hours, 2)}h</td>
-                      <td>{stat.total_value ? formatCurrency(stat.total_value) : '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
+          <WeeklyBarChart data={weeklyData} />
         )}
       </div>
 
       {/* Recent Time Entries */}
       <div className="card">
         <h2>{t.dashboard.recentEntries}</h2>
+        <p style={{ color: 'var(--text-tertiary)', fontSize: '14px', marginBottom: '16px' }}>
+          {t.dashboard.clickToEdit}
+        </p>
 
         {recentEntries.length === 0 ? (
           <div className="empty-state">
@@ -209,7 +180,17 @@ const Dashboard: React.FC = () => {
               </thead>
               <tbody>
                 {recentEntries.map((entry) => (
-                  <tr key={entry.id}>
+                  <tr
+                    key={entry.id}
+                    onClick={() => handleEntryClick(entry.id)}
+                    style={{ cursor: 'pointer' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '';
+                    }}
+                  >
                     <td>{entry.date}</td>
                     <td>{getProjectName(entry.project_id)}</td>
                     <td>{entry.start_time || '-'}</td>

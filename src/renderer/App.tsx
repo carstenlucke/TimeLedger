@@ -12,7 +12,7 @@ import { ConfirmationDialog } from './components/ConfirmationDialog';
 type Page = 'dashboard' | 'projects' | 'entries' | 'reports' | 'settings';
 
 interface AppContextType {
-  navigateToPage: (page: Page, options?: { projectFilter?: number }) => void;
+  navigateToPage: (page: Page, options?: { projectFilter?: number; entryId?: number }) => void;
 }
 
 export const AppContext = React.createContext<AppContextType>({
@@ -23,13 +23,16 @@ const AppContent: React.FC = () => {
   const { t } = useI18n();
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [entriesProjectFilter, setEntriesProjectFilter] = useState<number | undefined>(undefined);
+  const [entryToEdit, setEntryToEdit] = useState<number | undefined>(undefined);
 
-  const navigateToPage = (page: Page, options?: { projectFilter?: number }) => {
+  const navigateToPage = (page: Page, options?: { projectFilter?: number; entryId?: number }) => {
     setCurrentPage(page);
-    if (page === 'entries' && options?.projectFilter) {
-      setEntriesProjectFilter(options.projectFilter);
+    if (page === 'entries') {
+      setEntriesProjectFilter(options?.projectFilter);
+      setEntryToEdit(options?.entryId);
     } else {
       setEntriesProjectFilter(undefined);
+      setEntryToEdit(undefined);
     }
   };
 
@@ -40,7 +43,7 @@ const AppContent: React.FC = () => {
       case 'projects':
         return <Projects />;
       case 'entries':
-        return <TimeEntries initialProjectFilter={entriesProjectFilter} />;
+        return <TimeEntries initialProjectFilter={entriesProjectFilter} initialEntryId={entryToEdit} />;
       case 'reports':
         return <Reports />;
       case 'settings':

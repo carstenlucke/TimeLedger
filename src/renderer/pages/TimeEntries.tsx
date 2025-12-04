@@ -5,9 +5,10 @@ import { useI18n } from '../context/I18nContext';
 
 interface TimeEntriesProps {
   initialProjectFilter?: number;
+  initialEntryId?: number;
 }
 
-const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
+const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initialEntryId }) => {
   const { showNotification, showConfirmation } = useNotification();
   const { t } = useI18n();
   const [entries, setEntries] = useState<TimeEntry[]>([]);
@@ -37,6 +38,16 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
   useEffect(() => {
     setProjectFilter(initialProjectFilter);
   }, [initialProjectFilter]);
+
+  useEffect(() => {
+    // Auto-open edit modal if initialEntryId is provided
+    if (initialEntryId && entries.length > 0) {
+      const entry = entries.find(e => e.id === initialEntryId);
+      if (entry) {
+        handleEdit(entry);
+      }
+    }
+  }, [initialEntryId, entries]);
 
   const loadData = async () => {
     try {
