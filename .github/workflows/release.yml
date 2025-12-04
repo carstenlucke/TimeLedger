@@ -49,9 +49,9 @@ jobs:
           if [ "${{ matrix.platform }}" = "mac" ]; then
             npm run dist:universal
           elif [ "${{ matrix.platform }}" = "win" ]; then
-            npm run build && electron-builder --win
+            npm run build && npx electron-builder --win
           elif [ "${{ matrix.platform }}" = "linux" ]; then
-            npm run build && electron-builder --linux
+            npm run build && npx electron-builder --linux
           fi
         env:
           # If you want to sign the app, add your Apple credentials here:
