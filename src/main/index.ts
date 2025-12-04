@@ -9,16 +9,26 @@ let backupIntervalId: NodeJS.Timeout | null = null;
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
+// Set app name for all platforms
+if (app.setName) {
+  app.setName('TimeLedger');
+}
+
 function createWindow(): void {
   const preloadPath = path.join(__dirname, '../preload/index.js');
   console.log('Preload path:', preloadPath);
   console.log('Preload exists:', require('fs').existsSync(preloadPath));
-  
+
+  const iconPath = isDev
+    ? path.join(__dirname, '../../assets/icons/icon_512x512.png')
+    : path.join(process.resourcesPath, 'assets/icons/icon_512x512.png');
+
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     minWidth: 800,
     minHeight: 600,
+    icon: iconPath,
     webPreferences: {
       preload: preloadPath,
       contextIsolation: true,
@@ -49,6 +59,27 @@ function createWindow(): void {
 
 function createMenu(): void {
   const template: Electron.MenuItemConstructorOptions[] = [
+    // macOS app menu
+    ...(process.platform === 'darwin' ? [{
+      label: 'TimeLedger',
+      submenu: [
+        { role: 'about' as const },
+        { type: 'separator' as const },
+        {
+          label: 'Settings',
+          accelerator: 'Cmd+,',
+          click: () => {
+            mainWindow?.webContents.send('navigate', '/settings');
+          },
+        },
+        { type: 'separator' as const },
+        { role: 'hide' as const },
+        { role: 'hideOthers' as const },
+        { role: 'unhide' as const },
+        { type: 'separator' as const },
+        { role: 'quit' as const },
+      ],
+    }] : []),
     {
       label: 'File',
       submenu: [
@@ -142,6 +173,12 @@ app.whenReady().then(() => {
 
   // Setup IPC handlers
   setupIpcHandlers();
+
+  // Set dock icon on macOS
+  if (process.platform === 'darwin' && isDev) {
+    const iconPath = path.join(__dirname, '../../assets/icons/icon_512x512.png');
+    app.dock.setIcon(iconPath);
+  }
 
   // Create window
   createWindow();
