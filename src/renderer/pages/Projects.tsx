@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
 import type { Project, ProjectInput, TimeEntry } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
+import { useI18n } from '../context/I18nContext';
 import { AppContext } from '../App';
 
 const Projects: React.FC = () => {
   const { showNotification, showConfirmation } = useNotification();
+  const { t } = useI18n();
   const { navigateToPage } = useContext(AppContext);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,7 +37,7 @@ const Projects: React.FC = () => {
       setProjects(data);
     } catch (error) {
       console.error('Failed to load projects:', error);
-      showNotification('Failed to load projects: ' + (error as Error).message, 'error');
+      showNotification(t.notifications.loadFailed + ': ' + (error as Error).message, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -47,10 +49,10 @@ const Projects: React.FC = () => {
     try {
       if (editingProject) {
         await window.api.project.update(editingProject.id, formData);
-        showNotification('Project updated successfully', 'success');
+        showNotification(t.notifications.projectUpdated, 'success');
       } else {
         await window.api.project.create(formData);
-        showNotification('Project created successfully', 'success');
+        showNotification(t.notifications.projectCreated, 'success');
       }
 
       setShowModal(false);
@@ -59,7 +61,7 @@ const Projects: React.FC = () => {
       await loadProjects();
     } catch (error) {
       console.error('Failed to save project:', error);
-      showNotification('Failed to save project', 'error');
+      showNotification(t.notifications.saveFailed, 'error');
     }
   };
 
@@ -75,16 +77,16 @@ const Projects: React.FC = () => {
 
   const handleDelete = async (id: number) => {
     showConfirmation({
-      message: 'Are you sure you want to delete this project? All associated time entries will be deleted.',
-      confirmText: 'Delete',
+      message: t.projects.deleteConfirm,
+      confirmText: t.common.delete,
       onConfirm: async () => {
         try {
           await window.api.project.delete(id);
-          showNotification('Project deleted successfully', 'success');
+          showNotification(t.notifications.projectDeleted, 'success');
           await loadProjects();
         } catch (error) {
           console.error('Failed to delete project:', error);
-          showNotification('Failed to delete project', 'error');
+          showNotification(t.notifications.deleteFailed, 'error');
         }
       },
     });
@@ -116,7 +118,7 @@ const Projects: React.FC = () => {
       }));
     } catch (error) {
       console.error('Failed to load project entries:', error);
-      showNotification('Failed to load project entries', 'error');
+      showNotification(t.notifications.loadFailed, 'error');
     } finally {
       setLoadingEntries(false);
     }
@@ -167,30 +169,30 @@ const Projects: React.FC = () => {
   };
 
   if (isLoading) {
-    return <div className="loading">Loading projects...</div>;
+    return <div className="loading">{t.common.loading}</div>;
   }
 
   return (
     <div>
       <div className="page-header">
-        <h1>Projects</h1>
-        <p>Manage your projects and clients</p>
+        <h1>{t.projects.title}</h1>
+        <p>{t.projects.subtitle}</p>
       </div>
 
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2>All Projects</h2>
+          <h2>{t.projects.allProjects}</h2>
           <button className="btn btn-primary" onClick={handleAddNew}>
-            Add Project
+            {t.projects.addProject}
           </button>
         </div>
 
         {projects.length === 0 ? (
           <div className="empty-state">
-            <h3>No projects yet</h3>
-            <p>Create your first project to start tracking time</p>
+            <h3>{t.projects.noProjects}</h3>
+            <p>{t.projects.createFirst}</p>
             <button className="btn btn-primary" onClick={handleAddNew}>
-              Create Project
+              {t.projects.createProject}
             </button>
           </div>
         ) : (
@@ -198,10 +200,10 @@ const Projects: React.FC = () => {
             <table>
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Client</th>
-                  <th>Hourly Rate</th>
-                  <th>Actions</th>
+                  <th>{t.projects.projectName}</th>
+                  <th>{t.projects.client}</th>
+                  <th>{t.projects.hourlyRate}</th>
+                  <th>{t.common.actions}</th>
                 </tr>
               </thead>
               <tbody>
@@ -220,10 +222,10 @@ const Projects: React.FC = () => {
                     <td>
                       <div className="table-actions">
                         <button className="btn btn-secondary" onClick={() => handleEdit(project)}>
-                          Edit
+                          {t.common.edit}
                         </button>
                         <button className="btn btn-danger" onClick={() => handleDelete(project.id)}>
-                          Delete
+                          {t.common.delete}
                         </button>
                       </div>
                     </td>
@@ -239,12 +241,12 @@ const Projects: React.FC = () => {
         <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>{editingProject ? 'Edit Project' : 'New Project'}</h2>
+              <h2>{editingProject ? t.projects.editProject : t.projects.newProject}</h2>
             </div>
 
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label htmlFor="name">Project Name *</label>
+                <label htmlFor="name">{t.projects.projectName} *</label>
                 <input
                   type="text"
                   id="name"
@@ -256,7 +258,7 @@ const Projects: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="client_name">Client Name</label>
+                <label htmlFor="client_name">{t.projects.clientName}</label>
                 <input
                   type="text"
                   id="client_name"
@@ -266,7 +268,7 @@ const Projects: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="hourly_rate">Hourly Rate ($)</label>
+                <label htmlFor="hourly_rate">{t.projects.hourlyRate}</label>
                 <input
                   type="number"
                   id="hourly_rate"
@@ -284,10 +286,10 @@ const Projects: React.FC = () => {
 
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
-                  Cancel
+                  {t.common.cancel}
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  {editingProject ? 'Update' : 'Create'}
+                  {editingProject ? t.common.update : t.common.create}
                 </button>
               </div>
             </form>
@@ -303,28 +305,28 @@ const Projects: React.FC = () => {
         >
           <div className="modal" style={{ maxWidth: '900px' }}>
             <div className="modal-header">
-              <h2>Time Entries: {selectedProject.name}</h2>
+              <h2>{t.projects.timeEntries}: {selectedProject.name}</h2>
               {selectedProject.client_name && (
-                <p style={{ color: '#666', fontSize: '14px', marginTop: '4px' }}>
-                  Client: {selectedProject.client_name}
+                <p style={{ color: 'var(--text-tertiary)', fontSize: '14px', marginTop: '4px' }}>
+                  {t.projects.client}: {selectedProject.client_name}
                 </p>
               )}
             </div>
 
             {loadingEntries ? (
-              <div style={{ padding: '32px', textAlign: 'center' }}>Loading entries...</div>
+              <div style={{ padding: '32px', textAlign: 'center' }}>{t.common.loading}</div>
             ) : (
               <>
                 {projectEntries.length > 0 && (
                   <div style={{ marginBottom: '16px' }}>
                     <div className="stats-grid">
                       <div className="stat-card">
-                        <h3>Total Hours</h3>
+                        <h3>{t.dashboard.totalHours}</h3>
                         <div className="value">{getTotalHours().toFixed(2)}</div>
                       </div>
                       {getTotalValue() !== undefined && (
                         <div className="stat-card">
-                          <h3>Total Value</h3>
+                          <h3>{t.projects.totalValue}</h3>
                           <div className="value">${getTotalValue()!.toFixed(2)}</div>
                         </div>
                       )}
@@ -334,19 +336,19 @@ const Projects: React.FC = () => {
 
                 {projectEntries.length === 0 ? (
                   <div className="empty-state">
-                    <h3>No time entries yet</h3>
-                    <p>No time has been tracked for this project</p>
+                    <h3>{t.projects.noTimeEntries}</h3>
+                    <p>{t.projects.noTimeTracked}</p>
                   </div>
                 ) : (
                   <div className="table-container" style={{ maxHeight: '400px', overflow: 'auto' }}>
                     <table>
                       <thead>
                         <tr>
-                          <th>Date</th>
-                          <th>Start</th>
-                          <th>End</th>
-                          <th>Duration</th>
-                          <th>Description</th>
+                          <th>{t.common.date}</th>
+                          <th>{t.projects.start}</th>
+                          <th>{t.projects.end}</th>
+                          <th>{t.common.duration}</th>
+                          <th>{t.common.description}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -368,10 +370,10 @@ const Projects: React.FC = () => {
 
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" onClick={handleCloseEntriesOverlay}>
-                Close
+                {t.common.close}
               </button>
               <button type="button" className="btn btn-primary" onClick={handleViewAllEntries}>
-                View in Time Entries
+                {t.projects.viewInTimeEntries}
               </button>
             </div>
           </div>

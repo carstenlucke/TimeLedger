@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { TimeEntry, TimeEntryInput, Project } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
+import { useI18n } from '../context/I18nContext';
 
 interface TimeEntriesProps {
   initialProjectFilter?: number;
@@ -8,6 +9,7 @@ interface TimeEntriesProps {
 
 const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
   const { showNotification, showConfirmation } = useNotification();
+  const { t } = useI18n();
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,7 +54,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
       }
     } catch (error) {
       console.error('Failed to load data:', error);
-      showNotification('Failed to load data', 'error');
+      showNotification(t.notifications.loadFailed, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +64,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
     e.preventDefault();
 
     if (formData.project_id === 0) {
-      showNotification('Please select a project', 'warning');
+      showNotification(t.timeEntries.selectProject, 'warning');
       return;
     }
 
@@ -80,10 +82,10 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
 
       if (editingEntry) {
         await window.api.timeEntry.update(editingEntry.id, dataToSubmit);
-        showNotification('Time entry updated successfully', 'success');
+        showNotification(t.notifications.entryUpdated, 'success');
       } else {
         await window.api.timeEntry.create(dataToSubmit);
-        showNotification('Time entry created successfully', 'success');
+        showNotification(t.notifications.entryCreated, 'success');
       }
 
       setShowModal(false);
@@ -92,7 +94,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
       await loadData();
     } catch (error) {
       console.error('Failed to save time entry:', error);
-      showNotification('Failed to save time entry', 'error');
+      showNotification(t.notifications.saveFailed, 'error');
     }
   };
 
@@ -124,16 +126,16 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
 
   const handleDelete = async (id: number) => {
     showConfirmation({
-      message: 'Are you sure you want to delete this time entry?',
-      confirmText: 'Delete',
+      message: t.timeEntries.deleteConfirm,
+      confirmText: t.common.delete,
       onConfirm: async () => {
         try {
           await window.api.timeEntry.delete(id);
-          showNotification('Time entry deleted successfully', 'success');
+          showNotification(t.notifications.entryDeleted, 'success');
           await loadData();
         } catch (error) {
           console.error('Failed to delete time entry:', error);
-          showNotification('Failed to delete time entry', 'error');
+          showNotification(t.notifications.deleteFailed, 'error');
         }
       },
     });
@@ -241,20 +243,20 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
   };
 
   if (isLoading) {
-    return <div className="loading">Loading time entries...</div>;
+    return <div className="loading">{t.common.loading}</div>;
   }
 
   if (projects.length === 0) {
     return (
       <div>
         <div className="page-header">
-          <h1>Time Entries</h1>
-          <p>Track your working hours</p>
+          <h1>{t.timeEntries.title}</h1>
+          <p>{t.timeEntries.subtitle}</p>
         </div>
         <div className="card">
           <div className="empty-state">
-            <h3>No projects available</h3>
-            <p>Please create a project first before tracking time</p>
+            <h3>{t.projects.noProjects}</h3>
+            <p>{t.projects.createFirst}</p>
           </div>
         </div>
       </div>
@@ -264,17 +266,17 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
   return (
     <div>
       <div className="page-header">
-        <h1>Time Entries</h1>
-        <p>Track your working hours</p>
+        <h1>{t.timeEntries.title}</h1>
+        <p>{t.timeEntries.subtitle}</p>
       </div>
 
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h2>
-            {projectFilter ? `Time Entries: ${getFilteredProjectName()}` : 'All Time Entries'}
+            {projectFilter ? `${t.timeEntries.title}: ${getFilteredProjectName()}` : t.timeEntries.allEntries}
           </h2>
           <button className="btn btn-primary" onClick={handleAddNew}>
-            Add Time Entry
+            {t.timeEntries.addEntry}
           </button>
         </div>
 
@@ -282,13 +284,13 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
         <div style={{ marginBottom: '20px', padding: '16px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '4px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label htmlFor="filter-project">Filter by Project</label>
+              <label htmlFor="filter-project">{t.timeEntries.filterByProject}</label>
               <select
                 id="filter-project"
                 value={projectFilter || ''}
                 onChange={(e) => setProjectFilter(e.target.value ? parseInt(e.target.value) : undefined)}
               >
-                <option value="">All Projects</option>
+                <option value="">{t.projects.allProjects}</option>
                 {projects.map((project) => (
                   <option key={project.id} value={project.id}>
                     {project.name}
@@ -297,7 +299,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
               </select>
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label htmlFor="filter-date-from">From Date</label>
+              <label htmlFor="filter-date-from">{t.timeEntries.from}</label>
               <input
                 type="date"
                 id="filter-date-from"
@@ -306,7 +308,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
               />
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label htmlFor="filter-date-to">To Date</label>
+              <label htmlFor="filter-date-to">{t.timeEntries.to}</label>
               <input
                 type="date"
                 id="filter-date-to"
@@ -325,17 +327,17 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
               }}
               style={{ marginTop: '12px' }}
             >
-              Clear All Filters
+              {t.common.clearFilter}
             </button>
           )}
         </div>
 
         {filteredEntries.length === 0 ? (
           <div className="empty-state">
-            <h3>{projectFilter ? 'No time entries for this project' : 'No time entries yet'}</h3>
-            <p>Start tracking your time by creating your first entry</p>
+            <h3>{projectFilter ? t.timeEntries.noEntriesForProject : t.timeEntries.noEntries}</h3>
+            <p>{t.timeEntries.createFirst}</p>
             <button className="btn btn-primary" onClick={handleAddNew}>
-              Create Entry
+              {t.timeEntries.createEntry}
             </button>
           </div>
         ) : (
@@ -347,24 +349,24 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
                     onClick={() => handleSort('date')}
                     style={{ cursor: 'pointer', userSelect: 'none' }}
                   >
-                    Date {getSortIcon('date')}
+                    {t.common.date} {getSortIcon('date')}
                   </th>
                   <th
                     onClick={() => handleSort('project')}
                     style={{ cursor: 'pointer', userSelect: 'none' }}
                   >
-                    Project {getSortIcon('project')}
+                    {t.common.project} {getSortIcon('project')}
                   </th>
-                  <th>Start</th>
-                  <th>End</th>
+                  <th>{t.projects.start}</th>
+                  <th>{t.projects.end}</th>
                   <th
                     onClick={() => handleSort('duration')}
                     style={{ cursor: 'pointer', userSelect: 'none' }}
                   >
-                    Duration {getSortIcon('duration')}
+                    {t.common.duration} {getSortIcon('duration')}
                   </th>
-                  <th>Description</th>
-                  <th>Actions</th>
+                  <th>{t.common.description}</th>
+                  <th>{t.common.actions}</th>
                 </tr>
               </thead>
               <tbody>
@@ -379,10 +381,10 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
                     <td>
                       <div className="table-actions">
                         <button className="btn btn-secondary" onClick={() => handleEdit(entry)}>
-                          Edit
+                          {t.common.edit}
                         </button>
                         <button className="btn btn-danger" onClick={() => handleDelete(entry.id)}>
-                          Delete
+                          {t.common.delete}
                         </button>
                       </div>
                     </td>
@@ -402,12 +404,12 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
         >
           <div className="modal">
             <div className="modal-header">
-              <h2>{editingEntry ? 'Edit Time Entry' : 'New Time Entry'}</h2>
+              <h2>{editingEntry ? t.timeEntries.editEntry : t.timeEntries.newEntry}</h2>
             </div>
 
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label htmlFor="project_id">Project *</label>
+                <label htmlFor="project_id">{t.common.project} {t.timeEntries.required}</label>
                 <select
                   id="project_id"
                   value={formData.project_id}
@@ -423,7 +425,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="date">Date *</label>
+                <label htmlFor="date">{t.common.date} {t.timeEntries.required}</label>
                 <input
                   type="date"
                   id="date"
@@ -434,7 +436,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
               </div>
 
               <div className="form-group">
-                <label>Input Mode</label>
+                <label>{t.timeEntries.inputMode}</label>
                 <div style={{ display: 'flex', gap: '16px' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <input
@@ -442,7 +444,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
                       checked={inputMode === 'duration'}
                       onChange={() => setInputMode('duration')}
                     />
-                    Duration
+                    {t.timeEntries.durationMode}
                   </label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <input
@@ -450,14 +452,14 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
                       checked={inputMode === 'times'}
                       onChange={() => setInputMode('times')}
                     />
-                    Start/End Times
+                    {t.timeEntries.timesMode}
                   </label>
                 </div>
               </div>
 
               {inputMode === 'duration' ? (
                 <div className="form-group">
-                  <label htmlFor="duration_minutes">Duration (minutes) *</label>
+                  <label htmlFor="duration_minutes">{t.timeEntries.durationMinutes} {t.timeEntries.required}</label>
                   <input
                     type="number"
                     id="duration_minutes"
@@ -475,7 +477,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
               ) : (
                 <div className="form-row">
                   <div className="form-group">
-                    <label htmlFor="start_time">Start Time *</label>
+                    <label htmlFor="start_time">{t.timeEntries.startTime} {t.timeEntries.required}</label>
                     <input
                       type="time"
                       id="start_time"
@@ -485,7 +487,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
                     />
                   </div>
                   <div className="form-group">
-                    <label htmlFor="end_time">End Time *</label>
+                    <label htmlFor="end_time">{t.timeEntries.endTime} {t.timeEntries.required}</label>
                     <input
                       type="time"
                       id="end_time"
@@ -498,21 +500,21 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
               )}
 
               <div className="form-group">
-                <label htmlFor="description">Description</label>
+                <label htmlFor="description">{t.common.description}</label>
                 <textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="What did you work on?"
+                  placeholder={t.timeEntries.descriptionPlaceholder}
                 />
               </div>
 
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
-                  Cancel
+                  {t.common.cancel}
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  {editingEntry ? 'Update' : 'Create'}
+                  {editingEntry ? t.common.update : t.common.create}
                 </button>
               </div>
             </form>
