@@ -3,7 +3,10 @@
   "version": "1.2.1",
   "description": "A simple desktop time tracking application for freelancers and side projects",
   "main": "./dist/main/index.js",
-  "author": "TimeLedger",
+  "author": {
+    "name": "TimeLedger",
+    "email": "timeledger@flitzpeople.com"
+  },
   "license": "MIT",
   "scripts": {
     "dev": "concurrently \"npm run dev:renderer\" \"npm run dev:main\"",
