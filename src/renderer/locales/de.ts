@@ -1,6 +1,14 @@
 import type { TranslationKeys } from './en';
 
 export const de: TranslationKeys = {
+  // Formatting
+  formatting: {
+    currency: 'EUR',
+    currencySymbol: '€',
+    decimalSeparator: ',',
+    thousandsSeparator: '.',
+  },
+
   // Common
   common: {
     save: 'Speichern',

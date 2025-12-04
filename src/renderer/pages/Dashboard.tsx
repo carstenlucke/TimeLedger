@@ -12,7 +12,7 @@ interface WeeklyStat {
 
 const Dashboard: React.FC = () => {
   const { showNotification } = useNotification();
-  const { t } = useI18n();
+  const { t, formatCurrency, formatNumber } = useI18n();
   const [recentEntries, setRecentEntries] = useState<TimeEntry[]>([]);
   const [weeklyStats, setWeeklyStats] = useState<WeeklyStat[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -151,12 +151,12 @@ const Dashboard: React.FC = () => {
             <div className="stats-grid">
               <div className="stat-card">
                 <h3>{t.dashboard.totalHours}</h3>
-                <div className="value">{getTotalWeeklyHours().toFixed(2)}</div>
+                <div className="value">{formatNumber(getTotalWeeklyHours(), 2)}</div>
               </div>
               {getTotalWeeklyValue() !== undefined && (
                 <div className="stat-card">
                   <h3>{t.dashboard.totalRevenue}</h3>
-                  <div className="value">${getTotalWeeklyValue()!.toFixed(2)}</div>
+                  <div className="value">{formatCurrency(getTotalWeeklyValue()!)}</div>
                 </div>
               )}
             </div>
@@ -174,8 +174,8 @@ const Dashboard: React.FC = () => {
                   {weeklyStats.map((stat) => (
                     <tr key={stat.project_id}>
                       <td>{stat.project_name}</td>
-                      <td>{stat.total_hours.toFixed(2)}h</td>
-                      <td>{stat.total_value ? `$${stat.total_value.toFixed(2)}` : '-'}</td>
+                      <td>{formatNumber(stat.total_hours, 2)}h</td>
+                      <td>{stat.total_value ? formatCurrency(stat.total_value) : '-'}</td>
                     </tr>
                   ))}
                 </tbody>

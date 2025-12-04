@@ -6,7 +6,7 @@ import { AppContext } from '../App';
 
 const Projects: React.FC = () => {
   const { showNotification, showConfirmation } = useNotification();
-  const { t } = useI18n();
+  const { t, formatCurrency, formatNumber } = useI18n();
   const { navigateToPage } = useContext(AppContext);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -218,7 +218,7 @@ const Projects: React.FC = () => {
                       </span>
                     </td>
                     <td>{project.client_name || '-'}</td>
-                    <td>{project.hourly_rate ? `$${project.hourly_rate.toFixed(2)}` : '-'}</td>
+                    <td>{project.hourly_rate ? formatCurrency(project.hourly_rate) : '-'}</td>
                     <td>
                       <div className="table-actions">
                         <button className="btn btn-secondary" onClick={() => handleEdit(project)}>
@@ -322,12 +322,12 @@ const Projects: React.FC = () => {
                     <div className="stats-grid">
                       <div className="stat-card">
                         <h3>{t.dashboard.totalHours}</h3>
-                        <div className="value">{getTotalHours().toFixed(2)}</div>
+                        <div className="value">{formatNumber(getTotalHours(), 2)}</div>
                       </div>
                       {getTotalValue() !== undefined && (
                         <div className="stat-card">
                           <h3>{t.projects.totalValue}</h3>
-                          <div className="value">${getTotalValue()!.toFixed(2)}</div>
+                          <div className="value">{formatCurrency(getTotalValue()!)}</div>
                         </div>
                       )}
                     </div>

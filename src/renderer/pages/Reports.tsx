@@ -5,7 +5,7 @@ import { useI18n } from '../context/I18nContext';
 
 const Reports: React.FC = () => {
   const { showNotification } = useNotification();
-  const { t } = useI18n();
+  const { t, formatCurrency, formatNumber } = useI18n();
   const [projects, setProjects] = useState<Project[]>([]);
   const [report, setReport] = useState<ProjectReport[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -187,12 +187,12 @@ const Reports: React.FC = () => {
           <div className="stats-grid">
             <div className="stat-card">
               <h3>{t.reports.totalHours}</h3>
-              <div className="value">{getTotalHours().toFixed(2)}</div>
+              <div className="value">{formatNumber(getTotalHours(), 2)}</div>
             </div>
             {getTotalValue() !== undefined && (
               <div className="stat-card">
                 <h3>{t.projects.totalValue}</h3>
-                <div className="value">${getTotalValue()!.toFixed(2)}</div>
+                <div className="value">{formatCurrency(getTotalValue()!)}</div>
               </div>
             )}
           </div>
@@ -225,11 +225,11 @@ const Reports: React.FC = () => {
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '24px', fontWeight: '600' }}>
-                      {projectReport.total_hours.toFixed(2)}h
+                      {formatNumber(projectReport.total_hours, 2)}h
                     </div>
                     {projectReport.total_value !== undefined && (
                       <div style={{ color: 'var(--accent-green)', fontSize: '18px', marginTop: '4px' }}>
-                        ${projectReport.total_value.toFixed(2)}
+                        {formatCurrency(projectReport.total_value)}
                       </div>
                     )}
                   </div>

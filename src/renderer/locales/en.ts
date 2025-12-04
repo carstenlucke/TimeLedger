@@ -1,4 +1,12 @@
 export const en = {
+  // Formatting
+  formatting: {
+    currency: 'USD',
+    currencySymbol: '$',
+    decimalSeparator: '.',
+    thousandsSeparator: ',',
+  },
+
   // Common
   common: {
     save: 'Save',

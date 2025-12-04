@@ -6,6 +6,8 @@ interface I18nContextType {
   locale: Locale;
   setLocale: (locale: Locale) => void;
   t: TranslationKeys;
+  formatCurrency: (value: number) => string;
+  formatNumber: (value: number, decimals?: number) => string;
 }
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
@@ -23,10 +25,33 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem(LOCALE_STORAGE_KEY, newLocale);
   };
 
+  const formatCurrency = (value: number): string => {
+    const t = translations[locale];
+    const formatted = formatNumber(value, 2);
+    return `${formatted} ${t.formatting.currencySymbol}`;
+  };
+
+  const formatNumber = (value: number, decimals: number = 2): string => {
+    const t = translations[locale];
+    const fixed = value.toFixed(decimals);
+    const [integer, decimal] = fixed.split('.');
+
+    // Add thousands separator
+    const withThousands = integer.replace(/\B(?=(\d{3})+(?!\d))/g, t.formatting.thousandsSeparator);
+
+    // Combine with decimal separator
+    if (decimal) {
+      return `${withThousands}${t.formatting.decimalSeparator}${decimal}`;
+    }
+    return withThousands;
+  };
+
   const value: I18nContextType = {
     locale,
     setLocale,
     t: translations[locale],
+    formatCurrency,
+    formatNumber,
   };
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
