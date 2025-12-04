@@ -19,9 +19,14 @@ function createWindow(): void {
   console.log('Preload path:', preloadPath);
   console.log('Preload exists:', require('fs').existsSync(preloadPath));
 
+  // Icon path - use .icns for macOS, .png for others
+  const iconFileName = process.platform === 'darwin'
+    ? 'app_icon.icns'
+    : 'icon_512x512.png';
+
   const iconPath = isDev
-    ? path.join(__dirname, '../../assets/icons/icon_512x512.png')
-    : path.join(process.resourcesPath, 'assets/icons/icon_512x512.png');
+    ? path.join(__dirname, '../../assets/icons', iconFileName)
+    : path.join(process.resourcesPath, 'assets/icons', iconFileName);
 
   mainWindow = new BrowserWindow({
     width: 1200,

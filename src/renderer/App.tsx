@@ -80,7 +80,7 @@ const AppContent: React.FC = () => {
         <aside className="sidebar">
           <div className="sidebar-header">
             <div className="sidebar-logo">
-              <img src="/icons/icon_128x128.png" alt="TimeLedger" />
+              <img src="./icons/icon_128x128.png" alt="TimeLedger" />
             </div>
             <div className="sidebar-title">
               <h1>TimeLedger</h1>

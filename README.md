@@ -55,9 +55,12 @@ A simple desktop time tracking application for freelancers and side projects. Bu
 - `npm run dev` - Start the app in development mode
 - `npm run build` - Build the app for production
 - `npm run start` - Start the built app
-- `npm run dist` - Build and package the app for distribution
-- `npm run dist:mac` - Build for macOS
-- `npm run clean` - Clean build artifacts
+- `npm run dist` - Build and package for macOS (ARM64)
+- `npm run dist:universal` - Build Universal macOS binary (ARM64 + Intel)
+- `npm run postdist` - Clean up auto-update files (runs automatically after dist)
+- `npm run clean` - Clean build artifacts (dist/)
+- `npm run clean:release` - Clean release directory
+- `npm run clean:all` - Clean both dist/ and release/
 
 ### Project Structure
 
@@ -154,35 +157,39 @@ The SQLite database is stored at:
 
 ## Building for Production
 
-### macOS
+### Automated Multi-Platform Builds (Recommended)
 
-```bash
-npm run dist:mac
-```
+TimeLedger uses GitHub Actions for automated multi-platform releases:
 
-This creates:
-- DMG installer in `release/`
-- ZIP archive in `release/`
+1. Update version: `npm version <new-version>`
+2. Commit and push changes
+3. Create and push a version tag: `git tag v1.0.0 && git push origin v1.0.0`
+4. GitHub Actions automatically builds for all platforms and creates a release
 
-### Windows
+**What gets built automatically:**
+- **macOS**: DMG and ZIP for Intel (x64) and Apple Silicon (arm64)
+- **Windows**: NSIS installer and portable EXE (x64)
+- **Linux**: AppImage and DEB package (x64)
 
-```bash
-npm run dist
-```
+### Local Manual Builds (macOS only)
 
-This creates:
-- NSIS installer
-- Portable executable
-
-### Linux
-
+#### macOS ARM64 (Apple Silicon)
 ```bash
 npm run dist
 ```
+Creates:
+- DMG installer for ARM64
+- ZIP archive for ARM64
 
-This creates:
-- AppImage
-- DEB package
+**This is optimized for local development on Apple Silicon Macs.**
+
+#### macOS Universal Binary (Optional)
+```bash
+npm run dist:universal
+```
+Creates a single Universal binary that runs on both Intel and Apple Silicon.
+
+**Note:** For Windows and Linux builds, use GitHub Actions (automatic on tag push).
 
 ## Security Considerations
 

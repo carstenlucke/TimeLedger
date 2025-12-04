@@ -35,6 +35,8 @@ This guide provides detailed information for developers working on TimeLedger.
    npm run build
    ```
 
+**Note:** This project is optimized for development on **Apple Silicon Macs**. Local builds only target macOS. Windows and Linux builds are handled by GitHub Actions.
+
 ## Development Workflow
 
 ### Running the App in Development Mode
@@ -244,19 +246,22 @@ Creates production build in `dist/`:
 - `dist/main/` - Compiled main process
 - `dist/renderer/` - Bundled renderer
 
-### Package for Distribution
+### Local Package (macOS ARM64)
 
 ```bash
-# All platforms
 npm run dist
-
-# macOS only
-npm run dist:mac
 ```
 
 Output in `release/`:
-- DMG installer
-- ZIP archive
+- `TimeLedger-[version]-arm64.dmg` - ARM64 DMG installer
+- `TimeLedger-[version]-arm64-mac.zip` - ARM64 ZIP archive
+
+**For Universal Binary (ARM64 + Intel):**
+```bash
+npm run dist:universal
+```
+
+**For Windows/Linux:** Use GitHub Actions (automatic on version tag push)
 
 ### Build Configuration
 
@@ -414,6 +419,51 @@ SELECT * FROM time_entries;
 
 ## Release Process
 
+### Automated Release (Recommended)
+
+TimeLedger uses GitHub Actions to automate the build and release process for macOS:
+
+1. Update version in `package.json`:
+   ```bash
+   # Example: Update to version 1.2.0
+   npm version 1.2.0
+   ```
+
+2. Test the build locally:
+   ```bash
+   npm run build
+   npm run dist:mac
+   ```
+
+3. Commit your changes:
+   ```bash
+   git add package.json package-lock.json
+   git commit -m "chore: bump version to 1.2.0"
+   ```
+
+4. Create and push a version tag:
+   ```bash
+   git tag v1.2.0
+   git push origin main
+   git push origin v1.2.0
+   ```
+
+5. GitHub Actions will automatically:
+   - Build for all platforms in parallel (macOS, Windows, Linux)
+   - Create a GitHub release
+   - Upload all installers and archives as release assets:
+     - macOS: DMG and ZIP (Intel x64 + Apple Silicon arm64)
+     - Windows: NSIS installer and portable EXE (x64)
+     - Linux: AppImage and DEB package (x64)
+
+6. Monitor the build progress in the "Actions" tab on GitHub
+
+7. Once complete, verify the release at `https://github.com/yourusername/TimeLedger/releases`
+
+### Manual Release
+
+If you need to release manually:
+
 1. Update version in `package.json`
 2. Update CHANGELOG (if exists)
 3. Run full test suite
@@ -421,8 +471,20 @@ SELECT * FROM time_entries;
 5. Test installers
 6. Create git tag
 7. Push to repository
-8. Create GitHub release
+8. Create GitHub release manually
 9. Upload installers
+
+### Code Signing (Optional)
+
+To sign your macOS app, add these secrets to your GitHub repository:
+
+1. Go to Settings > Secrets and variables > Actions
+2. Add the following secrets:
+   - `APPLE_ID`: Your Apple ID email
+   - `APPLE_ID_PASSWORD`: App-specific password from Apple
+   - `TEAM_ID`: Your Apple Developer Team ID
+
+3. Uncomment the signing environment variables in `.github/workflows/release.yml`
 
 ## Contributing
 
