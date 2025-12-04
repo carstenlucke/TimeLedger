@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import type { TimeEntry, TimeEntryInput, Project } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
 
-const TimeEntries: React.FC = () => {
+interface TimeEntriesProps {
+  initialProjectFilter?: number;
+}
+
+const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
   const { showNotification, showConfirmation } = useNotification();
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -10,6 +14,7 @@ const TimeEntries: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   const [inputMode, setInputMode] = useState<'duration' | 'times'>('duration');
+  const [projectFilter, setProjectFilter] = useState<number | undefined>(initialProjectFilter);
   const [formData, setFormData] = useState<TimeEntryInput>({
     project_id: 0,
     date: new Date().toISOString().split('T')[0],
@@ -22,6 +27,10 @@ const TimeEntries: React.FC = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    setProjectFilter(initialProjectFilter);
+  }, [initialProjectFilter]);
 
   const loadData = async () => {
     try {
@@ -166,6 +175,16 @@ const TimeEntries: React.FC = () => {
     return `${hours}h ${mins}m`;
   };
 
+  const filteredEntries = projectFilter
+    ? entries.filter(entry => entry.project_id === projectFilter)
+    : entries;
+
+  const getFilteredProjectName = (): string => {
+    if (!projectFilter) return '';
+    const project = projects.find(p => p.id === projectFilter);
+    return project ? project.name : '';
+  };
+
   if (isLoading) {
     return <div className="loading">Loading time entries...</div>;
   }
@@ -196,15 +215,28 @@ const TimeEntries: React.FC = () => {
 
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2>All Time Entries</h2>
+          <div>
+            <h2>
+              {projectFilter ? `Time Entries: ${getFilteredProjectName()}` : 'All Time Entries'}
+            </h2>
+            {projectFilter && (
+              <button
+                className="btn btn-secondary"
+                onClick={() => setProjectFilter(undefined)}
+                style={{ marginTop: '8px', fontSize: '14px' }}
+              >
+                Clear Filter
+              </button>
+            )}
+          </div>
           <button className="btn btn-primary" onClick={handleAddNew}>
             Add Time Entry
           </button>
         </div>
 
-        {entries.length === 0 ? (
+        {filteredEntries.length === 0 ? (
           <div className="empty-state">
-            <h3>No time entries yet</h3>
+            <h3>{projectFilter ? 'No time entries for this project' : 'No time entries yet'}</h3>
             <p>Start tracking your time by creating your first entry</p>
             <button className="btn btn-primary" onClick={handleAddNew}>
               Create Entry
@@ -225,7 +257,7 @@ const TimeEntries: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {entries.map((entry) => (
+                {filteredEntries.map((entry) => (
                   <tr key={entry.id}>
                     <td>{entry.date}</td>
                     <td>{getProjectName(entry.project_id)}</td>

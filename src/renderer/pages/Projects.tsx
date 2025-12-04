@@ -1,13 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import type { Project, ProjectInput } from '../../shared/types';
+import React, { useState, useEffect, useContext } from 'react';
+import type { Project, ProjectInput, TimeEntry } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
+import { AppContext } from '../App';
 
 const Projects: React.FC = () => {
   const { showNotification, showConfirmation } = useNotification();
+  const { navigateToPage } = useContext(AppContext);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [showEntriesOverlay, setShowEntriesOverlay] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [projectEntries, setProjectEntries] = useState<TimeEntry[]>([]);
+  const [loadingEntries, setLoadingEntries] = useState(false);
   const [formData, setFormData] = useState<ProjectInput>({
     name: '',
     hourly_rate: undefined,
@@ -96,6 +102,70 @@ const Projects: React.FC = () => {
     setFormData({ name: '', hourly_rate: undefined, client_name: '' });
   };
 
+  const handleProjectClick = async (project: Project) => {
+    setSelectedProject(project);
+    setShowEntriesOverlay(true);
+    setLoadingEntries(true);
+
+    try {
+      const entries = await window.api.timeEntry.getByProject(project.id);
+      setProjectEntries(entries.sort((a, b) => {
+        const dateCompare = b.date.localeCompare(a.date);
+        if (dateCompare !== 0) return dateCompare;
+        return (b.start_time || '').localeCompare(a.start_time || '');
+      }));
+    } catch (error) {
+      console.error('Failed to load project entries:', error);
+      showNotification('Failed to load project entries', 'error');
+    } finally {
+      setLoadingEntries(false);
+    }
+  };
+
+  const handleCloseEntriesOverlay = () => {
+    setShowEntriesOverlay(false);
+    setSelectedProject(null);
+    setProjectEntries([]);
+  };
+
+  const handleViewAllEntries = () => {
+    if (selectedProject) {
+      navigateToPage('entries', { projectFilter: selectedProject.id });
+      handleCloseEntriesOverlay();
+    }
+  };
+
+  const handleOverlayMouseDown = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      (e.currentTarget as HTMLElement).dataset.mousedownOnOverlay = 'true';
+    } else {
+      (e.currentTarget as HTMLElement).dataset.mousedownOnOverlay = 'false';
+    }
+  };
+
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    const overlay = e.currentTarget as HTMLElement;
+    if (e.target === e.currentTarget && overlay.dataset.mousedownOnOverlay === 'true') {
+      handleCloseEntriesOverlay();
+    }
+  };
+
+  const formatDuration = (minutes: number): string => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+  };
+
+  const getTotalHours = (): number => {
+    const totalMinutes = projectEntries.reduce((sum, entry) => sum + entry.duration_minutes, 0);
+    return totalMinutes / 60;
+  };
+
+  const getTotalValue = (): number | undefined => {
+    if (!selectedProject?.hourly_rate) return undefined;
+    return getTotalHours() * selectedProject.hourly_rate;
+  };
+
   if (isLoading) {
     return <div className="loading">Loading projects...</div>;
   }
@@ -137,7 +207,14 @@ const Projects: React.FC = () => {
               <tbody>
                 {projects.map((project) => (
                   <tr key={project.id}>
-                    <td>{project.name}</td>
+                    <td>
+                      <span
+                        style={{ cursor: 'pointer', color: '#3498db', textDecoration: 'underline' }}
+                        onClick={() => handleProjectClick(project)}
+                      >
+                        {project.name}
+                      </span>
+                    </td>
                     <td>{project.client_name || '-'}</td>
                     <td>{project.hourly_rate ? `$${project.hourly_rate.toFixed(2)}` : '-'}</td>
                     <td>
@@ -214,6 +291,89 @@ const Projects: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showEntriesOverlay && selectedProject && (
+        <div
+          className="modal-overlay"
+          onMouseDown={handleOverlayMouseDown}
+          onClick={handleOverlayClick}
+        >
+          <div className="modal" style={{ maxWidth: '900px' }}>
+            <div className="modal-header">
+              <h2>Time Entries: {selectedProject.name}</h2>
+              {selectedProject.client_name && (
+                <p style={{ color: '#666', fontSize: '14px', marginTop: '4px' }}>
+                  Client: {selectedProject.client_name}
+                </p>
+              )}
+            </div>
+
+            {loadingEntries ? (
+              <div style={{ padding: '32px', textAlign: 'center' }}>Loading entries...</div>
+            ) : (
+              <>
+                {projectEntries.length > 0 && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <div className="stats-grid">
+                      <div className="stat-card">
+                        <h3>Total Hours</h3>
+                        <div className="value">{getTotalHours().toFixed(2)}</div>
+                      </div>
+                      {getTotalValue() !== undefined && (
+                        <div className="stat-card">
+                          <h3>Total Value</h3>
+                          <div className="value">${getTotalValue()!.toFixed(2)}</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {projectEntries.length === 0 ? (
+                  <div className="empty-state">
+                    <h3>No time entries yet</h3>
+                    <p>No time has been tracked for this project</p>
+                  </div>
+                ) : (
+                  <div className="table-container" style={{ maxHeight: '400px', overflow: 'auto' }}>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Start</th>
+                          <th>End</th>
+                          <th>Duration</th>
+                          <th>Description</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {projectEntries.map((entry) => (
+                          <tr key={entry.id}>
+                            <td>{entry.date}</td>
+                            <td>{entry.start_time || '-'}</td>
+                            <td>{entry.end_time || '-'}</td>
+                            <td>{formatDuration(entry.duration_minutes)}</td>
+                            <td>{entry.description || '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+
+            <div className="modal-footer">
+              <button type="button" className="btn btn-secondary" onClick={handleCloseEntriesOverlay}>
+                Close
+              </button>
+              <button type="button" className="btn btn-primary" onClick={handleViewAllEntries}>
+                View in Time Entries
+              </button>
+            </div>
           </div>
         </div>
       )}

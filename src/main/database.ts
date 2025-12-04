@@ -252,6 +252,7 @@ export class DatabaseManager {
   public generateReport(filter: ReportFilter): ProjectReport[] {
     const { start_date, end_date, project_ids } = filter;
 
+    // Build query based on whether date filtering is enabled
     let query = `
       SELECT
         p.id as project_id,
@@ -261,11 +262,17 @@ export class DatabaseManager {
         SUM(te.duration_minutes) as total_minutes
       FROM projects p
       LEFT JOIN time_entries te ON p.id = te.project_id
-        AND te.date >= ? AND te.date <= ?
     `;
 
-    const params: any[] = [start_date, end_date];
+    const params: any[] = [];
 
+    // Add date filtering if provided
+    if (start_date && end_date) {
+      query += ' AND te.date >= ? AND te.date <= ?';
+      params.push(start_date, end_date);
+    }
+
+    // Add project filtering if provided
     if (project_ids && project_ids.length > 0) {
       query += ` WHERE p.id IN (${project_ids.map(() => '?').join(',')})`;
       params.push(...project_ids);
@@ -282,12 +289,18 @@ export class DatabaseManager {
       const totalValue = row.hourly_rate ? totalHours * row.hourly_rate : undefined;
 
       // Get entries for this project
-      const entriesStmt = this.db.prepare(`
-        SELECT * FROM time_entries
-        WHERE project_id = ? AND date >= ? AND date <= ?
-        ORDER BY date DESC, start_time DESC
-      `);
-      const entries = entriesStmt.all(row.project_id, start_date, end_date) as TimeEntry[];
+      let entriesQuery = 'SELECT * FROM time_entries WHERE project_id = ?';
+      const entriesParams: any[] = [row.project_id];
+
+      if (start_date && end_date) {
+        entriesQuery += ' AND date >= ? AND date <= ?';
+        entriesParams.push(start_date, end_date);
+      }
+
+      entriesQuery += ' ORDER BY date DESC, start_time DESC';
+
+      const entriesStmt = this.db.prepare(entriesQuery);
+      const entries = entriesStmt.all(...entriesParams) as TimeEntry[];
 
       return {
         project_id: row.project_id,
