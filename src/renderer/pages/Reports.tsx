@@ -8,6 +8,7 @@ const Reports: React.FC = () => {
   const [report, setReport] = useState<ProjectReport[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
+  const [useDateFilter, setUseDateFilter] = useState(true);
   const [filter, setFilter] = useState<ReportFilter>({
     start_date: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
     end_date: new Date().toISOString().split('T')[0],
@@ -33,7 +34,8 @@ const Reports: React.FC = () => {
     try {
       setIsLoading(true);
       const filterToUse: ReportFilter = {
-        ...filter,
+        start_date: useDateFilter ? filter.start_date : undefined,
+        end_date: useDateFilter ? filter.end_date : undefined,
         project_ids: selectedProjects.length > 0 ? selectedProjects : undefined,
       };
       const data = await window.api.report.generate(filterToUse);
@@ -97,26 +99,39 @@ const Reports: React.FC = () => {
       <div className="card">
         <h2>Report Filters</h2>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="start_date">Start Date</label>
+        <div className="form-group">
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
             <input
-              type="date"
-              id="start_date"
-              value={filter.start_date}
-              onChange={(e) => setFilter({ ...filter, start_date: e.target.value })}
+              type="checkbox"
+              checked={!useDateFilter}
+              onChange={(e) => setUseDateFilter(!e.target.checked)}
             />
-          </div>
-          <div className="form-group">
-            <label htmlFor="end_date">End Date</label>
-            <input
-              type="date"
-              id="end_date"
-              value={filter.end_date}
-              onChange={(e) => setFilter({ ...filter, end_date: e.target.value })}
-            />
-          </div>
+            All time entries (no date restriction)
+          </label>
         </div>
+
+        {useDateFilter && (
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="start_date">Start Date</label>
+              <input
+                type="date"
+                id="start_date"
+                value={filter.start_date}
+                onChange={(e) => setFilter({ ...filter, start_date: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="end_date">End Date</label>
+              <input
+                type="date"
+                id="end_date"
+                value={filter.end_date}
+                onChange={(e) => setFilter({ ...filter, end_date: e.target.value })}
+              />
+            </div>
+          </div>
+        )}
 
         {projects.length > 0 && (
           <div className="form-group">

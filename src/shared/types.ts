@@ -38,8 +38,8 @@ export interface TimeEntryInput {
 
 // Reporting types
 export interface ReportFilter {
-  start_date: string;
-  end_date: string;
+  start_date?: string;
+  end_date?: string;
   project_ids?: number[];
 }
 
