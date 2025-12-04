@@ -153,14 +153,18 @@ const Settings: React.FC = () => {
             <span className="theme-toggle-label">
               {theme === 'dark' ? t.settings.darkMode : t.settings.lightMode}
             </span>
-            <div
+            <button
+              type="button"
               className={`theme-toggle-switch ${theme === 'light' ? 'active' : ''}`}
               onClick={toggleTheme}
+              role="switch"
+              aria-checked={theme === 'dark'}
+              aria-label={theme === 'dark' ? t.settings.darkMode : t.settings.lightMode}
             >
-              <div className="theme-toggle-slider">
+              <span className="theme-toggle-slider">
                 {theme === 'dark' ? '🌙' : '☀️'}
-              </div>
-            </div>
+              </span>
+            </button>
           </div>
         </div>
       </div>

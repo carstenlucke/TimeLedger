@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import TimeEntries from './pages/TimeEntries';
@@ -37,6 +37,26 @@ const AppContent: React.FC = () => {
     }
   };
 
+  // Listen for navigation events from main process (e.g., menu shortcuts)
+  useEffect(() => {
+    const cleanup = window.api.onNavigate((path: string) => {
+      // Convert path to page
+      if (path === '/settings') {
+        navigateToPage('settings');
+      } else if (path === '/dashboard') {
+        navigateToPage('dashboard');
+      } else if (path === '/projects') {
+        navigateToPage('projects');
+      } else if (path === '/entries') {
+        navigateToPage('entries');
+      } else if (path === '/reports') {
+        navigateToPage('reports');
+      }
+    });
+
+    return cleanup;
+  }, []);
+
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
@@ -60,7 +80,7 @@ const AppContent: React.FC = () => {
         <aside className="sidebar">
           <div className="sidebar-header">
             <div className="sidebar-logo">
-              <img src="/logo.png" alt="TimeLedger" />
+              <img src="/icons/icon_128x128.png" alt="TimeLedger" />
             </div>
             <div className="sidebar-title">
               <h1>TimeLedger</h1>
