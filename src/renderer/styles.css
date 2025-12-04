@@ -423,7 +423,7 @@ table tbody tr:hover {
 
 .stat-card .label {
   font-size: 12px;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   margin-top: 4px;
 }
 

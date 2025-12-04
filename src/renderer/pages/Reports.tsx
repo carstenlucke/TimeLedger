@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import type { Project, ProjectReport, ReportFilter, ExportFormat } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
+import { useI18n } from '../context/I18nContext';
 
 const Reports: React.FC = () => {
   const { showNotification } = useNotification();
+  const { t, formatCurrency, formatNumber } = useI18n();
   const [projects, setProjects] = useState<Project[]>([]);
   const [report, setReport] = useState<ProjectReport[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,7 +28,7 @@ const Reports: React.FC = () => {
       setProjects(data);
     } catch (error) {
       console.error('Failed to load projects:', error);
-      showNotification('Failed to load projects', 'error');
+      showNotification(t.notifications.loadFailed, 'error');
     }
   };
 
@@ -41,10 +43,10 @@ const Reports: React.FC = () => {
       const data = await window.api.report.generate(filterToUse);
       setReport(data);
       setHasGenerated(true);
-      showNotification('Report generated successfully', 'success');
+      showNotification(t.notifications.success, 'success');
     } catch (error) {
       console.error('Failed to generate report:', error);
-      showNotification('Failed to generate report', 'error');
+      showNotification(t.notifications.saveFailed, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -52,18 +54,18 @@ const Reports: React.FC = () => {
 
   const handleExport = async (format: ExportFormat) => {
     if (report.length === 0) {
-      showNotification('Please generate a report first', 'warning');
+      showNotification(t.reports.noData, 'warning');
       return;
     }
 
     try {
       const filePath = await window.api.report.export(report, format);
       if (filePath) {
-        showNotification(`Report exported successfully to ${filePath}`, 'success');
+        showNotification(`${t.notifications.success}: ${filePath}`, 'success');
       }
     } catch (error) {
       console.error('Failed to export report:', error);
-      showNotification('Failed to export report', 'error');
+      showNotification(t.notifications.saveFailed, 'error');
     }
   };
 
@@ -92,12 +94,12 @@ const Reports: React.FC = () => {
   return (
     <div>
       <div className="page-header">
-        <h1>Reports</h1>
-        <p>Generate time tracking reports</p>
+        <h1>{t.reports.title}</h1>
+        <p>{t.reports.subtitle}</p>
       </div>
 
       <div className="card">
-        <h2>Report Filters</h2>
+        <h2>{t.reports.generateReport}</h2>
 
         <div className="form-group">
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
@@ -106,14 +108,14 @@ const Reports: React.FC = () => {
               checked={!useDateFilter}
               onChange={(e) => setUseDateFilter(!e.target.checked)}
             />
-            All time entries (no date restriction)
+            {t.reports.allProjects} ({t.reports.selectPeriod}: {t.common.all})
           </label>
         </div>
 
         {useDateFilter && (
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="start_date">Start Date</label>
+              <label htmlFor="start_date">{t.reports.startDate}</label>
               <input
                 type="date"
                 id="start_date"
@@ -122,7 +124,7 @@ const Reports: React.FC = () => {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="end_date">End Date</label>
+              <label htmlFor="end_date">{t.reports.endDate}</label>
               <input
                 type="date"
                 id="end_date"
@@ -135,7 +137,7 @@ const Reports: React.FC = () => {
 
         {projects.length > 0 && (
           <div className="form-group">
-            <label>Projects (leave empty for all)</label>
+            <label>{t.common.project} ({t.reports.allProjects})</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '8px' }}>
               {projects.map((project) => (
                 <label
@@ -145,10 +147,10 @@ const Reports: React.FC = () => {
                     alignItems: 'center',
                     gap: '6px',
                     padding: '6px 12px',
-                    border: '1px solid #ddd',
+                    border: '1px solid var(--border-secondary)',
                     borderRadius: '4px',
                     cursor: 'pointer',
-                    backgroundColor: selectedProjects.includes(project.id) ? '#e3f2fd' : 'white',
+                    backgroundColor: selectedProjects.includes(project.id) ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
                   }}
                 >
                   <input
@@ -165,15 +167,15 @@ const Reports: React.FC = () => {
 
         <div className="btn-group">
           <button className="btn btn-primary" onClick={handleGenerateReport} disabled={isLoading}>
-            {isLoading ? 'Generating...' : 'Generate Report'}
+            {isLoading ? t.common.loading : t.reports.generate}
           </button>
           {hasGenerated && (
             <>
               <button className="btn btn-success" onClick={() => handleExport('csv')}>
-                Export CSV
+                {t.reports.exportCSV}
               </button>
               <button className="btn btn-success" onClick={() => handleExport('json')}>
-                Export JSON
+                {t.reports.exportPDF}
               </button>
             </>
           )}
@@ -184,13 +186,13 @@ const Reports: React.FC = () => {
         <>
           <div className="stats-grid">
             <div className="stat-card">
-              <h3>Total Hours</h3>
-              <div className="value">{getTotalHours().toFixed(2)}</div>
+              <h3>{t.reports.totalHours}</h3>
+              <div className="value">{formatNumber(getTotalHours(), 2)}</div>
             </div>
             {getTotalValue() !== undefined && (
               <div className="stat-card">
-                <h3>Total Value</h3>
-                <div className="value">${getTotalValue()!.toFixed(2)}</div>
+                <h3>{t.projects.totalValue}</h3>
+                <div className="value">{formatCurrency(getTotalValue()!)}</div>
               </div>
             )}
           </div>
@@ -198,8 +200,8 @@ const Reports: React.FC = () => {
           {report.length === 0 ? (
             <div className="card">
               <div className="empty-state">
-                <h3>No data found</h3>
-                <p>No time entries found for the selected date range and projects</p>
+                <h3>{t.reports.noData}</h3>
+                <p>{t.reports.noDataMessage}</p>
               </div>
             </div>
           ) : (
@@ -216,18 +218,18 @@ const Reports: React.FC = () => {
                   <div>
                     <h2>{projectReport.project_name}</h2>
                     {projectReport.client_name && (
-                      <p style={{ color: '#666', fontSize: '14px', marginTop: '4px' }}>
-                        Client: {projectReport.client_name}
+                      <p style={{ color: 'var(--text-tertiary)', fontSize: '14px', marginTop: '4px' }}>
+                        {t.projects.client}: {projectReport.client_name}
                       </p>
                     )}
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '24px', fontWeight: '600' }}>
-                      {projectReport.total_hours.toFixed(2)}h
+                      {formatNumber(projectReport.total_hours, 2)}h
                     </div>
                     {projectReport.total_value !== undefined && (
-                      <div style={{ color: '#27ae60', fontSize: '18px', marginTop: '4px' }}>
-                        ${projectReport.total_value.toFixed(2)}
+                      <div style={{ color: 'var(--accent-green)', fontSize: '18px', marginTop: '4px' }}>
+                        {formatCurrency(projectReport.total_value)}
                       </div>
                     )}
                   </div>
@@ -238,11 +240,11 @@ const Reports: React.FC = () => {
                     <table>
                       <thead>
                         <tr>
-                          <th>Date</th>
-                          <th>Start</th>
-                          <th>End</th>
-                          <th>Duration</th>
-                          <th>Description</th>
+                          <th>{t.common.date}</th>
+                          <th>{t.projects.start}</th>
+                          <th>{t.projects.end}</th>
+                          <th>{t.common.duration}</th>
+                          <th>{t.common.description}</th>
                         </tr>
                       </thead>
                       <tbody>

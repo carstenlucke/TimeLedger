@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { TimeEntry, Project, ProjectReport } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
+import { useI18n } from '../context/I18nContext';
 
 interface WeeklyStat {
   project_id: number;
@@ -11,6 +12,7 @@ interface WeeklyStat {
 
 const Dashboard: React.FC = () => {
   const { showNotification } = useNotification();
+  const { t, formatCurrency, formatNumber } = useI18n();
   const [recentEntries, setRecentEntries] = useState<TimeEntry[]>([]);
   const [weeklyStats, setWeeklyStats] = useState<WeeklyStat[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -75,7 +77,7 @@ const Dashboard: React.FC = () => {
       setWeeklyStats(stats.sort((a, b) => b.total_hours - a.total_hours));
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
-      showNotification('Failed to load dashboard data', 'error');
+      showNotification(t.notifications.loadFailed, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -122,39 +124,39 @@ const Dashboard: React.FC = () => {
   };
 
   if (isLoading) {
-    return <div className="loading">Loading dashboard...</div>;
+    return <div className="loading">{t.common.loading}</div>;
   }
 
   return (
     <div>
       <div className="page-header">
-        <h1>Dashboard</h1>
-        <p>Overview of your time tracking</p>
+        <h1>{t.dashboard.title}</h1>
+        <p>{t.dashboard.subtitle}</p>
       </div>
 
       {/* Weekly Stats */}
       <div className="card">
-        <h2>This Week</h2>
-        <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
+        <h2>{t.dashboard.thisWeek}</h2>
+        <p style={{ color: 'var(--text-tertiary)', fontSize: '14px', marginBottom: '16px' }}>
           {getCurrentWeekRange().startDate} - {getCurrentWeekRange().endDate}
         </p>
 
         {weeklyStats.length === 0 ? (
           <div className="empty-state">
-            <h3>No time entries this week</h3>
-            <p>Start tracking your time to see weekly statistics</p>
+            <h3>{t.dashboard.noEntriesThisWeek}</h3>
+            <p>{t.dashboard.startTracking}</p>
           </div>
         ) : (
           <>
             <div className="stats-grid">
               <div className="stat-card">
-                <h3>Total Hours</h3>
-                <div className="value">{getTotalWeeklyHours().toFixed(2)}</div>
+                <h3>{t.dashboard.totalHours}</h3>
+                <div className="value">{formatNumber(getTotalWeeklyHours(), 2)}</div>
               </div>
               {getTotalWeeklyValue() !== undefined && (
                 <div className="stat-card">
-                  <h3>Total Revenue</h3>
-                  <div className="value">${getTotalWeeklyValue()!.toFixed(2)}</div>
+                  <h3>{t.dashboard.totalRevenue}</h3>
+                  <div className="value">{formatCurrency(getTotalWeeklyValue()!)}</div>
                 </div>
               )}
             </div>
@@ -163,17 +165,17 @@ const Dashboard: React.FC = () => {
               <table>
                 <thead>
                   <tr>
-                    <th>Project</th>
-                    <th>Hours</th>
-                    <th>Revenue</th>
+                    <th>{t.common.project}</th>
+                    <th>{t.dashboard.totalHours}</th>
+                    <th>{t.dashboard.revenue}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {weeklyStats.map((stat) => (
                     <tr key={stat.project_id}>
                       <td>{stat.project_name}</td>
-                      <td>{stat.total_hours.toFixed(2)}h</td>
-                      <td>{stat.total_value ? `$${stat.total_value.toFixed(2)}` : '-'}</td>
+                      <td>{formatNumber(stat.total_hours, 2)}h</td>
+                      <td>{stat.total_value ? formatCurrency(stat.total_value) : '-'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -185,24 +187,24 @@ const Dashboard: React.FC = () => {
 
       {/* Recent Time Entries */}
       <div className="card">
-        <h2>Recent Time Entries</h2>
+        <h2>{t.dashboard.recentEntries}</h2>
 
         {recentEntries.length === 0 ? (
           <div className="empty-state">
-            <h3>No time entries yet</h3>
-            <p>Start tracking your time to see recent entries</p>
+            <h3>{t.dashboard.noEntriesYet}</h3>
+            <p>{t.dashboard.startTrackingRecent}</p>
           </div>
         ) : (
           <div className="table-container">
             <table>
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Project</th>
-                  <th>Start</th>
-                  <th>End</th>
-                  <th>Duration</th>
-                  <th>Description</th>
+                  <th>{t.common.date}</th>
+                  <th>{t.common.project}</th>
+                  <th>{t.projects.start}</th>
+                  <th>{t.projects.end}</th>
+                  <th>{t.common.duration}</th>
+                  <th>{t.common.description}</th>
                 </tr>
               </thead>
               <tbody>
