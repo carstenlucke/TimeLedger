@@ -22,6 +22,9 @@ export const de: TranslationKeys = {
     clearFilter: 'Filter löschen',
     sortBy: 'Sortieren nach',
     filterBy: 'Filtern nach',
+    previous: 'Zurück',
+    next: 'Weiter',
+    page: 'Seite',
   },
 
   // Navigation

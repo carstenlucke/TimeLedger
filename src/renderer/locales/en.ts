@@ -20,6 +20,9 @@ export const en = {
     clearFilter: 'Clear Filter',
     sortBy: 'Sort by',
     filterBy: 'Filter by',
+    previous: 'Previous',
+    next: 'Next',
+    page: 'Page',
   },
 
   // Navigation

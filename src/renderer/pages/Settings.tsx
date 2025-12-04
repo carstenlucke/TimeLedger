@@ -14,6 +14,7 @@ const Settings: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreatingBackup, setIsCreatingBackup] = useState(false);
   const [backupPageSize, setBackupPageSize] = useState<number | 'ALL'>(20);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     loadSettings();
@@ -107,7 +108,27 @@ const Settings: React.FC = () => {
     if (backupPageSize === 'ALL') {
       return backups;
     }
-    return backups.slice(0, backupPageSize);
+    const startIndex = (currentPage - 1) * backupPageSize;
+    const endIndex = startIndex + backupPageSize;
+    return backups.slice(startIndex, endIndex);
+  };
+
+  const getTotalPages = (): number => {
+    if (backupPageSize === 'ALL') return 1;
+    return Math.ceil(backups.length / backupPageSize);
+  };
+
+  const handlePageSizeChange = (newSize: number | 'ALL') => {
+    setBackupPageSize(newSize);
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
+
+  const handlePreviousPage = () => {
+    setCurrentPage((prev) => Math.max(1, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(getTotalPages(), prev + 1));
   };
 
   if (isLoading) {
@@ -190,7 +211,7 @@ const Settings: React.FC = () => {
                 <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>{t.common.show}:</span>
                 <select
                   value={backupPageSize}
-                  onChange={(e) => setBackupPageSize(e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value))}
+                  onChange={(e) => handlePageSizeChange(e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value))}
                   style={{ padding: '6px 12px', fontSize: '14px' }}
                 >
                   <option value={20}>20</option>
@@ -238,9 +259,46 @@ const Settings: React.FC = () => {
                   </tbody>
                 </table>
               </div>
-              {backupPageSize !== 'ALL' && backups.length > backupPageSize && (
-                <div style={{ marginTop: '12px', fontSize: '14px', color: 'var(--text-secondary)' }}>
-                  {t.settings.showing} {backupPageSize} {t.settings.of} {backups.length} {t.settings.backups}
+              {backupPageSize !== 'ALL' && getTotalPages() > 1 && (
+                <div style={{
+                  marginTop: '16px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '12px',
+                  backgroundColor: 'var(--bg-tertiary)',
+                  borderRadius: '4px'
+                }}>
+                  <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+                    {t.settings.showing} {((currentPage - 1) * (backupPageSize as number)) + 1}-{Math.min(currentPage * (backupPageSize as number), backups.length)} {t.settings.of} {backups.length} {t.settings.backups}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={handlePreviousPage}
+                      disabled={currentPage === 1}
+                      style={{ padding: '6px 12px', fontSize: '14px' }}
+                    >
+                      ← {t.common.previous}
+                    </button>
+                    <span style={{
+                      padding: '6px 12px',
+                      fontSize: '14px',
+                      color: 'var(--text-primary)',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}>
+                      {t.common.page} {currentPage} / {getTotalPages()}
+                    </span>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={handleNextPage}
+                      disabled={currentPage === getTotalPages()}
+                      style={{ padding: '6px 12px', fontSize: '14px' }}
+                    >
+                      {t.common.next} →
+                    </button>
+                  </div>
                 </div>
               )}
             </>
