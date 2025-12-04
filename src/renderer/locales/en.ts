@@ -135,6 +135,7 @@ export const en = {
     entries: 'Entries',
     export: 'Export',
     exportCSV: 'Export as CSV',
+    exportJSON: 'Export as JSON',
     exportPDF: 'Export as PDF',
   },
 
