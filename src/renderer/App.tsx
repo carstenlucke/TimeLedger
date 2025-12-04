@@ -5,6 +5,7 @@ import TimeEntries from './pages/TimeEntries';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import { NotificationProvider } from './context/NotificationContext';
+import { I18nProvider, useI18n } from './context/I18nContext';
 import { NotificationContainer } from './components/NotificationContainer';
 import { ConfirmationDialog } from './components/ConfirmationDialog';
 
@@ -18,7 +19,8 @@ export const AppContext = React.createContext<AppContextType>({
   navigateToPage: () => {},
 });
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
+  const { t } = useI18n();
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [entriesProjectFilter, setEntriesProjectFilter] = useState<number | undefined>(undefined);
 
@@ -49,69 +51,77 @@ const App: React.FC = () => {
   };
 
   return (
-    <NotificationProvider>
-      <AppContext.Provider value={{ navigateToPage }}>
-        <div className="app">
-          <aside className="sidebar">
-            <nav>
-              <a
-                href="#"
-                className={currentPage === 'dashboard' ? 'active' : ''}
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigateToPage('dashboard');
-                }}
-              >
-                Dashboard
-              </a>
-              <a
-                href="#"
-                className={currentPage === 'projects' ? 'active' : ''}
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigateToPage('projects');
-                }}
-              >
-                Projects
-              </a>
-              <a
-                href="#"
-                className={currentPage === 'entries' ? 'active' : ''}
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigateToPage('entries');
-                }}
-              >
-                Time Entries
-              </a>
-              <a
-                href="#"
-                className={currentPage === 'reports' ? 'active' : ''}
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigateToPage('reports');
-                }}
-              >
-                Reports
-              </a>
-              <a
-                href="#"
-                className={currentPage === 'settings' ? 'active' : ''}
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigateToPage('settings');
-                }}
-              >
-                Settings
-              </a>
-            </nav>
-          </aside>
-          <main className="main-content">{renderPage()}</main>
-          <NotificationContainer />
-          <ConfirmationDialog />
-        </div>
-      </AppContext.Provider>
-    </NotificationProvider>
+    <AppContext.Provider value={{ navigateToPage }}>
+      <div className="app">
+        <aside className="sidebar">
+          <nav>
+            <a
+              href="#"
+              className={currentPage === 'dashboard' ? 'active' : ''}
+              onClick={(e) => {
+                e.preventDefault();
+                navigateToPage('dashboard');
+              }}
+            >
+              {t.nav.dashboard}
+            </a>
+            <a
+              href="#"
+              className={currentPage === 'projects' ? 'active' : ''}
+              onClick={(e) => {
+                e.preventDefault();
+                navigateToPage('projects');
+              }}
+            >
+              {t.nav.projects}
+            </a>
+            <a
+              href="#"
+              className={currentPage === 'entries' ? 'active' : ''}
+              onClick={(e) => {
+                e.preventDefault();
+                navigateToPage('entries');
+              }}
+            >
+              {t.nav.timeEntries}
+            </a>
+            <a
+              href="#"
+              className={currentPage === 'reports' ? 'active' : ''}
+              onClick={(e) => {
+                e.preventDefault();
+                navigateToPage('reports');
+              }}
+            >
+              {t.nav.reports}
+            </a>
+            <a
+              href="#"
+              className={currentPage === 'settings' ? 'active' : ''}
+              onClick={(e) => {
+                e.preventDefault();
+                navigateToPage('settings');
+              }}
+            >
+              {t.nav.settings}
+            </a>
+          </nav>
+        </aside>
+        <main className="main-content">{renderPage()}</main>
+        <NotificationContainer />
+        <ConfirmationDialog />
+      </div>
+    </AppContext.Provider>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <I18nProvider>
+      <NotificationProvider>
+        <AppContent />
+      </NotificationProvider>
+    </I18nProvider>
   );
 };
 

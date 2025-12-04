@@ -15,6 +15,10 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   const [inputMode, setInputMode] = useState<'duration' | 'times'>('duration');
   const [projectFilter, setProjectFilter] = useState<number | undefined>(initialProjectFilter);
+  const [sortField, setSortField] = useState<'date' | 'project' | 'duration'>('date');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
   const [formData, setFormData] = useState<TimeEntryInput>({
     project_id: 0,
     date: new Date().toISOString().split('T')[0],
@@ -175,9 +179,60 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
     return `${hours}h ${mins}m`;
   };
 
-  const filteredEntries = projectFilter
-    ? entries.filter(entry => entry.project_id === projectFilter)
-    : entries;
+  const handleSort = (field: 'date' | 'project' | 'duration') => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (field: 'date' | 'project' | 'duration'): string => {
+    if (sortField !== field) return '↕';
+    return sortDirection === 'asc' ? '↑' : '↓';
+  };
+
+  const getFilteredAndSortedEntries = (): TimeEntry[] => {
+    let filtered = [...entries];
+
+    // Filter by project
+    if (projectFilter) {
+      filtered = filtered.filter(entry => entry.project_id === projectFilter);
+    }
+
+    // Filter by date range
+    if (dateFrom) {
+      filtered = filtered.filter(entry => entry.date >= dateFrom);
+    }
+    if (dateTo) {
+      filtered = filtered.filter(entry => entry.date <= dateTo);
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      let comparison = 0;
+
+      if (sortField === 'date') {
+        comparison = a.date.localeCompare(b.date);
+        if (comparison === 0 && a.start_time && b.start_time) {
+          comparison = a.start_time.localeCompare(b.start_time);
+        }
+      } else if (sortField === 'project') {
+        const projectA = getProjectName(a.project_id);
+        const projectB = getProjectName(b.project_id);
+        comparison = projectA.localeCompare(projectB);
+      } else if (sortField === 'duration') {
+        comparison = a.duration_minutes - b.duration_minutes;
+      }
+
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+
+    return filtered;
+  };
+
+  const filteredEntries = getFilteredAndSortedEntries();
 
   const getFilteredProjectName = (): string => {
     if (!projectFilter) return '';
@@ -215,23 +270,64 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
 
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <div>
-            <h2>
-              {projectFilter ? `Time Entries: ${getFilteredProjectName()}` : 'All Time Entries'}
-            </h2>
-            {projectFilter && (
-              <button
-                className="btn btn-secondary"
-                onClick={() => setProjectFilter(undefined)}
-                style={{ marginTop: '8px', fontSize: '14px' }}
-              >
-                Clear Filter
-              </button>
-            )}
-          </div>
+          <h2>
+            {projectFilter ? `Time Entries: ${getFilteredProjectName()}` : 'All Time Entries'}
+          </h2>
           <button className="btn btn-primary" onClick={handleAddNew}>
             Add Time Entry
           </button>
+        </div>
+
+        {/* Filters */}
+        <div style={{ marginBottom: '20px', padding: '16px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '4px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label htmlFor="filter-project">Filter by Project</label>
+              <select
+                id="filter-project"
+                value={projectFilter || ''}
+                onChange={(e) => setProjectFilter(e.target.value ? parseInt(e.target.value) : undefined)}
+              >
+                <option value="">All Projects</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label htmlFor="filter-date-from">From Date</label>
+              <input
+                type="date"
+                id="filter-date-from"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+              />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label htmlFor="filter-date-to">To Date</label>
+              <input
+                type="date"
+                id="filter-date-to"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+              />
+            </div>
+          </div>
+          {(projectFilter || dateFrom || dateTo) && (
+            <button
+              className="btn btn-secondary"
+              onClick={() => {
+                setProjectFilter(undefined);
+                setDateFrom('');
+                setDateTo('');
+              }}
+              style={{ marginTop: '12px' }}
+            >
+              Clear All Filters
+            </button>
+          )}
         </div>
 
         {filteredEntries.length === 0 ? (
@@ -247,11 +343,26 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter }) => {
             <table>
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Project</th>
+                  <th
+                    onClick={() => handleSort('date')}
+                    style={{ cursor: 'pointer', userSelect: 'none' }}
+                  >
+                    Date {getSortIcon('date')}
+                  </th>
+                  <th
+                    onClick={() => handleSort('project')}
+                    style={{ cursor: 'pointer', userSelect: 'none' }}
+                  >
+                    Project {getSortIcon('project')}
+                  </th>
                   <th>Start</th>
                   <th>End</th>
-                  <th>Duration</th>
+                  <th
+                    onClick={() => handleSort('duration')}
+                    style={{ cursor: 'pointer', userSelect: 'none' }}
+                  >
+                    Duration {getSortIcon('duration')}
+                  </th>
                   <th>Description</th>
                   <th>Actions</th>
                 </tr>
