@@ -40,6 +40,8 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
 
       - name: Build application
         run: npm run build
@@ -49,9 +51,9 @@ jobs:
           if [ "${{ matrix.platform }}" = "mac" ]; then
             npm run dist:universal
           elif [ "${{ matrix.platform }}" = "win" ]; then
-            npm run build && npx electron-builder --win
+            npm run build && npx electron-builder --win --publish never
           elif [ "${{ matrix.platform }}" = "linux" ]; then
-            npm run build && npx electron-builder --linux
+            npm run build && npx electron-builder --linux --publish never
           fi
         shell: bash
         env:
