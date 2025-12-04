@@ -102,38 +102,68 @@ const Reports: React.FC = () => {
         <h2>{t.reports.generateReport}</h2>
 
         <div className="form-group">
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={!useDateFilter}
-              onChange={(e) => setUseDateFilter(!e.target.checked)}
-            />
-            {t.reports.allProjects} ({t.reports.selectPeriod}: {t.common.all})
-          </label>
-        </div>
+          <label>{t.reports.dateRange}</label>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className={!useDateFilter ? 'btn btn-primary' : 'btn btn-secondary'}
+              onClick={() => {
+                setUseDateFilter(false);
+                setFilter({ ...filter, start_date: '', end_date: '' });
+              }}
+              style={{ minWidth: '180px' }}
+            >
+              {t.reports.noRestriction}
+            </button>
 
-        {useDateFilter && (
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="start_date">{t.reports.startDate}</label>
-              <input
-                type="date"
-                id="start_date"
-                value={filter.start_date}
-                onChange={(e) => setFilter({ ...filter, start_date: e.target.value })}
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="end_date">{t.reports.endDate}</label>
-              <input
-                type="date"
-                id="end_date"
-                value={filter.end_date}
-                onChange={(e) => setFilter({ ...filter, end_date: e.target.value })}
-              />
-            </div>
+            {useDateFilter && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label htmlFor="start_date" style={{ marginBottom: 0, fontSize: '14px' }}>
+                    {t.reports.startDate}:
+                  </label>
+                  <input
+                    type="date"
+                    id="start_date"
+                    value={filter.start_date}
+                    onChange={(e) => setFilter({ ...filter, start_date: e.target.value })}
+                    style={{ flex: 'none' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label htmlFor="end_date" style={{ marginBottom: 0, fontSize: '14px' }}>
+                    {t.reports.endDate}:
+                  </label>
+                  <input
+                    type="date"
+                    id="end_date"
+                    value={filter.end_date}
+                    onChange={(e) => setFilter({ ...filter, end_date: e.target.value })}
+                    style={{ flex: 'none' }}
+                  />
+                </div>
+              </>
+            )}
+
+            {!useDateFilter && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  setUseDateFilter(true);
+                  setFilter({
+                    ...filter,
+                    start_date: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+                    end_date: new Date().toISOString().split('T')[0],
+                  });
+                }}
+                style={{ minWidth: '180px' }}
+              >
+                {t.reports.dateRange}
+              </button>
+            )}
           </div>
-        )}
+        </div>
 
         {projects.length > 0 && (
           <div className="form-group">

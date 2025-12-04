@@ -55,6 +55,10 @@ export const en = {
     startTracking: 'Start tracking your time to see weekly statistics',
     startTrackingRecent: 'Start tracking your time to see recent entries',
     revenue: 'Revenue',
+    lastWeeks: 'Last 10 Calendar Weeks',
+    week: 'Week',
+    clickToEdit: 'Click to edit',
+    hours: 'hrs',
   },
 
   // Projects
@@ -136,6 +140,8 @@ export const en = {
     export: 'Export',
     exportCSV: 'Export as CSV',
     exportPDF: 'Export as PDF',
+    noRestriction: 'No Restriction',
+    dateRange: 'Date Range',
   },
 
   // Settings

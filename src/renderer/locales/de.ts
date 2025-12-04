@@ -57,6 +57,10 @@ export const de: TranslationKeys = {
     startTracking: 'Beginnen Sie mit der Zeiterfassung, um wöchentliche Statistiken zu sehen',
     startTrackingRecent: 'Beginnen Sie mit der Zeiterfassung, um aktuelle Einträge zu sehen',
     revenue: 'Umsatz',
+    lastWeeks: 'Letzte 10 Kalenderwochen',
+    week: 'KW',
+    clickToEdit: 'Klicken zum Bearbeiten',
+    hours: 'Std',
   },
 
   // Projects
@@ -138,6 +142,8 @@ export const de: TranslationKeys = {
     export: 'Exportieren',
     exportCSV: 'Als CSV exportieren',
     exportPDF: 'Als PDF exportieren',
+    noRestriction: 'Keine Einschränkung',
+    dateRange: 'Zeitraum',
   },
 
   // Settings
