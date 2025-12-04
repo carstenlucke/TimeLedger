@@ -53,12 +53,14 @@ jobs:
           elif [ "${{ matrix.platform }}" = "linux" ]; then
             npm run build && npx electron-builder --linux
           fi
+        shell: bash
         env:
+          GH_TOKEN: ""
+          ELECTRON_BUILDER_PUBLISH: never
           # If you want to sign the app, add your Apple credentials here:
           # APPLE_ID: ${{ secrets.APPLE_ID }}
           # APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
           # TEAM_ID: ${{ secrets.TEAM_ID }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Clean up auto-update files
         run: |
