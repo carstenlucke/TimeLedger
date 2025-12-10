@@ -765,13 +765,12 @@ table tbody tr:hover {
 
 .copy-btn {
   background-color: transparent;
-  border: 1px solid var(--border-secondary);
+  border: none;
   transition: all 0.2s;
 }
 
 .copy-btn:hover:not(:disabled) {
   background-color: var(--hover-overlay);
-  border-color: var(--accent-blue);
   transform: translateY(-1px);
 }
 

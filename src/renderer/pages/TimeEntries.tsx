@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { TimeEntry, TimeEntryInput, Project } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
+import CopyIcon from '../components/CopyIcon';
 
 interface TimeEntriesProps {
   initialProjectFilter?: number;
@@ -293,10 +294,10 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
     const text = formatMultipleEntries(entriesToCopy);
     const success = await copyToClipboard(text);
     if (success) {
-      showNotification(
-        t.notifications.copiedEntries || `Copied ${entriesToCopy.length} entries`,
-        'success'
-      );
+      const message = t.notifications.copiedEntries
+        ? t.notifications.copiedEntries.replace('{count}', entriesToCopy.length.toString())
+        : `Copied ${entriesToCopy.length} entries`;
+      showNotification(message, 'success');
       setSelectedEntries(new Set()); // Clear selection after copying
     } else {
       showNotification(t.notifications.copyFailed || 'Failed to copy', 'error');
@@ -309,10 +310,10 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
     const text = formatMultipleEntries(filteredEntries);
     const success = await copyToClipboard(text);
     if (success) {
-      showNotification(
-        t.notifications.copiedEntries || `Copied ${filteredEntries.length} entries`,
-        'success'
-      );
+      const message = t.notifications.copiedEntries
+        ? t.notifications.copiedEntries.replace('{count}', filteredEntries.length.toString())
+        : `Copied ${filteredEntries.length} entries`;
+      showNotification(message, 'success');
     } else {
       showNotification(t.notifications.copyFailed || 'Failed to copy', 'error');
     }
@@ -495,7 +496,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
                 onClick={handleCopyAllVisible}
                 title={`Copy all ${filteredEntries.length} visible entries`}
               >
-                📋 Copy All Visible ({filteredEntries.length})
+                <CopyIcon size={16} /> Copy All Visible ({filteredEntries.length})
               </button>
             )}
             {selectedEntries.size > 0 && (
@@ -504,7 +505,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
                 onClick={handleCopySelected}
                 title={`Copy ${selectedEntries.size} selected entries`}
               >
-                📋 Copy Selected ({selectedEntries.size})
+                <CopyIcon size={16} /> Copy Selected ({selectedEntries.size})
               </button>
             )}
           </div>
@@ -581,7 +582,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
                           onClick={() => handleCopySingle(entry)}
                           title="Copy entry"
                         >
-                          📋
+                          <CopyIcon size={16} />
                         </button>
                         <button className="btn btn-secondary" onClick={() => handleEdit(entry)}>
                           {t.common.edit}
