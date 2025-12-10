@@ -201,5 +201,8 @@ export const de: TranslationKeys = {
     loadFailed: 'Fehler beim Laden der Daten',
     saveFailed: 'Fehler beim Speichern',
     deleteFailed: 'Fehler beim Löschen',
+    copiedToClipboard: 'In Zwischenablage kopiert',
+    copiedEntries: '{count} Einträge kopiert',
+    copyFailed: 'Fehler beim Kopieren in die Zwischenablage',
   },
 };
