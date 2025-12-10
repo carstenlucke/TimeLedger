@@ -553,29 +553,56 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
                     {t.common.duration} {getSortIcon('duration')}
                   </th>
                   <th>{t.common.description}</th>
+                  <th>{t.invoices.billingStatus}</th>
                   <th>{t.common.actions}</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredEntries.map((entry) => (
-                  <tr
-                    key={entry.id}
-                    className={selectedEntries.has(entry.id) ? 'selected-row' : ''}
-                  >
-                    <td style={{ textAlign: 'center' }}>
-                      <input
-                        type="checkbox"
-                        checked={selectedEntries.has(entry.id)}
-                        onChange={() => handleToggleEntry(entry.id)}
-                      />
-                    </td>
-                    <td>{entry.date}</td>
-                    <td>{getProjectName(entry.project_id)}</td>
-                    <td>{entry.start_time || '-'}</td>
-                    <td>{entry.end_time || '-'}</td>
-                    <td>{formatDuration(entry.duration_minutes)}</td>
-                    <td>{entry.description || '-'}</td>
-                    <td>
+                {filteredEntries.map((entry) => {
+                  const getBillingStatusBadge = (status?: string) => {
+                    const statusMap: Record<string, { label: string; color: string }> = {
+                      unbilled: { label: t.invoices.unbilled, color: 'var(--text-secondary)' },
+                      in_draft: { label: t.invoices.inDraft, color: 'var(--accent-blue)' },
+                      invoiced: { label: t.invoices.invoiced, color: 'var(--accent-green)' },
+                    };
+                    const info = statusMap[status || 'unbilled'];
+                    return (
+                      <span
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: '8px',
+                          backgroundColor: `${info.color}20`,
+                          color: info.color,
+                          fontSize: '0.75rem',
+                          fontWeight: '500',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {info.label}
+                      </span>
+                    );
+                  };
+
+                  return (
+                    <tr
+                      key={entry.id}
+                      className={selectedEntries.has(entry.id) ? 'selected-row' : ''}
+                    >
+                      <td style={{ textAlign: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedEntries.has(entry.id)}
+                          onChange={() => handleToggleEntry(entry.id)}
+                        />
+                      </td>
+                      <td>{entry.date}</td>
+                      <td>{getProjectName(entry.project_id)}</td>
+                      <td>{entry.start_time || '-'}</td>
+                      <td>{entry.end_time || '-'}</td>
+                      <td>{formatDuration(entry.duration_minutes)}</td>
+                      <td>{entry.description || '-'}</td>
+                      <td>{getBillingStatusBadge(entry.billing_status)}</td>
+                      <td>
                       <div className="table-actions">
                         <button
                           className="btn btn-icon copy-btn"

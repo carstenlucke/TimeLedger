@@ -10,6 +10,9 @@ import type {
   ReportFilter,
   ProjectReport,
   AppSettings,
+  Invoice,
+  InvoiceInput,
+  InvoiceWithEntries,
 } from '../shared/types';
 
 export class DatabaseManager {
@@ -66,6 +69,21 @@ export class DatabaseManager {
       )
     `);
 
+    // Create invoices table
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS invoices (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        invoice_number TEXT NOT NULL UNIQUE,
+        invoice_date TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'draft',
+        total_amount REAL NOT NULL DEFAULT 0,
+        notes TEXT,
+        cancellation_reason TEXT,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     // Create settings table
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS settings (
@@ -74,10 +92,27 @@ export class DatabaseManager {
       )
     `);
 
+    // Add invoice-related columns to time_entries if they don't exist
+    try {
+      this.db.exec(`ALTER TABLE time_entries ADD COLUMN invoice_id INTEGER REFERENCES invoices(id)`);
+    } catch (e) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      this.db.exec(`ALTER TABLE time_entries ADD COLUMN billing_status TEXT NOT NULL DEFAULT 'unbilled'`);
+    } catch (e) {
+      // Column already exists, ignore error
+    }
+
     // Create indices
     this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_time_entries_project_id ON time_entries(project_id);
       CREATE INDEX IF NOT EXISTS idx_time_entries_date ON time_entries(date);
+      CREATE INDEX IF NOT EXISTS idx_time_entries_invoice_id ON time_entries(invoice_id);
+      CREATE INDEX IF NOT EXISTS idx_time_entries_billing_status ON time_entries(billing_status);
+      CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
+      CREATE INDEX IF NOT EXISTS idx_invoices_date ON invoices(invoice_date);
     `);
   }
 
@@ -344,6 +379,281 @@ export class DatabaseManager {
     if (settings.last_backup !== undefined) {
       this.setSetting('last_backup', settings.last_backup);
     }
+  }
+
+  // Invoice methods
+  public createInvoice(input: InvoiceInput): Invoice {
+    const stmt = this.db.prepare(`
+      INSERT INTO invoices (invoice_number, invoice_date, status, total_amount, notes, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    `);
+    const result = stmt.run(
+      input.invoice_number,
+      input.invoice_date,
+      input.status || 'draft',
+      input.total_amount || 0,
+      input.notes
+    );
+    return this.getInvoiceById(result.lastInsertRowid as number)!;
+  }
+
+  public updateInvoice(id: number, input: Partial<InvoiceInput>): Invoice {
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (input.invoice_number !== undefined) {
+      updates.push('invoice_number = ?');
+      values.push(input.invoice_number);
+    }
+    if (input.invoice_date !== undefined) {
+      updates.push('invoice_date = ?');
+      values.push(input.invoice_date);
+    }
+    if (input.status !== undefined) {
+      updates.push('status = ?');
+      values.push(input.status);
+    }
+    if (input.total_amount !== undefined) {
+      updates.push('total_amount = ?');
+      values.push(input.total_amount);
+    }
+    if (input.notes !== undefined) {
+      updates.push('notes = ?');
+      values.push(input.notes);
+    }
+    if (input.cancellation_reason !== undefined) {
+      updates.push('cancellation_reason = ?');
+      values.push(input.cancellation_reason);
+    }
+
+    updates.push("updated_at = datetime('now')");
+    values.push(id);
+
+    const stmt = this.db.prepare(`
+      UPDATE invoices SET ${updates.join(', ')} WHERE id = ?
+    `);
+    stmt.run(...values);
+    return this.getInvoiceById(id)!;
+  }
+
+  public deleteInvoice(id: number): void {
+    // Release all time entries from this invoice
+    const releaseStmt = this.db.prepare(`
+      UPDATE time_entries
+      SET invoice_id = NULL, billing_status = 'unbilled'
+      WHERE invoice_id = ?
+    `);
+    releaseStmt.run(id);
+
+    // Delete the invoice
+    const stmt = this.db.prepare('DELETE FROM invoices WHERE id = ?');
+    stmt.run(id);
+  }
+
+  public getAllInvoices(): Invoice[] {
+    const stmt = this.db.prepare('SELECT * FROM invoices ORDER BY invoice_date DESC');
+    return stmt.all() as Invoice[];
+  }
+
+  public getInvoiceById(id: number): Invoice | undefined {
+    const stmt = this.db.prepare('SELECT * FROM invoices WHERE id = ?');
+    return stmt.get(id) as Invoice | undefined;
+  }
+
+  public getInvoiceWithEntries(id: number): InvoiceWithEntries | undefined {
+    const invoice = this.getInvoiceById(id);
+    if (!invoice) return undefined;
+
+    const entriesStmt = this.db.prepare(`
+      SELECT te.*, p.name as project_name, p.hourly_rate
+      FROM time_entries te
+      LEFT JOIN projects p ON te.project_id = p.id
+      WHERE te.invoice_id = ?
+      ORDER BY te.date DESC
+    `);
+    const entries = entriesStmt.all(id) as any[];
+
+    return {
+      ...invoice,
+      entries,
+    };
+  }
+
+  public addTimeEntriesToInvoice(invoiceId: number, entryIds: number[]): void {
+    // Check if invoice exists and is in draft status
+    const invoice = this.getInvoiceById(invoiceId);
+    if (!invoice) {
+      throw new Error('Invoice not found');
+    }
+    if (invoice.status !== 'draft') {
+      throw new Error('Can only add entries to draft invoices');
+    }
+
+    // Check if any entries are already billed
+    const checkStmt = this.db.prepare(`
+      SELECT id FROM time_entries
+      WHERE id IN (${entryIds.map(() => '?').join(',')})
+      AND (billing_status = 'invoiced' OR (invoice_id IS NOT NULL AND invoice_id != ?))
+    `);
+    const alreadyBilled = checkStmt.all(...entryIds, invoiceId) as any[];
+    if (alreadyBilled.length > 0) {
+      throw new Error('Some entries are already billed to another invoice');
+    }
+
+    // Add entries to invoice
+    const stmt = this.db.prepare(`
+      UPDATE time_entries
+      SET invoice_id = ?, billing_status = 'in_draft'
+      WHERE id = ?
+    `);
+
+    for (const entryId of entryIds) {
+      stmt.run(invoiceId, entryId);
+    }
+
+    // Recalculate invoice total
+    this.recalculateInvoiceTotal(invoiceId);
+  }
+
+  public removeTimeEntriesFromInvoice(entryIds: number[]): void {
+    const stmt = this.db.prepare(`
+      UPDATE time_entries
+      SET invoice_id = NULL, billing_status = 'unbilled'
+      WHERE id = ?
+    `);
+
+    const invoiceIds = new Set<number>();
+
+    // Get invoice IDs first
+    const getInvoiceStmt = this.db.prepare('SELECT invoice_id FROM time_entries WHERE id = ?');
+    for (const entryId of entryIds) {
+      const result = getInvoiceStmt.get(entryId) as { invoice_id?: number } | undefined;
+      if (result?.invoice_id) {
+        invoiceIds.add(result.invoice_id);
+      }
+    }
+
+    // Remove entries
+    for (const entryId of entryIds) {
+      stmt.run(entryId);
+    }
+
+    // Recalculate totals for affected invoices
+    for (const invoiceId of invoiceIds) {
+      this.recalculateInvoiceTotal(invoiceId);
+    }
+  }
+
+  public finalizeInvoice(id: number): Invoice {
+    const invoice = this.getInvoiceById(id);
+    if (!invoice) {
+      throw new Error('Invoice not found');
+    }
+    if (invoice.status !== 'draft') {
+      throw new Error('Only draft invoices can be finalized');
+    }
+
+    // Update invoice status
+    const updateInvoiceStmt = this.db.prepare(`
+      UPDATE invoices SET status = 'invoiced', updated_at = datetime('now') WHERE id = ?
+    `);
+    updateInvoiceStmt.run(id);
+
+    // Update all time entries to 'invoiced' status
+    const updateEntriesStmt = this.db.prepare(`
+      UPDATE time_entries SET billing_status = 'invoiced' WHERE invoice_id = ?
+    `);
+    updateEntriesStmt.run(id);
+
+    return this.getInvoiceById(id)!;
+  }
+
+  public cancelInvoice(id: number, reason: string): Invoice {
+    const invoice = this.getInvoiceById(id);
+    if (!invoice) {
+      throw new Error('Invoice not found');
+    }
+    if (invoice.status === 'cancelled') {
+      throw new Error('Invoice is already cancelled');
+    }
+
+    // Update invoice status
+    const updateInvoiceStmt = this.db.prepare(`
+      UPDATE invoices
+      SET status = 'cancelled', cancellation_reason = ?, updated_at = datetime('now')
+      WHERE id = ?
+    `);
+    updateInvoiceStmt.run(reason, id);
+
+    // Release time entries
+    const updateEntriesStmt = this.db.prepare(`
+      UPDATE time_entries SET invoice_id = NULL, billing_status = 'unbilled' WHERE invoice_id = ?
+    `);
+    updateEntriesStmt.run(id);
+
+    return this.getInvoiceById(id)!;
+  }
+
+  public getUnbilledTimeEntries(): any[] {
+    const stmt = this.db.prepare(`
+      SELECT te.*, p.name as project_name, p.hourly_rate
+      FROM time_entries te
+      LEFT JOIN projects p ON te.project_id = p.id
+      WHERE te.billing_status = 'unbilled'
+      ORDER BY te.date DESC
+    `);
+    return stmt.all() as any[];
+  }
+
+  public generateNextInvoiceNumber(): string {
+    // Get the latest invoice number
+    const stmt = this.db.prepare(`
+      SELECT invoice_number FROM invoices
+      ORDER BY id DESC LIMIT 1
+    `);
+    const result = stmt.get() as { invoice_number: string } | undefined;
+
+    if (!result) {
+      // First invoice
+      const year = new Date().getFullYear();
+      return `INV-${year}-001`;
+    }
+
+    // Try to parse the existing format
+    const match = result.invoice_number.match(/INV-(\d{4})-(\d+)/);
+    if (match) {
+      const year = new Date().getFullYear();
+      const lastYear = parseInt(match[1]);
+      const lastNumber = parseInt(match[2]);
+
+      if (year === lastYear) {
+        // Same year, increment number
+        return `INV-${year}-${String(lastNumber + 1).padStart(3, '0')}`;
+      } else {
+        // New year, start from 001
+        return `INV-${year}-001`;
+      }
+    }
+
+    // Fallback: generate based on timestamp
+    return `INV-${Date.now()}`;
+  }
+
+  private recalculateInvoiceTotal(invoiceId: number): void {
+    const stmt = this.db.prepare(`
+      SELECT
+        SUM(te.duration_minutes * COALESCE(p.hourly_rate, 0) / 60.0) as total
+      FROM time_entries te
+      LEFT JOIN projects p ON te.project_id = p.id
+      WHERE te.invoice_id = ?
+    `);
+    const result = stmt.get(invoiceId) as { total: number | null };
+    const total = result.total || 0;
+
+    const updateStmt = this.db.prepare(`
+      UPDATE invoices SET total_amount = ?, updated_at = datetime('now') WHERE id = ?
+    `);
+    updateStmt.run(total, invoiceId);
   }
 
   public close(): void {
