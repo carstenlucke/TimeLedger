@@ -199,6 +199,9 @@ export const en = {
     loadFailed: 'Failed to load data',
     saveFailed: 'Failed to save',
     deleteFailed: 'Failed to delete',
+    copiedToClipboard: 'Copied to clipboard',
+    copiedEntries: 'Copied {count} entries',
+    copyFailed: 'Failed to copy to clipboard',
   },
 };
 

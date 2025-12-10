@@ -744,3 +744,45 @@ table tbody tr:hover {
 .theme-toggle-switch.active .theme-toggle-slider {
   transform: translateX(24px);
 }
+
+/* Copy to Clipboard Features */
+.selected-row {
+  background-color: rgba(124, 156, 191, 0.1) !important;
+}
+
+[data-theme="light"] .selected-row {
+  background-color: rgba(91, 122, 157, 0.08) !important;
+}
+
+.btn-icon {
+  padding: 4px 8px;
+  font-size: 16px;
+  min-width: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.copy-btn {
+  background-color: transparent;
+  border: none;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover:not(:disabled) {
+  background-color: var(--hover-overlay);
+  transform: translateY(-1px);
+}
+
+.copy-btn:active {
+  transform: translateY(0);
+}
+
+/* Checkbox styling in tables */
+table th input[type="checkbox"],
+table td input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-blue);
+}

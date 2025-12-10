@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { TimeEntry, TimeEntryInput, Project } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
+import CopyIcon from '../components/CopyIcon';
 
 interface TimeEntriesProps {
   initialProjectFilter?: number;
@@ -22,6 +23,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
+  const [selectedEntries, setSelectedEntries] = useState<Set<number>>(new Set());
   const [formData, setFormData] = useState<TimeEntryInput>({
     project_id: 0,
     date: new Date().toISOString().split('T')[0],
@@ -192,6 +194,153 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
     return `${hours}h ${mins}m`;
   };
 
+  // Clipboard utility functions
+  const copyToClipboard = async (text: string): Promise<boolean> => {
+    try {
+      // Modern Clipboard API
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        const successful = document.execCommand('copy');
+        textArea.remove();
+        return successful;
+      }
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      return false;
+    }
+  };
+
+  const formatSingleEntry = (entry: TimeEntry): string => {
+    const parts: string[] = [];
+    parts.push(`Project: ${getProjectName(entry.project_id)}`);
+    parts.push(`Date: ${entry.date}`);
+
+    if (entry.start_time && entry.end_time) {
+      parts.push(`Time: ${entry.start_time} - ${entry.end_time}`);
+    }
+
+    parts.push(`Duration: ${formatDuration(entry.duration_minutes)}`);
+
+    if (entry.description) {
+      parts.push(`Description: ${entry.description}`);
+    }
+
+    return parts.join('\n');
+  };
+
+  const formatMultipleEntries = (entries: TimeEntry[]): string => {
+    // Group entries by project
+    const groupedByProject = entries.reduce((acc, entry) => {
+      const projectName = getProjectName(entry.project_id);
+      if (!acc[projectName]) {
+        acc[projectName] = [];
+      }
+      acc[projectName].push(entry);
+      return acc;
+    }, {} as Record<string, TimeEntry[]>);
+
+    const parts: string[] = [];
+    let grandTotal = 0;
+
+    // Format each project section
+    Object.entries(groupedByProject).forEach(([projectName, projectEntries]) => {
+      parts.push(`\n${projectName}`);
+      parts.push('='.repeat(projectName.length));
+
+      let projectTotal = 0;
+      projectEntries.forEach(entry => {
+        const timeStr = entry.start_time && entry.end_time
+          ? ` (${entry.start_time} - ${entry.end_time})`
+          : '';
+        const descStr = entry.description ? ` - ${entry.description}` : '';
+        parts.push(`• ${entry.date}: ${formatDuration(entry.duration_minutes)}${timeStr}${descStr}`);
+        projectTotal += entry.duration_minutes;
+      });
+
+      parts.push(`Subtotal: ${formatDuration(projectTotal)}`);
+      grandTotal += projectTotal;
+    });
+
+    parts.push(`\nGrand Total: ${formatDuration(grandTotal)}`);
+
+    return parts.join('\n');
+  };
+
+  const handleCopySingle = async (entry: TimeEntry) => {
+    const text = formatSingleEntry(entry);
+    const success = await copyToClipboard(text);
+    if (success) {
+      showNotification(t.notifications.copiedToClipboard || 'Copied to clipboard', 'success');
+    } else {
+      showNotification(t.notifications.copyFailed || 'Failed to copy', 'error');
+    }
+  };
+
+  const handleCopySelected = async () => {
+    const entriesToCopy = filteredEntries.filter(entry => selectedEntries.has(entry.id));
+    if (entriesToCopy.length === 0) return;
+
+    const text = formatMultipleEntries(entriesToCopy);
+    const success = await copyToClipboard(text);
+    if (success) {
+      const message = t.notifications.copiedEntries
+        ? t.notifications.copiedEntries.replace('{count}', entriesToCopy.length.toString())
+        : `Copied ${entriesToCopy.length} entries`;
+      showNotification(message, 'success');
+      setSelectedEntries(new Set()); // Clear selection after copying
+    } else {
+      showNotification(t.notifications.copyFailed || 'Failed to copy', 'error');
+    }
+  };
+
+  const handleCopyAllVisible = async () => {
+    if (filteredEntries.length === 0) return;
+
+    const text = formatMultipleEntries(filteredEntries);
+    const success = await copyToClipboard(text);
+    if (success) {
+      const message = t.notifications.copiedEntries
+        ? t.notifications.copiedEntries.replace('{count}', filteredEntries.length.toString())
+        : `Copied ${filteredEntries.length} entries`;
+      showNotification(message, 'success');
+    } else {
+      showNotification(t.notifications.copyFailed || 'Failed to copy', 'error');
+    }
+  };
+
+  // Checkbox selection handlers
+  const handleToggleEntry = (entryId: number) => {
+    const newSelected = new Set(selectedEntries);
+    if (newSelected.has(entryId)) {
+      newSelected.delete(entryId);
+    } else {
+      newSelected.add(entryId);
+    }
+    setSelectedEntries(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedEntries.size === filteredEntries.length) {
+      // Deselect all
+      setSelectedEntries(new Set());
+    } else {
+      // Select all visible entries
+      const allIds = new Set(filteredEntries.map(entry => entry.id));
+      setSelectedEntries(allIds);
+    }
+  };
+
   const handleSort = (field: 'date' | 'project' | 'duration') => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -328,19 +477,38 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
               />
             </div>
           </div>
-          {(projectFilter || dateFrom || dateTo) && (
-            <button
-              className="btn btn-secondary"
-              onClick={() => {
-                setProjectFilter(undefined);
-                setDateFrom('');
-                setDateTo('');
-              }}
-              style={{ marginTop: '12px' }}
-            >
-              {t.common.clearFilter}
-            </button>
-          )}
+          <div style={{ display: 'flex', gap: '12px', marginTop: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+            {(projectFilter || dateFrom || dateTo) && (
+              <button
+                className="btn btn-secondary"
+                onClick={() => {
+                  setProjectFilter(undefined);
+                  setDateFrom('');
+                  setDateTo('');
+                }}
+              >
+                {t.common.clearFilter}
+              </button>
+            )}
+            {filteredEntries.length > 0 && (
+              <button
+                className="btn btn-primary"
+                onClick={handleCopyAllVisible}
+                title={`Copy all ${filteredEntries.length} visible entries`}
+              >
+                <CopyIcon size={16} /> Copy All Visible ({filteredEntries.length})
+              </button>
+            )}
+            {selectedEntries.size > 0 && (
+              <button
+                className="btn btn-success"
+                onClick={handleCopySelected}
+                title={`Copy ${selectedEntries.size} selected entries`}
+              >
+                <CopyIcon size={16} /> Copy Selected ({selectedEntries.size})
+              </button>
+            )}
+          </div>
         </div>
 
         {filteredEntries.length === 0 ? (
@@ -356,6 +524,14 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
             <table>
               <thead>
                 <tr>
+                  <th style={{ width: '40px', textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedEntries.size === filteredEntries.length && filteredEntries.length > 0}
+                      onChange={handleSelectAll}
+                      title="Select all"
+                    />
+                  </th>
                   <th
                     onClick={() => handleSort('date')}
                     style={{ cursor: 'pointer', userSelect: 'none' }}
@@ -382,7 +558,17 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
               </thead>
               <tbody>
                 {filteredEntries.map((entry) => (
-                  <tr key={entry.id}>
+                  <tr
+                    key={entry.id}
+                    className={selectedEntries.has(entry.id) ? 'selected-row' : ''}
+                  >
+                    <td style={{ textAlign: 'center' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedEntries.has(entry.id)}
+                        onChange={() => handleToggleEntry(entry.id)}
+                      />
+                    </td>
                     <td>{entry.date}</td>
                     <td>{getProjectName(entry.project_id)}</td>
                     <td>{entry.start_time || '-'}</td>
@@ -391,6 +577,13 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
                     <td>{entry.description || '-'}</td>
                     <td>
                       <div className="table-actions">
+                        <button
+                          className="btn btn-icon copy-btn"
+                          onClick={() => handleCopySingle(entry)}
+                          title="Copy entry"
+                        >
+                          <CopyIcon size={16} />
+                        </button>
                         <button className="btn btn-secondary" onClick={() => handleEdit(entry)}>
                           {t.common.edit}
                         </button>
