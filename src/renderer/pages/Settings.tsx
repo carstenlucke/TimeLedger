@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import type { AppSettings, BackupFile } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n, Locale } from '../context/I18nContext';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme, Theme } from '../context/ThemeContext';
 
 const Settings: React.FC = () => {
   const { showNotification, showConfirmation } = useNotification();
   const { t, locale, setLocale } = useI18n();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [settings, setSettings] = useState<AppSettings>({
     backup_directory: undefined,
     last_backup: undefined,
@@ -148,24 +148,18 @@ const Settings: React.FC = () => {
         <h2>{t.settings.appearance}</h2>
 
         <div className="form-group">
-          <label>{t.settings.themeLabel}</label>
-          <div className="theme-toggle-container">
-            <span className="theme-toggle-label">
-              {theme === 'dark' ? t.settings.darkMode : t.settings.lightMode}
-            </span>
-            <button
-              type="button"
-              className={`theme-toggle-switch ${theme === 'light' ? 'active' : ''}`}
-              onClick={toggleTheme}
-              role="switch"
-              aria-checked={theme === 'dark'}
-              aria-label={theme === 'dark' ? t.settings.darkMode : t.settings.lightMode}
-            >
-              <span className="theme-toggle-slider">
-                {theme === 'dark' ? '🌙' : '☀️'}
-              </span>
-            </button>
-          </div>
+          <label htmlFor="theme">{t.settings.themeLabel}</label>
+          <select
+            id="theme"
+            value={theme}
+            onChange={(e) => setTheme(e.target.value as Theme)}
+          >
+            <option value="dark">{t.settings.themeDark}</option>
+            <option value="light">{t.settings.themeLight}</option>
+            <option value="ocean">{t.settings.themeOcean}</option>
+            <option value="sunset">{t.settings.themeSunset}</option>
+            <option value="forest">{t.settings.themeForest}</option>
+          </select>
         </div>
       </div>
 

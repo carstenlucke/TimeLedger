@@ -59,6 +59,90 @@
   --hover-overlay: rgba(0, 0, 0, 0.05);
 }
 
+/* Ocean Theme */
+[data-theme="ocean"] {
+  /* Ocean Background Colors */
+  --bg-primary: #0a1628;
+  --bg-secondary: #122743;
+  --bg-tertiary: #1a365d;
+  --bg-elevated: #1e4976;
+
+  /* Ocean Accent Colors */
+  --accent-blue: #60a5fa;
+  --accent-green: #34d399;
+  --accent-purple: #a78bfa;
+  --accent-red: #f87171;
+  --accent-yellow: #fbbf24;
+
+  /* Ocean Text Colors */
+  --text-primary: #e0f2fe;
+  --text-secondary: #bae6fd;
+  --text-tertiary: #7dd3fc;
+
+  /* Ocean Border Colors */
+  --border-primary: #1e3a5f;
+  --border-secondary: #2d5a8c;
+
+  /* Hover States for Ocean Theme */
+  --hover-overlay: rgba(96, 165, 250, 0.1);
+}
+
+/* Sunset Theme */
+[data-theme="sunset"] {
+  /* Sunset Background Colors */
+  --bg-primary: #1f1617;
+  --bg-secondary: #2d1f20;
+  --bg-tertiary: #3d2a2b;
+  --bg-elevated: #4d3536;
+
+  /* Sunset Accent Colors */
+  --accent-blue: #fb923c;
+  --accent-green: #fbbf24;
+  --accent-purple: #f472b6;
+  --accent-red: #ef4444;
+  --accent-yellow: #facc15;
+
+  /* Sunset Text Colors */
+  --text-primary: #fef3c7;
+  --text-secondary: #fde68a;
+  --text-tertiary: #fcd34d;
+
+  /* Sunset Border Colors */
+  --border-primary: #451a1a;
+  --border-secondary: #7c2d12;
+
+  /* Hover States for Sunset Theme */
+  --hover-overlay: rgba(251, 146, 60, 0.1);
+}
+
+/* Forest Theme */
+[data-theme="forest"] {
+  /* Forest Background Colors */
+  --bg-primary: #0f1c14;
+  --bg-secondary: #1a2e23;
+  --bg-tertiary: #234032;
+  --bg-elevated: #2d5241;
+
+  /* Forest Accent Colors */
+  --accent-blue: #6ee7b7;
+  --accent-green: #34d399;
+  --accent-purple: #a78bfa;
+  --accent-red: #fca5a5;
+  --accent-yellow: #bef264;
+
+  /* Forest Text Colors */
+  --text-primary: #d1fae5;
+  --text-secondary: #a7f3d0;
+  --text-tertiary: #6ee7b7;
+
+  /* Forest Border Colors */
+  --border-primary: #1e4336;
+  --border-secondary: #2d5a4a;
+
+  /* Hover States for Forest Theme */
+  --hover-overlay: rgba(52, 211, 153, 0.1);
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
