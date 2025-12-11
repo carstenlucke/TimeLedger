@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { LayoutDashboard, Folder, Clock3, FileText, LineChart, Settings as SettingsIcon } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import TimeEntries from './pages/TimeEntries';
@@ -108,7 +109,7 @@ const AppContent: React.FC = () => {
                 navigateToPage('dashboard');
               }}
             >
-              <span className="nav-icon">📊</span>
+              <LayoutDashboard className="nav-icon" aria-hidden="true" size={20} strokeWidth={1.75} />
               {t.nav.dashboard}
             </a>
             <a
@@ -119,7 +120,7 @@ const AppContent: React.FC = () => {
                 navigateToPage('projects');
               }}
             >
-              <span className="nav-icon">📁</span>
+              <Folder className="nav-icon" aria-hidden="true" size={20} strokeWidth={1.75} />
               {t.nav.projects}
             </a>
             <a
@@ -130,7 +131,7 @@ const AppContent: React.FC = () => {
                 navigateToPage('entries');
               }}
             >
-              <span className="nav-icon">⏱️</span>
+              <Clock3 className="nav-icon" aria-hidden="true" size={20} strokeWidth={1.75} />
               {t.nav.timeEntries}
             </a>
             <a
@@ -141,7 +142,7 @@ const AppContent: React.FC = () => {
                 navigateToPage('invoices');
               }}
             >
-              <span className="nav-icon">🧾</span>
+              <FileText className="nav-icon" aria-hidden="true" size={20} strokeWidth={1.75} />
               {t.nav.invoices}
             </a>
             <a
@@ -152,7 +153,7 @@ const AppContent: React.FC = () => {
                 navigateToPage('reports');
               }}
             >
-              <span className="nav-icon">📈</span>
+              <LineChart className="nav-icon" aria-hidden="true" size={20} strokeWidth={1.75} />
               {t.nav.reports}
             </a>
             <a
@@ -163,7 +164,7 @@ const AppContent: React.FC = () => {
                 navigateToPage('settings');
               }}
             >
-              <span className="nav-icon">⚙️</span>
+              <SettingsIcon className="nav-icon" aria-hidden="true" size={20} strokeWidth={1.75} />
               {t.nav.settings}
             </a>
           </nav>
