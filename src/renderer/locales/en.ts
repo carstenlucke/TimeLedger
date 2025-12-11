@@ -166,6 +166,7 @@ export const en = {
     statusInvoiced: 'Invoiced',
     statusCancelled: 'Cancelled',
     deleteConfirm: 'Are you sure you want to delete this draft invoice? All associated time entries will be released.',
+    deleteCancelledConfirm: 'Are you sure you want to delete this cancelled invoice?',
     viewDetails: 'View Details',
     finalize: 'Finalize',
     cancelInvoice: 'Cancel Invoice',

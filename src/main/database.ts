@@ -489,13 +489,13 @@ export class DatabaseManager {
       throw new Error('Can only add entries to draft invoices');
     }
 
-    // Check if any entries are already billed
+    // Check if any entries are already billed (not unbilled)
     const checkStmt = this.db.prepare(`
       SELECT id FROM time_entries
       WHERE id IN (${entryIds.map(() => '?').join(',')})
-      AND (billing_status = 'invoiced' OR (invoice_id IS NOT NULL AND invoice_id != ?))
+      AND billing_status != 'unbilled'
     `);
-    const alreadyBilled = checkStmt.all(...entryIds, invoiceId) as any[];
+    const alreadyBilled = checkStmt.all(...entryIds) as any[];
     if (alreadyBilled.length > 0) {
       throw new Error('Some entries are already billed to another invoice');
     }
@@ -585,9 +585,9 @@ export class DatabaseManager {
     `);
     updateInvoiceStmt.run(reason, id);
 
-    // Release time entries
+    // Reset billing status but keep invoice_id for reference
     const updateEntriesStmt = this.db.prepare(`
-      UPDATE time_entries SET invoice_id = NULL, billing_status = 'unbilled' WHERE invoice_id = ?
+      UPDATE time_entries SET billing_status = 'unbilled' WHERE invoice_id = ?
     `);
     updateEntriesStmt.run(id);
 

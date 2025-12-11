@@ -14,7 +14,7 @@ import { ConfirmationDialog } from './components/ConfirmationDialog';
 type Page = 'dashboard' | 'projects' | 'entries' | 'invoices' | 'reports' | 'settings';
 
 interface AppContextType {
-  navigateToPage: (page: Page, options?: { projectFilter?: number; entryId?: number }) => void;
+  navigateToPage: (page: Page, options?: { projectFilter?: number; entryId?: number; invoiceId?: number }) => void;
 }
 
 export const AppContext = React.createContext<AppContextType>({
@@ -26,15 +26,22 @@ const AppContent: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [entriesProjectFilter, setEntriesProjectFilter] = useState<number | undefined>(undefined);
   const [entryToEdit, setEntryToEdit] = useState<number | undefined>(undefined);
+  const [invoiceToView, setInvoiceToView] = useState<number | undefined>(undefined);
 
-  const navigateToPage = (page: Page, options?: { projectFilter?: number; entryId?: number }) => {
+  const navigateToPage = (page: Page, options?: { projectFilter?: number; entryId?: number; invoiceId?: number }) => {
     setCurrentPage(page);
     if (page === 'entries') {
       setEntriesProjectFilter(options?.projectFilter);
       setEntryToEdit(options?.entryId);
+      setInvoiceToView(undefined);
+    } else if (page === 'invoices') {
+      setInvoiceToView(options?.invoiceId);
+      setEntriesProjectFilter(undefined);
+      setEntryToEdit(undefined);
     } else {
       setEntriesProjectFilter(undefined);
       setEntryToEdit(undefined);
+      setInvoiceToView(undefined);
     }
   };
 
@@ -69,7 +76,7 @@ const AppContent: React.FC = () => {
       case 'entries':
         return <TimeEntries initialProjectFilter={entriesProjectFilter} initialEntryId={entryToEdit} />;
       case 'invoices':
-        return <Invoices />;
+        return <Invoices initialInvoiceId={invoiceToView} />;
       case 'reports':
         return <Reports />;
       case 'settings':

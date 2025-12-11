@@ -168,6 +168,7 @@ export const de: TranslationKeys = {
     statusInvoiced: 'Abgerechnet',
     statusCancelled: 'Storniert',
     deleteConfirm: 'Sind Sie sicher, dass Sie diese Entwurfsrechnung löschen möchten? Alle zugehörigen Zeiteinträge werden freigegeben.',
+    deleteCancelledConfirm: 'Sind Sie sicher, dass Sie diese stornierte Rechnung löschen möchten?',
     viewDetails: 'Details anzeigen',
     finalize: 'Abschließen',
     cancelInvoice: 'Rechnung stornieren',

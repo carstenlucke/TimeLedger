@@ -3,21 +3,24 @@ import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
 import type { Invoice, InvoiceWithEntries } from '../../shared/types';
 
-export const Invoices: React.FC = () => {
+interface InvoicesProps {
+  initialInvoiceId?: number;
+}
+
+export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
   const { showNotification, showConfirmation } = useNotification();
   const { t, formatCurrency } = useI18n();
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showAddEntriesModal, setShowAddEntriesModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceWithEntries | null>(null);
   const [unbilledEntries, setUnbilledEntries] = useState<any[]>([]);
   const [selectedEntryIds, setSelectedEntryIds] = useState<number[]>([]);
   const [cancellationReason, setCancellationReason] = useState('');
+  const [isEditingFields, setIsEditingFields] = useState(false);
 
   const [formData, setFormData] = useState({
     invoice_number: '',
@@ -28,6 +31,16 @@ export const Invoices: React.FC = () => {
   useEffect(() => {
     loadInvoices();
   }, []);
+
+  useEffect(() => {
+    // Auto-open invoice details modal if initialInvoiceId is provided
+    if (initialInvoiceId && invoices.length > 0) {
+      const invoice = invoices.find(inv => inv.id === initialInvoiceId);
+      if (invoice) {
+        loadInvoiceDetails(invoice.id);
+      }
+    }
+  }, [initialInvoiceId, invoices]);
 
   const loadInvoices = async () => {
     try {
@@ -56,7 +69,13 @@ export const Invoices: React.FC = () => {
     try {
       const data = await window.api.invoice.getWithEntries(id);
       setSelectedInvoice(data);
-      setShowDetailsModal(true);
+      setFormData({
+        invoice_number: data.invoice_number,
+        invoice_date: data.invoice_date,
+        notes: data.notes || '',
+      });
+      setIsEditingFields(false);
+      setShowInvoiceModal(true);
     } catch (error) {
       console.error('Failed to load invoice details:', error);
       showNotification(t.notifications.loadFailed, 'error');
@@ -65,90 +84,90 @@ export const Invoices: React.FC = () => {
 
   const handleCreate = async () => {
     const generatedNumber = await window.api.invoice.generateNumber();
-    setEditingInvoice(null);
+    setSelectedInvoice(null);
     setFormData({
       invoice_number: generatedNumber,
       invoice_date: new Date().toISOString().split('T')[0],
       notes: '',
     });
-    setShowModal(true);
+    setIsEditingFields(true);
+    setShowInvoiceModal(true);
   };
 
-  const handleEdit = (invoice: Invoice) => {
-    if (invoice.status !== 'draft') {
-      const message = invoice.status === 'invoiced'
-        ? t.invoices.cannotEditInvoiced
-        : t.invoices.cannotEditCancelled;
-      showNotification(message, 'warning');
-      return;
-    }
-    setEditingInvoice(invoice);
-    setFormData({
-      invoice_number: invoice.invoice_number,
-      invoice_date: invoice.invoice_date,
-      notes: invoice.notes || '',
-    });
-    setShowModal(true);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSaveFields = async () => {
     try {
-      if (editingInvoice) {
-        await window.api.invoice.update(editingInvoice.id, formData);
+      if (selectedInvoice) {
+        await window.api.invoice.update(selectedInvoice.id, formData);
         showNotification(t.notifications.invoiceUpdated, 'success');
+        await loadInvoiceDetails(selectedInvoice.id);
+        loadInvoices();
       } else {
-        await window.api.invoice.create({
+        const newInvoice = await window.api.invoice.create({
           ...formData,
           status: 'draft',
           total_amount: 0,
         });
         showNotification(t.notifications.invoiceCreated, 'success');
+        await loadInvoiceDetails(newInvoice.id);
+        loadInvoices();
       }
-      setShowModal(false);
-      loadInvoices();
+      setIsEditingFields(false);
     } catch (error) {
       console.error('Failed to save invoice:', error);
       showNotification(t.notifications.saveFailed, 'error');
     }
   };
 
+  const handleCloseInvoiceModal = () => {
+    setShowInvoiceModal(false);
+    setSelectedInvoice(null);
+    setIsEditingFields(false);
+  };
+
   const handleDelete = async (invoice: Invoice) => {
-    if (invoice.status !== 'draft') {
-      showNotification('Only draft invoices can be deleted', 'warning');
+    if (invoice.status === 'invoiced') {
+      showNotification('Invoiced invoices cannot be deleted', 'warning');
       return;
     }
 
-    const confirmed = await showConfirmation(t.invoices.deleteConfirm);
-    if (!confirmed) return;
+    const message = invoice.status === 'cancelled'
+      ? t.invoices.deleteCancelledConfirm
+      : t.invoices.deleteConfirm;
 
-    try {
-      await window.api.invoice.delete(invoice.id);
-      showNotification(t.notifications.invoiceDeleted, 'success');
-      loadInvoices();
-    } catch (error) {
-      console.error('Failed to delete invoice:', error);
-      showNotification(t.notifications.deleteFailed, 'error');
-    }
+    showConfirmation({
+      message,
+      confirmText: t.common.delete,
+      onConfirm: async () => {
+        try {
+          await window.api.invoice.delete(invoice.id);
+          showNotification(t.notifications.invoiceDeleted, 'success');
+          loadInvoices();
+        } catch (error) {
+          console.error('Failed to delete invoice:', error);
+          showNotification(t.notifications.deleteFailed, 'error');
+        }
+      },
+    });
   };
 
   const handleFinalize = async (invoice: Invoice) => {
-    const confirmed = await showConfirmation(t.invoices.finalizeConfirm);
-    if (!confirmed) return;
-
-    try {
-      await window.api.invoice.finalize(invoice.id);
-      showNotification(t.notifications.invoiceFinalized, 'success');
-      loadInvoices();
-      if (selectedInvoice?.id === invoice.id) {
-        setShowDetailsModal(false);
-        setSelectedInvoice(null);
-      }
-    } catch (error) {
-      console.error('Failed to finalize invoice:', error);
-      showNotification(t.notifications.saveFailed, 'error');
-    }
+    showConfirmation({
+      message: t.invoices.finalizeConfirm,
+      confirmText: t.invoices.finalize,
+      onConfirm: async () => {
+        try {
+          await window.api.invoice.finalize(invoice.id);
+          showNotification(t.notifications.invoiceFinalized, 'success');
+          loadInvoices();
+          if (selectedInvoice?.id === invoice.id) {
+            handleCloseInvoiceModal();
+          }
+        } catch (error) {
+          console.error('Failed to finalize invoice:', error);
+          showNotification(t.notifications.saveFailed, 'error');
+        }
+      },
+    });
   };
 
   const handleCancelInvoice = async () => {
@@ -163,8 +182,7 @@ export const Invoices: React.FC = () => {
       setShowCancelModal(false);
       setCancellationReason('');
       loadInvoices();
-      setShowDetailsModal(false);
-      setSelectedInvoice(null);
+      handleCloseInvoiceModal();
     } catch (error) {
       console.error('Failed to cancel invoice:', error);
       showNotification(t.notifications.saveFailed, 'error');
@@ -195,22 +213,23 @@ export const Invoices: React.FC = () => {
   };
 
   const handleRemoveEntries = async (entryIds: number[]) => {
-    const confirmed = await showConfirmation(
-      `Remove ${entryIds.length} ${entryIds.length === 1 ? 'entry' : 'entries'} from this invoice?`
-    );
-    if (!confirmed) return;
-
-    try {
-      await window.api.invoice.removeEntries(entryIds);
-      showNotification(t.notifications.entriesRemoved, 'success');
-      if (selectedInvoice) {
-        await loadInvoiceDetails(selectedInvoice.id);
-      }
-      loadInvoices();
-    } catch (error) {
-      console.error('Failed to remove entries:', error);
-      showNotification(t.notifications.saveFailed, 'error');
-    }
+    showConfirmation({
+      message: `Remove ${entryIds.length} ${entryIds.length === 1 ? 'entry' : 'entries'} from this invoice?`,
+      confirmText: t.invoices.removeEntries,
+      onConfirm: async () => {
+        try {
+          await window.api.invoice.removeEntries(entryIds);
+          showNotification(t.notifications.entriesRemoved, 'success');
+          if (selectedInvoice) {
+            await loadInvoiceDetails(selectedInvoice.id);
+          }
+          loadInvoices();
+        } catch (error) {
+          console.error('Failed to remove entries:', error);
+          showNotification(t.notifications.saveFailed, 'error');
+        }
+      },
+    });
   };
 
   const toggleEntrySelection = (entryId: number) => {
@@ -311,12 +330,6 @@ export const Invoices: React.FC = () => {
                         {invoice.status === 'draft' && (
                           <>
                             <button
-                              className="btn btn-secondary btn-sm"
-                              onClick={() => handleEdit(invoice)}
-                            >
-                              {t.common.edit}
-                            </button>
-                            <button
                               className="btn btn-success btn-sm"
                               onClick={() => handleFinalize(invoice)}
                             >
@@ -330,6 +343,14 @@ export const Invoices: React.FC = () => {
                             </button>
                           </>
                         )}
+                        {invoice.status === 'cancelled' && (
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleDelete(invoice)}
+                          >
+                            {t.common.delete}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -340,194 +361,221 @@ export const Invoices: React.FC = () => {
         </div>
       )}
 
-      {/* Create/Edit Invoice Modal */}
-      {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>{editingInvoice ? t.invoices.editInvoice : t.invoices.newInvoice}</h2>
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>
-                  {t.invoices.invoiceNumber} {t.timeEntries.required}
-                </label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input
-                    type="text"
-                    value={formData.invoice_number}
-                    onChange={(e) =>
-                      setFormData({ ...formData, invoice_number: e.target.value })
-                    }
-                    required
-                    style={{ flex: 1 }}
-                  />
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={async () => {
-                      const num = await window.api.invoice.generateNumber();
-                      setFormData({ ...formData, invoice_number: num });
-                    }}
-                  >
-                    {t.invoices.generateNumber}
-                  </button>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>
-                  {t.invoices.invoiceDate} {t.timeEntries.required}
-                </label>
-                <input
-                  type="date"
-                  value={formData.invoice_date}
-                  onChange={(e) =>
-                    setFormData({ ...formData, invoice_date: e.target.value })
-                  }
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>{t.invoices.notes}</label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={4}
-                  placeholder={t.invoices.notesPlaceholder}
-                />
-              </div>
-
-              <div className="form-actions">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
-                  {t.common.cancel}
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  {editingInvoice ? t.common.update : t.common.create}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Invoice Details Modal */}
-      {showDetailsModal && selectedInvoice && (
-        <div className="modal-overlay" onClick={() => setShowDetailsModal(false)}>
+      {/* Combined Invoice Modal */}
+      {showInvoiceModal && (
+        <div className="modal-overlay" onClick={handleCloseInvoiceModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
+            {/* Header with invoice number/date and edit button */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <div>
-                <h2>{selectedInvoice.invoice_number}</h2>
-                <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
-                  {new Date(selectedInvoice.invoice_date).toLocaleDateString()}
-                </p>
+              <div style={{ flex: 1 }}>
+                {isEditingFields || !selectedInvoice ? (
+                  <div className="form-group" style={{ marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <input
+                        type="text"
+                        value={formData.invoice_number}
+                        onChange={(e) => setFormData({ ...formData, invoice_number: e.target.value })}
+                        placeholder={t.invoices.invoiceNumber}
+                        style={{ fontSize: '1.5rem', fontWeight: 'bold', flex: 1 }}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={async () => {
+                          const num = await window.api.invoice.generateNumber();
+                          setFormData({ ...formData, invoice_number: num });
+                        }}
+                      >
+                        {t.invoices.generateNumber}
+                      </button>
+                    </div>
+                    <input
+                      type="date"
+                      value={formData.invoice_date}
+                      onChange={(e) => setFormData({ ...formData, invoice_date: e.target.value })}
+                      style={{ marginTop: '8px' }}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <h2 style={{ margin: 0 }}>{selectedInvoice.invoice_number}</h2>
+                    <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                      {new Date(selectedInvoice.invoice_date).toLocaleDateString()}
+                    </p>
+                  </>
+                )}
               </div>
-              {getStatusBadge(selectedInvoice.status)}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                {selectedInvoice && getStatusBadge(selectedInvoice.status)}
+                {selectedInvoice && selectedInvoice.status === 'draft' && !isEditingFields && (
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => setIsEditingFields(true)}
+                  >
+                    {t.common.edit}
+                  </button>
+                )}
+                {isEditingFields && (
+                  <>
+                    <button className="btn btn-secondary btn-sm" onClick={() => {
+                      if (selectedInvoice) {
+                        setFormData({
+                          invoice_number: selectedInvoice.invoice_number,
+                          invoice_date: selectedInvoice.invoice_date,
+                          notes: selectedInvoice.notes || '',
+                        });
+                        setIsEditingFields(false);
+                      } else {
+                        handleCloseInvoiceModal();
+                      }
+                    }}>
+                      {t.common.cancel}
+                    </button>
+                    <button className="btn btn-primary btn-sm" onClick={handleSaveFields}>
+                      {t.common.save}
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
 
-            <div style={{ marginBottom: '20px', padding: '16px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
-                    {t.invoices.totalAmount}
-                  </p>
-                  <p style={{ fontSize: '1.5rem', fontWeight: '600', margin: 0 }}>
-                    {formatCurrency(selectedInvoice.total_amount)}
-                  </p>
+            {/* Summary and Notes Section */}
+            {selectedInvoice && (
+              <div style={{ marginBottom: '20px', padding: '16px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                      {t.invoices.totalAmount}
+                    </p>
+                    <p style={{ fontSize: '1.5rem', fontWeight: '600', margin: 0 }}>
+                      {formatCurrency(selectedInvoice.total_amount)}
+                    </p>
+                  </div>
+                  <div>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                      {t.invoices.totalHours}
+                    </p>
+                    <p style={{ fontSize: '1.5rem', fontWeight: '600', margin: 0 }}>
+                      {formatDuration(selectedInvoice.entries.reduce((sum: number, e: any) => sum + e.duration_minutes, 0))}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
-                    {t.invoices.totalHours}
-                  </p>
-                  <p style={{ fontSize: '1.5rem', fontWeight: '600', margin: 0 }}>
-                    {formatDuration(selectedInvoice.entries.reduce((sum: number, e: any) => sum + e.duration_minutes, 0))}
-                  </p>
-                </div>
-              </div>
-              {selectedInvoice.notes && (
+
+                {/* Notes Section */}
                 <div style={{ marginTop: '16px' }}>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
                     {t.invoices.notes}
                   </p>
-                  <p style={{ margin: 0 }}>{selectedInvoice.notes}</p>
+                  {isEditingFields ? (
+                    <textarea
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      rows={3}
+                      placeholder={t.invoices.notesPlaceholder}
+                      style={{ width: '100%' }}
+                    />
+                  ) : (
+                    <p style={{ margin: 0 }}>{selectedInvoice.notes || t.invoices.noNotesPlaceholder}</p>
+                  )}
                 </div>
-              )}
-              {selectedInvoice.cancellation_reason && (
-                <div style={{ marginTop: '16px' }}>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
-                    {t.invoices.cancellationReason}
-                  </p>
-                  <p style={{ margin: 0, color: 'var(--accent-red)' }}>{selectedInvoice.cancellation_reason}</p>
-                </div>
-              )}
-            </div>
 
-            <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0 }}>{t.invoices.invoiceEntries} ({selectedInvoice.entries.length})</h3>
-              {selectedInvoice.status === 'draft' && (
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => handleAddEntries(selectedInvoice.id)}
-                >
-                  {t.invoices.addTimeEntries}
-                </button>
-              )}
-            </div>
-
-            {selectedInvoice.entries.length === 0 ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                <p>{t.invoices.noEntriesInInvoice}</p>
-                {selectedInvoice.status === 'draft' && <p>{t.invoices.addEntriesToInvoice}</p>}
-              </div>
-            ) : (
-              <div className="table-container" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>{t.common.date}</th>
-                      <th>{t.common.project}</th>
-                      <th>{t.common.description}</th>
-                      <th>{t.common.duration}</th>
-                      <th>Value</th>
-                      {selectedInvoice.status === 'draft' && <th>{t.common.actions}</th>}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedInvoice.entries.map((entry: any) => (
-                      <tr key={entry.id}>
-                        <td>{new Date(entry.date).toLocaleDateString()}</td>
-                        <td>{entry.project_name}</td>
-                        <td>{entry.description || '-'}</td>
-                        <td>{formatDuration(entry.duration_minutes)}</td>
-                        <td>{formatCurrency((entry.duration_minutes / 60) * (entry.hourly_rate || 0))}</td>
-                        {selectedInvoice.status === 'draft' && (
-                          <td>
-                            <button
-                              className="btn btn-danger btn-sm"
-                              onClick={() => handleRemoveEntries([entry.id])}
-                            >
-                              Remove
-                            </button>
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                {selectedInvoice.cancellation_reason && (
+                  <div style={{ marginTop: '16px' }}>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                      {t.invoices.cancellationReason}
+                    </p>
+                    <p style={{ margin: 0, color: 'var(--accent-red)' }}>{selectedInvoice.cancellation_reason}</p>
+                  </div>
+                )}
               </div>
             )}
 
+            {/* Notes Section for New Invoice */}
+            {!selectedInvoice && (
+              <div style={{ marginBottom: '20px' }}>
+                <div className="form-group">
+                  <label>{t.invoices.notes}</label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    rows={4}
+                    placeholder={t.invoices.notesPlaceholder}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Time Entries Section - only show for existing invoices */}
+            {selectedInvoice && (
+              <>
+                <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ margin: 0 }}>{t.invoices.invoiceEntries} ({selectedInvoice.entries.length})</h3>
+                  {selectedInvoice.status === 'draft' && (
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => handleAddEntries(selectedInvoice.id)}
+                    >
+                      {t.invoices.addTimeEntries}
+                    </button>
+                  )}
+                </div>
+
+                {selectedInvoice.entries.length === 0 ? (
+                  <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                    <p>{t.invoices.noEntriesInInvoice}</p>
+                    {selectedInvoice.status === 'draft' && <p>{t.invoices.addEntriesToInvoice}</p>}
+                  </div>
+                ) : (
+                  <div className="table-container" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>{t.common.date}</th>
+                          <th>{t.common.project}</th>
+                          <th>{t.common.description}</th>
+                          <th>{t.common.duration}</th>
+                          <th>Value</th>
+                          {selectedInvoice.status === 'draft' && <th>{t.common.actions}</th>}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedInvoice.entries.map((entry: any) => (
+                          <tr key={entry.id}>
+                            <td>{new Date(entry.date).toLocaleDateString()}</td>
+                            <td>{entry.project_name}</td>
+                            <td>{entry.description || '-'}</td>
+                            <td>{formatDuration(entry.duration_minutes)}</td>
+                            <td>{formatCurrency((entry.duration_minutes / 60) * (entry.hourly_rate || 0))}</td>
+                            {selectedInvoice.status === 'draft' && (
+                              <td>
+                                <button
+                                  className="btn btn-danger btn-sm"
+                                  onClick={() => handleRemoveEntries([entry.id])}
+                                >
+                                  Remove
+                                </button>
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Footer Actions */}
             <div className="form-actions" style={{ marginTop: '20px' }}>
-              {selectedInvoice.status === 'draft' && (
-                <>
-                  <button
-                    className="btn btn-success"
-                    onClick={() => handleFinalize(selectedInvoice)}
-                  >
-                    {t.invoices.finalize}
-                  </button>
-                </>
+              {selectedInvoice && selectedInvoice.status === 'draft' && (
+                <button
+                  className="btn btn-success"
+                  onClick={() => handleFinalize(selectedInvoice)}
+                >
+                  {t.invoices.finalize}
+                </button>
               )}
-              {(selectedInvoice.status === 'invoiced' || selectedInvoice.status === 'draft') && (
+              {selectedInvoice && (selectedInvoice.status === 'invoiced' || selectedInvoice.status === 'draft') && (
                 <button
                   className="btn btn-danger"
                   onClick={() => setShowCancelModal(true)}
@@ -535,7 +583,7 @@ export const Invoices: React.FC = () => {
                   {t.invoices.cancelInvoice}
                 </button>
               )}
-              <button className="btn btn-secondary" onClick={() => setShowDetailsModal(false)}>
+              <button className="btn btn-secondary" onClick={handleCloseInvoiceModal}>
                 {t.common.close}
               </button>
             </div>
