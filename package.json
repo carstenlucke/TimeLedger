@@ -23,7 +23,7 @@
     "clean": "rimraf dist",
     "clean:release": "rimraf release",
     "clean:all": "rimraf dist release",
-    "postinstall": "node scripts/fix-electron-name.js"
+    "postinstall": "node scripts/fix-electron-name.js && electron-rebuild"
   },
   "dependencies": {
     "@types/pdfkit": "^0.17.4",
