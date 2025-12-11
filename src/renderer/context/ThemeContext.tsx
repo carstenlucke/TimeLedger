@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type Theme = 'dark' | 'light' | 'ocean' | 'sunset' | 'forest';
+export type Theme = 'dark' | 'light' | 'ocean' | 'sunset' | 'forest' | 'neon' | 'candy' | 'lavender' | 'mint' | 'peach';
 
 interface ThemeContextType {
   theme: Theme;
@@ -14,7 +14,7 @@ interface ThemeProviderProps {
   children: ReactNode;
 }
 
-const VALID_THEMES: Theme[] = ['dark', 'light', 'ocean', 'sunset', 'forest'];
+const VALID_THEMES: Theme[] = ['dark', 'light', 'ocean', 'sunset', 'forest', 'neon', 'candy', 'lavender', 'mint', 'peach'];
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>(() => {

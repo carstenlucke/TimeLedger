@@ -159,6 +159,11 @@ const Settings: React.FC = () => {
             <option value="ocean">{t.settings.themeOcean}</option>
             <option value="sunset">{t.settings.themeSunset}</option>
             <option value="forest">{t.settings.themeForest}</option>
+            <option value="neon">{t.settings.themeNeon}</option>
+            <option value="candy">{t.settings.themeCandy}</option>
+            <option value="lavender">{t.settings.themeLavender}</option>
+            <option value="mint">{t.settings.themeMint}</option>
+            <option value="peach">{t.settings.themePeach}</option>
           </select>
         </div>
       </div>
