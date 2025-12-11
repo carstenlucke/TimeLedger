@@ -33,6 +33,20 @@ const IPC_CHANNELS = {
   BACKUP_CREATE: 'backup:create',
   BACKUP_LIST: 'backup:list',
   BACKUP_RESTORE: 'backup:restore',
+
+  // Invoices
+  INVOICE_CREATE: 'invoice:create',
+  INVOICE_UPDATE: 'invoice:update',
+  INVOICE_DELETE: 'invoice:delete',
+  INVOICE_GET_ALL: 'invoice:get-all',
+  INVOICE_GET_BY_ID: 'invoice:get-by-id',
+  INVOICE_GET_WITH_ENTRIES: 'invoice:get-with-entries',
+  INVOICE_ADD_ENTRIES: 'invoice:add-entries',
+  INVOICE_REMOVE_ENTRIES: 'invoice:remove-entries',
+  INVOICE_FINALIZE: 'invoice:finalize',
+  INVOICE_CANCEL: 'invoice:cancel',
+  INVOICE_GET_UNBILLED_ENTRIES: 'invoice:get-unbilled-entries',
+  INVOICE_GENERATE_NUMBER: 'invoice:generate-number',
 } as const;
 
 // Define the API that will be exposed to the renderer
@@ -105,6 +119,34 @@ const api = {
       ipcRenderer.invoke(IPC_CHANNELS.BACKUP_LIST),
     restore: (backupPath: string): Promise<boolean> =>
       ipcRenderer.invoke(IPC_CHANNELS.BACKUP_RESTORE, backupPath),
+  },
+
+  // Invoice methods
+  invoice: {
+    create: (input: any): Promise<any> =>
+      ipcRenderer.invoke(IPC_CHANNELS.INVOICE_CREATE, input),
+    update: (id: number, input: any): Promise<any> =>
+      ipcRenderer.invoke(IPC_CHANNELS.INVOICE_UPDATE, id, input),
+    delete: (id: number): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.INVOICE_DELETE, id),
+    getAll: (): Promise<any[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.INVOICE_GET_ALL),
+    getById: (id: number): Promise<any> =>
+      ipcRenderer.invoke(IPC_CHANNELS.INVOICE_GET_BY_ID, id),
+    getWithEntries: (id: number): Promise<any> =>
+      ipcRenderer.invoke(IPC_CHANNELS.INVOICE_GET_WITH_ENTRIES, id),
+    addEntries: (invoiceId: number, entryIds: number[]): Promise<any> =>
+      ipcRenderer.invoke(IPC_CHANNELS.INVOICE_ADD_ENTRIES, invoiceId, entryIds),
+    removeEntries: (entryIds: number[]): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.INVOICE_REMOVE_ENTRIES, entryIds),
+    finalize: (id: number): Promise<any> =>
+      ipcRenderer.invoke(IPC_CHANNELS.INVOICE_FINALIZE, id),
+    cancel: (id: number, reason: string): Promise<any> =>
+      ipcRenderer.invoke(IPC_CHANNELS.INVOICE_CANCEL, id, reason),
+    getUnbilledEntries: (): Promise<any[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.INVOICE_GET_UNBILLED_ENTRIES),
+    generateNumber: (): Promise<string> =>
+      ipcRenderer.invoke(IPC_CHANNELS.INVOICE_GENERATE_NUMBER),
   },
 };
 

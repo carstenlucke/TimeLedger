@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import TimeEntries from './pages/TimeEntries';
+import { Invoices } from './pages/Invoices';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import { NotificationProvider } from './context/NotificationContext';
@@ -10,10 +11,10 @@ import { ThemeProvider } from './context/ThemeContext';
 import { NotificationContainer } from './components/NotificationContainer';
 import { ConfirmationDialog } from './components/ConfirmationDialog';
 
-type Page = 'dashboard' | 'projects' | 'entries' | 'reports' | 'settings';
+type Page = 'dashboard' | 'projects' | 'entries' | 'invoices' | 'reports' | 'settings';
 
 interface AppContextType {
-  navigateToPage: (page: Page, options?: { projectFilter?: number; entryId?: number }) => void;
+  navigateToPage: (page: Page, options?: { projectFilter?: number; entryId?: number; invoiceId?: number }) => void;
 }
 
 export const AppContext = React.createContext<AppContextType>({
@@ -25,15 +26,22 @@ const AppContent: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [entriesProjectFilter, setEntriesProjectFilter] = useState<number | undefined>(undefined);
   const [entryToEdit, setEntryToEdit] = useState<number | undefined>(undefined);
+  const [invoiceToView, setInvoiceToView] = useState<number | undefined>(undefined);
 
-  const navigateToPage = (page: Page, options?: { projectFilter?: number; entryId?: number }) => {
+  const navigateToPage = (page: Page, options?: { projectFilter?: number; entryId?: number; invoiceId?: number }) => {
     setCurrentPage(page);
     if (page === 'entries') {
       setEntriesProjectFilter(options?.projectFilter);
       setEntryToEdit(options?.entryId);
+      setInvoiceToView(undefined);
+    } else if (page === 'invoices') {
+      setInvoiceToView(options?.invoiceId);
+      setEntriesProjectFilter(undefined);
+      setEntryToEdit(undefined);
     } else {
       setEntriesProjectFilter(undefined);
       setEntryToEdit(undefined);
+      setInvoiceToView(undefined);
     }
   };
 
@@ -49,6 +57,8 @@ const AppContent: React.FC = () => {
         navigateToPage('projects');
       } else if (path === '/entries') {
         navigateToPage('entries');
+      } else if (path === '/invoices') {
+        navigateToPage('invoices');
       } else if (path === '/reports') {
         navigateToPage('reports');
       }
@@ -65,6 +75,8 @@ const AppContent: React.FC = () => {
         return <Projects />;
       case 'entries':
         return <TimeEntries initialProjectFilter={entriesProjectFilter} initialEntryId={entryToEdit} />;
+      case 'invoices':
+        return <Invoices initialInvoiceId={invoiceToView} />;
       case 'reports':
         return <Reports />;
       case 'settings':
@@ -120,6 +132,17 @@ const AppContent: React.FC = () => {
             >
               <span className="nav-icon">⏱️</span>
               {t.nav.timeEntries}
+            </a>
+            <a
+              href="#"
+              className={currentPage === 'invoices' ? 'active' : ''}
+              onClick={(e) => {
+                e.preventDefault();
+                navigateToPage('invoices');
+              }}
+            >
+              <span className="nav-icon">🧾</span>
+              {t.nav.invoices}
             </a>
             <a
               href="#"

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import type { TimeEntry, TimeEntryInput, Project } from '../../shared/types';
+import React, { useState, useEffect, useContext } from 'react';
+import type { TimeEntry, TimeEntryInput, Project, Invoice, InvoiceWithEntries } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
 import CopyIcon from '../components/CopyIcon';
+import { AppContext } from '../App';
 
 interface TimeEntriesProps {
   initialProjectFilter?: number;
@@ -11,9 +12,12 @@ interface TimeEntriesProps {
 
 const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initialEntryId }) => {
   const { showNotification, showConfirmation } = useNotification();
-  const { t } = useI18n();
+  const { t, formatCurrency, formatNumber } = useI18n();
+  const { navigateToPage } = useContext(AppContext);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [viewingInvoice, setViewingInvoice] = useState<InvoiceWithEntries | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
@@ -54,12 +58,14 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [entriesData, projectsData] = await Promise.all([
+      const [entriesData, projectsData, invoicesData] = await Promise.all([
         window.api.timeEntry.getAll(),
         window.api.project.getAll(),
+        window.api.invoice.getAll(),
       ]);
       setEntries(entriesData);
       setProjects(projectsData);
+      setInvoices(invoicesData);
 
       // Set default project if available
       if (projectsData.length > 0 && formData.project_id === 0) {
@@ -192,6 +198,39 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours}h ${mins}m`;
+  };
+
+  const loadInvoiceDetails = async (invoiceId: number) => {
+    try {
+      const data = await window.api.invoice.getWithEntries(invoiceId);
+      setViewingInvoice(data);
+    } catch (error) {
+      console.error('Failed to load invoice details:', error);
+      showNotification(t.notifications.loadFailed, 'error');
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusMap: Record<string, { label: string; color: string }> = {
+      draft: { label: t.invoices.statusDraft, color: 'var(--text-secondary)' },
+      invoiced: { label: t.invoices.statusInvoiced, color: 'var(--accent-green)' },
+      cancelled: { label: t.invoices.statusCancelled, color: 'var(--accent-red)' },
+    };
+    const info = statusMap[status];
+    return (
+      <span
+        style={{
+          padding: '4px 12px',
+          borderRadius: '12px',
+          backgroundColor: `${info.color}20`,
+          color: info.color,
+          fontSize: '0.85rem',
+          fontWeight: '600',
+        }}
+      >
+        {info.label}
+      </span>
+    );
   };
 
   // Clipboard utility functions
@@ -553,47 +592,92 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
                     {t.common.duration} {getSortIcon('duration')}
                   </th>
                   <th>{t.common.description}</th>
+                  <th>{t.invoices.billingStatus}</th>
                   <th>{t.common.actions}</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredEntries.map((entry) => (
-                  <tr
-                    key={entry.id}
-                    className={selectedEntries.has(entry.id) ? 'selected-row' : ''}
-                  >
-                    <td style={{ textAlign: 'center' }}>
-                      <input
-                        type="checkbox"
-                        checked={selectedEntries.has(entry.id)}
-                        onChange={() => handleToggleEntry(entry.id)}
-                      />
-                    </td>
-                    <td>{entry.date}</td>
-                    <td>{getProjectName(entry.project_id)}</td>
-                    <td>{entry.start_time || '-'}</td>
-                    <td>{entry.end_time || '-'}</td>
-                    <td>{formatDuration(entry.duration_minutes)}</td>
-                    <td>{entry.description || '-'}</td>
-                    <td>
-                      <div className="table-actions">
-                        <button
-                          className="btn btn-icon copy-btn"
-                          onClick={() => handleCopySingle(entry)}
-                          title="Copy entry"
-                        >
-                          <CopyIcon size={16} />
-                        </button>
-                        <button className="btn btn-secondary" onClick={() => handleEdit(entry)}>
-                          {t.common.edit}
-                        </button>
-                        <button className="btn btn-danger" onClick={() => handleDelete(entry.id)}>
-                          {t.common.delete}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {filteredEntries.map((entry) => {
+                  const getBillingStatusBadge = (status?: string) => {
+                    // Check if the associated invoice is cancelled
+                    const invoice = entry.invoice_id ? invoices.find(inv => inv.id === entry.invoice_id) : undefined;
+                    const isInvoiceCancelled = invoice?.status === 'cancelled';
+
+                    const statusMap: Record<string, { label: string; color: string }> = {
+                      unbilled: { label: t.invoices.unbilled, color: 'var(--text-secondary)' },
+                      in_draft: { label: t.invoices.inDraft, color: 'var(--accent-blue)' },
+                      invoiced: { label: t.invoices.invoiced, color: 'var(--accent-green)' },
+                    };
+                    const info = statusMap[status || 'unbilled'];
+
+                    // Clickable if invoice exists (including cancelled invoices)
+                    const isClickable = !!entry.invoice_id;
+
+                    // Show different styling for cancelled invoices
+                    const displayColor = isInvoiceCancelled ? 'var(--accent-red)' : info.color;
+                    const displayLabel = isInvoiceCancelled ? t.invoices.statusCancelled : info.label;
+
+                    return (
+                      <span
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: '8px',
+                          backgroundColor: `${displayColor}20`,
+                          color: displayColor,
+                          fontSize: '0.75rem',
+                          fontWeight: '500',
+                          whiteSpace: 'nowrap',
+                          cursor: isClickable ? 'pointer' : 'default',
+                          opacity: isInvoiceCancelled ? 0.7 : 1,
+                          textDecoration: isInvoiceCancelled ? 'line-through' : 'none',
+                        }}
+                        onClick={isClickable ? () => loadInvoiceDetails(entry.invoice_id!) : undefined}
+                        title={isClickable ? (isInvoiceCancelled ? 'Click to view cancelled invoice' : 'Click to view invoice') : undefined}
+                      >
+                        {displayLabel}
+                      </span>
+                    );
+                  };
+
+                  return (
+                    <tr
+                      key={entry.id}
+                      className={selectedEntries.has(entry.id) ? 'selected-row' : ''}
+                    >
+                      <td style={{ textAlign: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedEntries.has(entry.id)}
+                          onChange={() => handleToggleEntry(entry.id)}
+                        />
+                      </td>
+                      <td>{entry.date}</td>
+                      <td>{getProjectName(entry.project_id)}</td>
+                      <td>{entry.start_time || '-'}</td>
+                      <td>{entry.end_time || '-'}</td>
+                      <td>{formatDuration(entry.duration_minutes)}</td>
+                      <td>{entry.description || '-'}</td>
+                      <td>{getBillingStatusBadge(entry.billing_status)}</td>
+                      <td>
+                        <div className="table-actions">
+                          <button
+                            className="btn btn-icon copy-btn"
+                            onClick={() => handleCopySingle(entry)}
+                            title="Copy entry"
+                          >
+                            <CopyIcon size={16} />
+                          </button>
+                          <button className="btn btn-secondary" onClick={() => handleEdit(entry)}>
+                            {t.common.edit}
+                          </button>
+                          <button className="btn btn-danger" onClick={() => handleDelete(entry.id)}>
+                            {t.common.delete}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -722,6 +806,116 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Invoice Details Modal */}
+      {viewingInvoice && (
+        <div className="modal-overlay" onClick={() => setViewingInvoice(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <h2 style={{ margin: 0 }}>{viewingInvoice.invoice_number}</h2>
+                <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                  {new Date(viewingInvoice.invoice_date).toLocaleDateString()}
+                </p>
+              </div>
+              {getStatusBadge(viewingInvoice.status)}
+            </div>
+
+            {/* Summary */}
+            <div style={{ marginBottom: '20px', padding: '16px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                    {t.invoices.totalAmount}
+                  </p>
+                  <p style={{ fontSize: '1.5rem', fontWeight: '600', margin: 0 }}>
+                    {formatCurrency(viewingInvoice.total_amount)}
+                  </p>
+                </div>
+                <div>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                    {t.invoices.totalHours}
+                  </p>
+                  <p style={{ fontSize: '1.5rem', fontWeight: '600', margin: 0 }}>
+                    {formatDuration(viewingInvoice.entries.reduce((sum: number, e: any) => sum + e.duration_minutes, 0))}
+                  </p>
+                </div>
+              </div>
+
+              {viewingInvoice.notes && (
+                <div style={{ marginTop: '16px' }}>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                    {t.invoices.notes}
+                  </p>
+                  <p style={{ margin: 0 }}>{viewingInvoice.notes}</p>
+                </div>
+              )}
+
+              {viewingInvoice.cancellation_reason && (
+                <div style={{ marginTop: '16px' }}>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                    {t.invoices.cancellationReason}
+                  </p>
+                  <p style={{ margin: 0, color: 'var(--accent-red)' }}>{viewingInvoice.cancellation_reason}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Time Entries */}
+            <div style={{ marginBottom: '16px' }}>
+              <h3 style={{ margin: '0 0 16px 0' }}>{t.invoices.invoiceEntries} ({viewingInvoice.entries.length})</h3>
+            </div>
+
+            {viewingInvoice.entries.length === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                <p>{t.invoices.noEntriesInInvoice}</p>
+              </div>
+            ) : (
+              <div className="table-container" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>{t.common.date}</th>
+                      <th>{t.common.project}</th>
+                      <th>{t.common.description}</th>
+                      <th>{t.common.duration}</th>
+                      <th>Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {viewingInvoice.entries.map((entry: any) => (
+                      <tr key={entry.id}>
+                        <td>{new Date(entry.date).toLocaleDateString()}</td>
+                        <td>{entry.project_name}</td>
+                        <td>{entry.description || '-'}</td>
+                        <td>{formatDuration(entry.duration_minutes)}</td>
+                        <td>{formatCurrency((entry.duration_minutes / 60) * (entry.hourly_rate || 0))}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Footer Actions */}
+            <div className="form-actions" style={{ marginTop: '20px' }}>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setViewingInvoice(null);
+                  navigateToPage('invoices', { invoiceId: viewingInvoice.id });
+                }}
+              >
+                {t.invoices.viewDetails}
+              </button>
+              <button className="btn btn-secondary" onClick={() => setViewingInvoice(null)}>
+                {t.common.close}
+              </button>
+            </div>
           </div>
         </div>
       )}

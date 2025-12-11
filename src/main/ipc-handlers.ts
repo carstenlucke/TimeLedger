@@ -8,6 +8,7 @@ import type {
   TimeEntryInput,
   ReportFilter,
   ExportFormat,
+  InvoiceInput,
 } from '../shared/types';
 
 export function setupIpcHandlers(): void {
@@ -168,5 +169,89 @@ export function setupIpcHandlers(): void {
     await backupManager.restoreBackup(backupPath);
     // Note: The app should be restarted after restore
     return true;
+  });
+
+  // Invoice handlers
+  ipcMain.handle(IPC_CHANNELS.INVOICE_CREATE, async (_, input: InvoiceInput) => {
+    try {
+      console.log('Creating invoice:', input);
+      return db.createInvoice(input);
+    } catch (error) {
+      console.error('Error creating invoice:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.INVOICE_UPDATE, async (_, id: number, input: Partial<InvoiceInput>) => {
+    return db.updateInvoice(id, input);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.INVOICE_DELETE, async (_, id: number) => {
+    db.deleteInvoice(id);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.INVOICE_GET_ALL, async () => {
+    try {
+      console.log('Fetching all invoices...');
+      const invoices = db.getAllInvoices();
+      console.log(`Found ${invoices.length} invoices`);
+      return invoices;
+    } catch (error) {
+      console.error('Error fetching invoices:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.INVOICE_GET_BY_ID, async (_, id: number) => {
+    return db.getInvoiceById(id);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.INVOICE_GET_WITH_ENTRIES, async (_, id: number) => {
+    return db.getInvoiceWithEntries(id);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.INVOICE_ADD_ENTRIES, async (_, invoiceId: number, entryIds: number[]) => {
+    try {
+      db.addTimeEntriesToInvoice(invoiceId, entryIds);
+      return db.getInvoiceWithEntries(invoiceId);
+    } catch (error) {
+      console.error('Error adding entries to invoice:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.INVOICE_REMOVE_ENTRIES, async (_, entryIds: number[]) => {
+    try {
+      db.removeTimeEntriesFromInvoice(entryIds);
+    } catch (error) {
+      console.error('Error removing entries from invoice:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.INVOICE_FINALIZE, async (_, id: number) => {
+    try {
+      return db.finalizeInvoice(id);
+    } catch (error) {
+      console.error('Error finalizing invoice:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.INVOICE_CANCEL, async (_, id: number, reason: string) => {
+    try {
+      return db.cancelInvoice(id, reason);
+    } catch (error) {
+      console.error('Error cancelling invoice:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.INVOICE_GET_UNBILLED_ENTRIES, async () => {
+    return db.getUnbilledTimeEntries();
+  });
+
+  ipcMain.handle(IPC_CHANNELS.INVOICE_GENERATE_NUMBER, async () => {
+    return db.generateNextInvoiceNumber();
   });
 }

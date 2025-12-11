@@ -16,8 +16,26 @@ export interface TimeEntry {
   end_time?: string;
   duration_minutes: number;
   description?: string;
+  invoice_id?: number;
+  billing_status?: 'unbilled' | 'in_draft' | 'invoiced';
   created_at: string;
   updated_at: string;
+}
+
+export interface Invoice {
+  id: number;
+  invoice_number: string;
+  invoice_date: string;
+  status: 'draft' | 'invoiced' | 'cancelled';
+  total_amount: number;
+  notes?: string;
+  cancellation_reason?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InvoiceWithEntries extends Invoice {
+  entries: any[];
 }
 
 // Input types for creating/updating records
@@ -34,6 +52,15 @@ export interface TimeEntryInput {
   end_time?: string;
   duration_minutes?: number;
   description?: string;
+}
+
+export interface InvoiceInput {
+  invoice_number: string;
+  invoice_date: string;
+  status?: 'draft' | 'invoiced' | 'cancelled';
+  total_amount?: number;
+  notes?: string;
+  cancellation_reason?: string;
 }
 
 // Reporting types
@@ -102,4 +129,18 @@ export const IPC_CHANNELS = {
   BACKUP_CREATE: 'backup:create',
   BACKUP_LIST: 'backup:list',
   BACKUP_RESTORE: 'backup:restore',
+
+  // Invoices
+  INVOICE_CREATE: 'invoice:create',
+  INVOICE_UPDATE: 'invoice:update',
+  INVOICE_DELETE: 'invoice:delete',
+  INVOICE_GET_ALL: 'invoice:get-all',
+  INVOICE_GET_BY_ID: 'invoice:get-by-id',
+  INVOICE_GET_WITH_ENTRIES: 'invoice:get-with-entries',
+  INVOICE_ADD_ENTRIES: 'invoice:add-entries',
+  INVOICE_REMOVE_ENTRIES: 'invoice:remove-entries',
+  INVOICE_FINALIZE: 'invoice:finalize',
+  INVOICE_CANCEL: 'invoice:cancel',
+  INVOICE_GET_UNBILLED_ENTRIES: 'invoice:get-unbilled-entries',
+  INVOICE_GENERATE_NUMBER: 'invoice:generate-number',
 } as const;
