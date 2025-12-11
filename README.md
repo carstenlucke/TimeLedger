@@ -2,15 +2,19 @@
 
 A simple desktop time tracking application for freelancers and side projects. Built with Electron, React, TypeScript, and SQLite.
 
-![TimeLedger](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![TimeLedger](https://img.shields.io/badge/version-1.2.5-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 ## Features
 
 - **Project Management**: Create and manage projects with optional hourly rates and client names
 - **Manual Time Entry**: Track time with either duration or start/end times
+- **Invoice Management**: Create draft invoices from unbilled time entries with automatic numbering and status tracking
+- **Billing Status Tracking**: Time entries automatically track billing status (unbilled, in draft, invoiced)
+- **Dashboard**: Overview with weekly bar charts and key statistics
 - **Reporting**: Generate detailed reports by date range and project
 - **Export**: Export reports as CSV, JSON, or PDF
+- **Multi-Language Support**: Available in English and German
 - **Dark/Light Theme**: Toggle between dark and light themes for comfortable viewing
 - **Automatic Backups**: Hourly automatic backups and backup on app exit
 - **Cloud Sync**: Store backups in iCloud, Dropbox, OneDrive, or any synced folder
@@ -123,6 +127,22 @@ This ensures your data is automatically backed up to the cloud.
 5. Add an optional description
 6. Click **Create**
 
+### Creating Invoices
+
+1. Navigate to **Invoices**
+2. Click **Create Invoice**
+3. Automatic invoice number is generated (format: INV-YYYY-NNN)
+4. Select unbilled time entries to include
+5. Review total amount (calculated from hourly rates)
+6. Save as draft or finalize the invoice
+7. Finalized invoices update time entries to "invoiced" status
+
+**Invoice Features:**
+- Draft invoices can be edited and entries can be added/removed
+- Finalized invoices lock time entries from further billing
+- Invoices can be cancelled with a reason (entries return to unbilled status)
+- Cross-navigation between invoices and related time entries
+
 ### Generating Reports
 
 1. Navigate to **Reports**
@@ -231,12 +251,14 @@ This project is licensed under the MIT License.
 ## Roadmap
 
 Future enhancements may include:
-- Keyboard shortcuts
-- Invoice generation
-- Timer mode (in addition to manual entry)
-- Charts and visualizations
+- Keyboard shortcuts and menu navigation improvements
+- Timer mode (real-time tracking in addition to manual entry)
+- Enhanced charts and visualizations
 - Multi-currency support
-- Tags and categories
+- Tags and categories for better organization
+- Custom invoice templates
+- Recurring time entries
+- Client portal for invoice sharing
 
 ## Support
 

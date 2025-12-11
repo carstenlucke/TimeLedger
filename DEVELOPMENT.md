@@ -106,6 +106,33 @@ Renderer Updates UI
 
 ## Key Features Architecture
 
+### Internationalization (I18n)
+
+TimeLedger supports multiple languages using React Context:
+
+**Implementation:**
+- `src/renderer/context/I18nContext.tsx`: Context provider with language state
+- Translation files in `src/renderer/locales/`:
+  - `en.ts`: English translations
+  - `de.ts`: German translations
+- Language preference stored in `localStorage`
+- Default language: English
+- Language toggle available in Settings page
+
+**Supported Languages:**
+- English (en)
+- German (de)
+
+**Usage in components:**
+```typescript
+import { useI18n } from '../context/I18nContext';
+
+const MyComponent = () => {
+  const { t, language, setLanguage } = useI18n();
+  return <h1>{t.nav.dashboard}</h1>;
+};
+```
+
 ### Theme System
 
 TimeLedger implements a light/dark theme system using React Context:
@@ -126,6 +153,31 @@ const MyComponent = () => {
   // Use theme or toggleTheme
 };
 ```
+
+### Dashboard & Charts
+
+The Dashboard provides an overview of time tracking activities:
+
+**Implementation:**
+- `src/renderer/pages/Dashboard.tsx`: Main dashboard component
+- `src/renderer/components/WeeklyBarChart.tsx`: Stacked bar chart component for weekly visualization
+- Shows the last 10 calendar weeks in a stacked bar chart (grouped by project)
+- Displays the most recent 10 time entries in a clickable table
+- Uses SVG for chart rendering with dynamic project color assignment
+
+**Features:**
+- **Stacked Bar Chart**:
+  - Shows last 10 calendar weeks (Monday to Sunday)
+  - Each bar is stacked by project with different colors
+  - Total hours displayed above each bar
+  - Week labels (ISO week numbers) below each bar
+  - Project legend with color coding
+- **Recent Entries Table**:
+  - Last 10 time entries with full details
+  - Clickable entries for quick editing
+  - Hover effects for better UX
+- **Color Management**: Uses a 12-color palette for project differentiation
+- **Empty State Handling**: Friendly messages when no data exists
 
 ### PDF Export
 
@@ -176,6 +228,25 @@ CREATE TABLE time_entries (
   FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE
 )
 ```
+
+#### Invoices Table
+```sql
+CREATE TABLE invoices (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  invoice_number TEXT NOT NULL UNIQUE,
+  invoice_date TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'draft',
+  total_amount REAL NOT NULL DEFAULT 0,
+  notes TEXT,
+  cancellation_reason TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+)
+```
+
+**Invoice-related fields in time_entries:**
+- `invoice_id`: Foreign key to invoices table
+- `billing_status`: One of 'unbilled', 'in_draft', 'invoiced'
 
 #### Settings Table
 ```sql
@@ -276,15 +347,43 @@ Configuration in `package.json` under `build`:
 
 Before each release, test:
 
+**Projects:**
 - [ ] Create/edit/delete projects
+- [ ] Set hourly rates and client names
+
+**Time Entries:**
 - [ ] Create/edit/delete time entries
+- [ ] Test duration input mode
+- [ ] Test start/end time mode
+- [ ] Filter entries by project
+- [ ] Verify billing status tracking
+
+**Invoices:**
+- [ ] Create draft invoice from unbilled entries
+- [ ] Add/remove entries to/from draft invoice
+- [ ] Finalize invoice (locks entries)
+- [ ] Cancel invoice (releases entries)
+- [ ] Verify invoice number generation
+- [ ] Check automatic total calculation
+- [ ] Cross-navigation between invoices and entries
+
+**Reports & Export:**
 - [ ] Generate reports with various filters
-- [ ] Export CSV and JSON
+- [ ] Export CSV, JSON, and PDF
+- [ ] Verify data accuracy in exports
+
+**Settings & Backup:**
 - [ ] Select backup directory
 - [ ] Create manual backup
 - [ ] Restore from backup
+- [ ] Change language (English ↔ German)
+- [ ] Toggle theme (light ↔ dark)
+
+**General:**
 - [ ] App exit (triggers backup)
 - [ ] First launch experience
+- [ ] Dashboard statistics accuracy
+- [ ] Weekly bar chart display
 
 ### Database Testing
 

@@ -1,399 +1,488 @@
 # TimeLedger User Guide
 
-Welcome to TimeLedger! This guide will help you get started with tracking your time effectively.
+Welcome to TimeLedger! This guide describes the features and functionality of the application.
 
 ## Table of Contents
 
-1. [Getting Started](#getting-started)
-2. [Managing Projects](#managing-projects)
-3. [Tracking Time](#tracking-time)
-4. [Generating Reports](#generating-reports)
-5. [Backups and Data Safety](#backups-and-data-safety)
-6. [Tips and Best Practices](#tips-and-best-practices)
+1. [Overview](#overview)
+2. [Dashboard](#dashboard)
+3. [Project Management](#project-management)
+4. [Time Tracking](#time-tracking)
+5. [Invoice Management](#invoice-management)
+6. [Reports](#reports)
+7. [Backups and Data Safety](#backups-and-data-safety)
+8. [Settings](#settings)
+9. [Tips and Best Practices](#tips-and-best-practices)
 
-## Getting Started
+## Overview
 
-### First Launch
+TimeLedger is a desktop time tracking application designed for freelancers and side projects. It provides manual time entry (no running timers), project-based tracking, invoice management, and comprehensive reporting capabilities.
 
-When you first open TimeLedger, you'll be prompted to select a backup directory. This is important for data safety!
+### Application Structure
 
-**Recommended locations:**
-- iCloud Drive folder (macOS)
-- Dropbox folder
-- OneDrive folder
-- Any folder that syncs to cloud storage
+The application consists of six main sections accessible via the sidebar:
 
-**Why this matters:**
-- Your data is automatically backed up hourly
-- You can restore data if something goes wrong
-- Your backups are synced across devices via your cloud storage
+- **Dashboard**: Visual overview of time tracking activity
+- **Projects**: Project and client management
+- **Time Entries**: Manual time recording
+- **Invoices**: Invoice creation and management
+- **Reports**: Detailed time tracking reports with export options
+- **Settings**: Application configuration and backup management
 
-### Understanding the Interface
+### Data Storage
 
-TimeLedger has four main sections accessible from the sidebar:
+All data is stored locally in a SQLite database located in your system's application data directory:
+- **macOS**: `~/Library/Application Support/TimeLedger/db.sqlite`
+- **Windows**: `%APPDATA%/TimeLedger/db.sqlite`
+- **Linux**: `~/.config/TimeLedger/db.sqlite`
 
-1. **Projects**: Manage your projects and clients
-2. **Time Entries**: Record your working hours
-3. **Reports**: View and export time tracking reports
-4. **Settings**: Configure backups, change theme, and view app information
+### First Launch Setup
 
-### Customizing the Theme
+On first launch, you'll be prompted to select a backup directory. Choose a cloud-synced folder (iCloud Drive, Dropbox, OneDrive) to ensure automatic backup synchronization across devices.
 
-TimeLedger supports both light and dark themes:
+## Dashboard
 
-1. Go to **Settings**
-2. Find the **Theme** section
-3. Click the toggle button to switch between light and dark mode
-4. Your preference is automatically saved and will persist across app restarts
+The Dashboard provides a visual overview of your time tracking activity.
 
-## Managing Projects
+### Stacked Bar Chart
 
-### Creating a Project
+The chart displays weekly time tracking data for the last 10 calendar weeks:
+- Each bar represents one calendar week (Monday to Sunday)
+- Bars are stacked by project with color-coded segments
+- Total hours are displayed above each bar
+- ISO week numbers are shown below each bar
+- A legend identifies which color represents each project
+- Empty weeks appear as gaps in the chart
 
-1. Click **Projects** in the sidebar
-2. Click the **Add Project** button
-3. Fill in the project details:
-   - **Name** (required): e.g., "Website Redesign", "Client Project"
-   - **Client Name** (optional): e.g., "Acme Corp"
-   - **Hourly Rate** (optional): e.g., "75.00" for $75/hour
-4. Click **Create**
+The chart helps identify work patterns, busy periods, and project distribution over time.
 
-**Tips:**
-- Set an hourly rate if you bill by the hour
-- Use clear, descriptive project names
-- Include the client name for better organization
+### Recent Time Entries
 
-### Editing a Project
+A table displays the 10 most recent time entries with complete details:
+- Date, project name, start time, end time, duration, and description
+- Entries are clickable for quick editing
+- Hover effects provide visual feedback
+- The table provides quick access to review and modify recent work
 
-1. Find the project in the list
-2. Click **Edit**
-3. Make your changes
-4. Click **Update**
+### Empty State
 
-### Deleting a Project
+When no time has been tracked yet, the dashboard displays a message encouraging you to start tracking time.
 
-1. Find the project in the list
-2. Click **Delete**
-3. Confirm the deletion
+## Project Management
 
-**⚠️ Warning:** Deleting a project also deletes all associated time entries!
+Projects organize your time tracking by client or deliverable. Each project can have an optional hourly rate and client name.
 
-## Tracking Time
+### Project Properties
 
-TimeLedger uses **manual time entry** (no running timers). You record time after you've finished working.
+**Required:**
+- **Name**: Descriptive identifier (e.g., "Website Redesign", "Client Project Alpha")
 
-### Adding a Time Entry
+**Optional:**
+- **Client Name**: Associated client or organization
+- **Hourly Rate**: Rate for calculating billable amounts (stored as decimal, e.g., 75.00)
 
-1. Click **Time Entries** in the sidebar
-2. Click **Add Time Entry**
-3. Select the **Project**
-4. Set the **Date** (defaults to today)
-5. Choose how to enter time:
+### Project Operations
 
-#### Option 1: Duration (Recommended for most cases)
+**Creating Projects**: Add new projects by providing a name and optional client/rate information.
 
-1. Select **Duration** radio button
-2. Enter total minutes worked
-3. Example: "90" for 1.5 hours
+**Editing Projects**: Modify any project property at any time. Changes affect future calculations but not historical data.
 
-**Best for:**
-- Tracking completed work sessions
-- Simple, quick entries
-- When exact times don't matter
+**Deleting Projects**: Remove projects when no longer needed. All associated time entries are also deleted (cascade delete).
 
-#### Option 2: Start/End Times
+### Best Practices
 
-1. Select **Start/End Times** radio button
-2. Enter start time (e.g., "09:00")
-3. Enter end time (e.g., "11:30")
-4. Duration is calculated automatically
+- Use clear, descriptive project names for easy identification
+- Set hourly rates even for fixed-price projects to track opportunity cost
+- Include client names to organize multi-client workloads
+- Archive completed projects by exporting data before deletion
 
-**Best for:**
-- When you know exact working hours
-- Billable work requiring precise times
-- Client reporting
+## Time Tracking
 
-6. Add a **Description** (optional but recommended)
-   - Example: "Implemented user authentication"
-   - Example: "Client meeting and requirements gathering"
+TimeLedger uses manual time entry rather than running timers. Time is recorded after work sessions are completed.
 
-7. Click **Create**
+### Time Entry Properties
 
-### Editing a Time Entry
+Each time entry contains:
+- **Project**: Associated project (required)
+- **Date**: Date of work performed (required)
+- **Duration**: Total time in minutes (required)
+- **Start Time**: Optional start time
+- **End Time**: Optional end time
+- **Description**: Optional work description
+- **Billing Status**: Automatically managed (unbilled, in_draft, invoiced)
+- **Invoice ID**: Automatically set when added to an invoice
 
-1. Find the entry in the list
-2. Click **Edit**
-3. Make your changes
-4. Click **Update**
+### Duration Input Methods
 
-### Deleting a Time Entry
+**Duration Entry (Recommended for most cases):**
+- Enter total minutes worked directly
+- Example: 90 minutes = 1.5 hours
+- Best for completed work sessions and quick entries
 
-1. Find the entry in the list
-2. Click **Delete**
-3. Confirm the deletion
+**Start/End Times:**
+- Enter specific start and end times
+- Duration is calculated automatically
+- Best for precise time tracking and billable work requiring exact times
+- Example: Start 09:00, End 11:30 = 150 minutes
 
-## Generating Reports
+### Billing Status
 
-Reports help you understand how you've spent your time and calculate billable amounts.
+Time entries have three billing statuses:
+- **Unbilled**: Available to add to invoices (default)
+- **In Draft**: Added to a draft invoice, can still be edited
+- **Invoiced**: Part of a finalized invoice, locked from editing
 
-### Creating a Report
+### Time Entry Filtering
 
-1. Click **Reports** in the sidebar
-2. Set the **Start Date** and **End Date**
-   - Defaults to current month
-   - Example: Last week, last month, last quarter
-3. (Optional) Select specific projects to include
-   - Leave empty to include all projects
-4. Click **Generate Report**
+Time entries can be filtered by:
+- Project
+- Date range
+- Billing status
+- Search terms in descriptions
 
-### Understanding Report Results
+### Editing and Deletion
 
-The report shows:
+Time entries can be edited or deleted unless they are in "invoiced" status. Invoiced entries must first be released by cancelling the associated invoice.
 
-**Summary Cards:**
-- **Total Hours**: Sum of all tracked time
-- **Total Value**: Revenue based on hourly rates (if set)
+## Invoice Management
+
+TimeLedger helps create and manage invoices from tracked time entries. The invoice system tracks billing status and prevents double-billing.
+
+### Invoice Properties
+
+Each invoice contains:
+- **Invoice Number**: Auto-generated sequential number (format: INV-YYYY-NNN)
+- **Invoice Date**: Date the invoice was created
+- **Status**: Draft, Invoiced, or Cancelled
+- **Total Amount**: Automatically calculated from time entries and hourly rates
+- **Notes**: Optional invoice notes or terms
+- **Cancellation Reason**: Required if invoice is cancelled
+- **Time Entries**: Associated time entries
+
+### Invoice Numbering
+
+Invoice numbers are automatically generated in the format INV-YYYY-NNN:
+- Year resets the counter annually
+- Numbers increment sequentially
+- Cannot be manually changed to ensure consistency
+- Example: INV-2025-001, INV-2025-002, etc.
+
+### Invoice Status Workflow
+
+**Draft Status:**
+- Initial status when created
+- Entries can be added or removed
+- Invoice details can be edited
+- Time entries are marked as "in_draft"
+- Total amount updates automatically
+
+**Invoiced Status:**
+- Reached by finalizing a draft invoice
+- Invoice is locked and cannot be edited
+- Associated time entries are marked as "invoiced"
+- Entries cannot be deleted or modified
+- Entries cannot be added to other invoices
+
+**Cancelled Status:**
+- Reached by cancelling a finalized invoice
+- Requires a cancellation reason
+- Associated time entries return to "unbilled" status
+- Entries become available for re-invoicing
+- Invoice record is preserved for audit trail
+
+### Creating Invoices
+
+Invoices are created from unbilled time entries:
+- Select unbilled entries to include
+- System generates next invoice number automatically
+- Total amount calculated from entry durations and project hourly rates
+- Entries without hourly rates contribute zero value but are still tracked
+- Save as draft for further editing or finalize immediately
+
+### Managing Draft Invoices
+
+Draft invoices support:
+- Adding more unbilled entries
+- Removing entries (returns them to unbilled status)
+- Editing invoice date and notes
+- Recalculation of totals when entries change
+
+### Finalizing Invoices
+
+Finalizing converts a draft to an invoiced status:
+- Locks all associated time entries
+- Prevents further modifications
+- Marks entries as "invoiced" in billing status
+- Cannot be undone (only cancelled)
+
+### Cancelling Invoices
+
+Cancelled invoices:
+- Require a cancellation reason for record-keeping
+- Release time entries back to unbilled status
+- Preserve the invoice record
+- Allow entries to be re-invoiced
+- Common reasons: payment issues, project changes, corrections needed
+
+### Cross-Navigation
+
+The invoice system supports navigation between related items:
+- Time entries display invoice numbers when billed
+- Invoice numbers are clickable to view invoice details
+- Invoices show all included entries
+- Entries can be clicked to navigate to the time entries page with filtering
+
+## Reports
+
+Reports provide detailed analysis of time tracking data with flexible filtering and export options.
+
+### Report Filtering
+
+Reports can be filtered by:
+- **Date Range**: Start and end dates (defaults to current month)
+- **Projects**: Include all or select specific projects
+- **Empty filter**: Includes all projects and data
+
+### Report Contents
+
+Generated reports include:
+
+**Summary Information:**
+- Total hours tracked
+- Total billable value (based on hourly rates)
 
 **Per-Project Breakdown:**
 - Project name and client
-- Total hours worked
-- Total value (hours × hourly rate)
-- Detailed list of all time entries
+- Total hours for each project
+- Total value per project (hours × hourly rate)
+- Detailed list of all time entries for each project
 
-### Exporting Reports
+**Time Entry Details:**
+- Date, start time, end time, duration
+- Description
+- Individual calculations
 
-After generating a report, you can export it in three formats:
+### Export Formats
 
-1. Click **Export CSV** for spreadsheet-compatible format
-   - Opens in Excel, Google Sheets, etc.
-   - Includes detailed entries and summary
-2. Click **Export JSON** for structured data
-   - Useful for custom processing or integrations
-   - Machine-readable format
-3. Click **Export PDF** for professional reports
-   - Ready-to-share format
-   - Includes formatted summary and detailed breakdowns
-   - Perfect for client deliverables
+Reports can be exported in three formats:
 
-**CSV Format:**
-- Individual time entries with all details
-- Summary section at the bottom
-- Easy to import into invoicing software
+**CSV (Comma-Separated Values):**
+- Spreadsheet-compatible format
+- Opens in Excel, Google Sheets, Numbers
+- Includes individual entries and summary data
+- Best for further analysis or manipulation
+- Can be imported into invoicing/accounting software
 
-**JSON Format:**
-- Complete structured data
-- Includes all project and entry information
+**JSON (JavaScript Object Notation):**
+- Structured data format
+- Machine-readable
 - Preserves data types and relationships
+- Useful for integrations, custom processing, or backups
+- Contains complete project and entry information
 
-**PDF Format:**
-- Professional, formatted report
-- Includes summary cards and per-project breakdowns
-- Print-ready for client presentations
-- Automatically saved to your Downloads folder
+**PDF (Portable Document Format):**
+- Professional formatted reports
+- Ready to share with clients
+- Includes summary cards and project breakdowns
+- Print-ready format
+- Automatically saved to Downloads folder
+- Filename format: `timeledger-report-YYYY-MM-DD.pdf`
 
 ## Backups and Data Safety
 
+TimeLedger includes automatic and manual backup functionality to protect your data.
+
 ### Automatic Backups
 
-TimeLedger automatically backs up your data:
+The application creates backups automatically:
+- **Hourly**: While the application is running
+- **On Exit**: When closing the application
 
-- **Every hour** while the app is running
-- **On app exit** when you close the application
+Backups are SQLite database copies stored in your selected backup directory with filename format: `backup-YYYY-MM-DD_HH-mm-ss.sqlite`
 
-Backups are copied to your selected cloud-synced folder.
+### Backup Directory
+
+The backup directory should be:
+- A cloud-synced folder (iCloud Drive, Dropbox, OneDrive)
+- Accessible and writable
+- Monitored by your cloud storage provider
+
+Benefits of cloud-synced backups:
+- Automatic off-site backup
+- Access from multiple devices
+- Protection against local drive failure
+- Version history via cloud provider
 
 ### Manual Backups
 
-To create a backup immediately:
-
-1. Go to **Settings**
-2. Click **Create Backup Now**
-3. Wait for confirmation
-
-**When to use manual backups:**
+Manual backups can be created at any time, useful:
 - Before making major changes
 - After entering important data
-- Before restoring an old backup
+- Before restoring from an old backup
+- Before application updates
 
-### Viewing Backups
+### Backup Management
 
-1. Go to **Settings**
-2. Scroll to **Available Backups** section
-3. View list of all backups with:
-   - Filename (includes date/time)
-   - Creation date
-   - File size
+The Settings page displays:
+- Current backup directory path
+- Last backup timestamp
+- List of available backups with filename, date, and size
 
 ### Restoring from Backup
 
-If you need to restore your data:
+Restoring replaces the current database with a backup copy:
+- Current data is automatically backed up before restore
+- Application must be restarted after restore
+- All current data is replaced with backup data
+- Use with caution—restoration cannot be undone
 
-1. Go to **Settings**
-2. Find the backup you want to restore
-3. Click **Restore**
-4. Confirm the action (reads the warning!)
-5. **Restart the application** for changes to take effect
+### Backup File Format
 
-**⚠️ Important:**
-- Restoring replaces ALL current data
-- A backup of current data is created before restoring
-- You must restart the app after restoring
+Backups are plain SQLite database files:
+- Can be opened with SQLite tools
+- Can be queried directly if needed
+- Compatible with database management tools
+- Can be copied to multiple locations manually
 
-### Changing Backup Directory
+## Settings
 
-1. Go to **Settings**
-2. Click **Select Directory**
-3. Choose a new folder
-4. Future backups will be saved there
-5. Old backups remain in the previous location
+The Settings page provides configuration options and application information.
+
+### Theme Preferences
+
+Toggle between light and dark themes:
+- Light mode: High contrast, suitable for bright environments
+- Dark mode: Reduced eye strain, suitable for low light
+- Preference is saved in localStorage
+- Applies immediately without restart
+
+### Language Preferences
+
+Select your preferred language:
+- **English**: Default language
+- **German (Deutsch)**: Complete German translation
+
+Language changes apply immediately to all interface elements.
+
+### Backup Configuration
+
+Configure backup settings:
+- View current backup directory
+- Change backup directory
+- View last backup timestamp
+- Create manual backups
+- View available backup list
+- Restore from backups
+
+### Application Information
+
+View application metadata:
+- Version number
+- License information
+- Contact information
 
 ## Tips and Best Practices
 
 ### Time Tracking
 
-1. **Track time daily**: Don't wait until the end of the week
-2. **Be consistent**: Use either duration or start/end times, not both
-3. **Add descriptions**: Future you will thank you
-4. **Round appropriately**: Most clients expect 15-minute increments
-5. **Track non-billable time**: Meetings, admin work, etc.
+- Record time daily rather than weekly for accuracy and completeness
+- Choose either duration or start/end times and use consistently
+- Add meaningful descriptions for future reference and client reporting
+- Round to 15-minute increments when required by clients
+- Track non-billable time (meetings, admin work) for productivity analysis
 
 ### Project Organization
 
-1. **One project per client**: Or per major deliverable
-2. **Set hourly rates**: Even for estimates
-3. **Use clear names**: "Website" vs "Acme Corp Website Redesign"
-4. **Archive completed projects**: Delete only if absolutely certain
+- Create one project per client or major deliverable
+- Set hourly rates even for fixed-price projects to track opportunity cost
+- Use descriptive names that remain meaningful over time
+- Export data before deleting completed projects
+
+### Invoice Management
+
+- Create invoices weekly or bi-weekly for steady cash flow
+- Review all entries and totals before finalizing
+- Add payment terms and project references in notes field
+- Document clear cancellation reasons for audit trail
 
 ### Reporting
 
-1. **Weekly reviews**: Generate weekly reports to stay on top of work
-2. **Invoice preparation**: Run reports before creating invoices
-3. **Export regularly**: Keep CSV/PDF backups of major milestones
-4. **Date ranges**: Use consistent periods (weekly, monthly)
-5. **PDF for clients**: Use PDF export for professional client-facing reports
+- Generate weekly reports to monitor productivity and billing
+- Run reports before creating invoices to verify completeness
+- Export important reports as PDF/CSV for permanent records
+- Use consistent date ranges (weekly, monthly, quarterly) for trend analysis
+- Use PDF export for professional client-facing reports
 
 ### Data Safety
 
-1. **Check backup directory**: Ensure it's actually syncing to cloud
-2. **Test restores**: Occasionally verify backups work
-3. **Multiple backup locations**: Consider copying important backups elsewhere
-4. **Before major updates**: Create manual backup
+- Verify backup directory is actively syncing to cloud storage
+- Test backup restoration periodically by checking file sizes and dates
+- Copy critical backups to additional locations manually
+- Create manual backup before major application updates
+- Review backup list regularly to ensure backups are being created
 
-### Keyboard Shortcuts
+### Common Workflows
 
-While TimeLedger doesn't have custom shortcuts yet, you can use:
+- **Daily Routine:** Check Dashboard → Record completed work → Review entries for accuracy
+- **Weekly Invoicing:** Review unbilled entries → Create invoice → Verify totals → Finalize → Export report
+- **Monthly Review:** Generate monthly report → Review project distribution → Identify trends → Export for records
+- **Project Completion:** Generate final report → Export as PDF and CSV → Create manual backup → Archive or delete project
 
-- **Tab**: Navigate between form fields
-- **Enter**: Submit forms
-- **Esc**: Close modals (click outside)
-- **Cmd/Ctrl + ,**: Open Settings (from menu)
-- **Cmd/Ctrl + Q**: Quit application
+## Keyboard and Navigation
 
-## Common Workflows
+**Form Navigation:**
+- Tab: Move between form fields
+- Enter: Submit forms
+- Escape: Close dialogs (by clicking outside)
 
-### Freelancer Daily Routine
+**Application Controls:**
+- Cmd/Ctrl + ,: Open Settings (from menu)
+- Cmd/Ctrl + Q: Quit application
 
-1. Open TimeLedger
-2. For each work session completed:
-   - Add Time Entry
-   - Select project
-   - Enter duration or times
-   - Add description of work done
-3. At end of day, review entries for accuracy
-
-### Weekly Invoicing
-
-1. Go to Reports
-2. Set date range to last week
-3. Select client's project(s)
-4. Generate Report
-5. Export as PDF or CSV
-6. Send PDF to client or use data to create invoice
-
-### Monthly Review
-
-1. Go to Reports
-2. Set date range to last month
-3. Include all projects
-4. Generate Report
-5. Review total hours and distribution
-6. Export for records
-
-### Project Completion
-
-1. Generate final report for project
-2. Export as PDF for client and CSV/JSON for records
-3. Create manual backup
-4. Review all time entries for accuracy
-5. Archive or delete project
+**Mouse Interaction:**
+- Hover: Visual highlighting on interactive elements
+- Click: Navigate, edit, or perform actions
+- Click outside: Close modal dialogs
 
 ## Troubleshooting
 
-### "No projects available" in Time Entries
+### Common Issues
 
-**Solution:** Create a project first before tracking time
+- **"No projects available" when adding time entries:** Create at least one project before tracking time
+- **Cannot export report:** Generate a report first, then export buttons will appear
+- **Backup directory not configured:** Select a backup directory in Settings to enable automatic backups
+- **Application performance:** Large databases (thousands of entries) may slow down. Consider archiving old data by exporting and deleting
+- **Lost data:** Restore from most recent backup in Settings. Application restart required after restore
+- **Database locked error:** Close all instances of the app, delete .db-wal and .db-shm files next to database, restart app
 
-### Cannot export report
+### Advanced Usage
 
-**Solution:** Generate a report first, then export buttons will appear
-
-### Backup directory showing as "Not configured"
-
-**Solution:** Go to Settings and click "Select Directory"
-
-### App feels slow
-
-**Solution:**
-- Check number of time entries (1000s may slow down)
-- Create a new database and restore from backup
-- Archive old data by exporting and deleting
-
-### Lost data
-
-**Solution:**
-1. Don't panic - check backups
-2. Go to Settings
-3. Find most recent backup
-4. Click Restore
-5. Restart app
-
-## Getting Help
-
-If you encounter issues:
-
-1. Check this user guide
-2. Review the README.md for technical details
-3. Check the GitHub issues page
-4. Create a new issue with details
-
-## Advanced Usage
-
-### Database Location
-
-Your data is stored in a SQLite database at:
-- **macOS**: `~/Library/Application Support/TimeLedger/db.sqlite`
-- **Windows**: `%APPDATA%/TimeLedger/db.sqlite`
-- **Linux**: `~/.config/TimeLedger/db.sqlite`
-
-### Direct Database Access
-
+**Direct Database Access:**
 Advanced users can query the database directly using SQLite tools:
-
 ```bash
 sqlite3 ~/Library/Application\ Support/TimeLedger/db.sqlite
 ```
 
-**Tables:**
+**Database Tables:**
 - `projects`: All projects
-- `time_entries`: All time entries
+- `time_entries`: All time entries (includes invoice_id and billing_status)
+- `invoices`: All invoices (draft, invoiced, cancelled)
 - `settings`: Application settings
 
-### Backup File Format
+**Backup Files:**
+Backups are standard SQLite files that can be:
+- Opened with any SQLite tool
+- Queried directly for data extraction
+- Backed up to multiple locations
+- Versioned using your own system
 
-Backups are plain SQLite database files:
-- Can be opened with any SQLite tool
-- Can be queried directly
-- Can be backed up to multiple locations
+## Getting Help
+
+For issues or questions:
+1. Check this user guide for feature explanations
+2. Review README.md for technical information
+3. Check GitHub repository for known issues
+4. Create a new issue with detailed description
 
 ---
 
