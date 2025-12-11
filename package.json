@@ -19,7 +19,7 @@
     "pack": "electron-builder --dir",
     "dist": "electron-builder --mac --arm64 --publish never && npm run postdist",
     "dist:universal": "electron-builder --mac --universal --publish never && npm run postdist",
-    "postdist": "rimraf release/*.blockmap release/*.yml",
+    "postdist": "rimraf release/*.blockmap release/*.yml && electron-rebuild",
     "clean": "rimraf dist",
     "clean:release": "rimraf release",
     "clean:all": "rimraf dist release",
