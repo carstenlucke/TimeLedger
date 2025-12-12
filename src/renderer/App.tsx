@@ -11,6 +11,7 @@ import { I18nProvider, useI18n } from './context/I18nContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { NotificationContainer } from './components/NotificationContainer';
 import { ConfirmationDialog } from './components/ConfirmationDialog';
+import { GlobalSearch } from './components/GlobalSearch';
 
 type Page = 'dashboard' | 'projects' | 'entries' | 'invoices' | 'reports' | 'settings';
 
@@ -100,6 +101,7 @@ const AppContent: React.FC = () => {
               <p>Time Tracking</p>
             </div>
           </div>
+          <GlobalSearch />
           <nav>
             <a
               href="#"

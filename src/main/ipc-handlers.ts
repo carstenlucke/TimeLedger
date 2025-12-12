@@ -254,4 +254,12 @@ export function setupIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.INVOICE_GENERATE_NUMBER, async () => {
     return db.generateNextInvoiceNumber();
   });
+
+  // Search handlers
+  ipcMain.handle(IPC_CHANNELS.SEARCH_GLOBAL, async (_, query: string) => {
+    if (!query || query.trim().length < 2) {
+      return { projects: [], timeEntries: [], invoices: [] };
+    }
+    return db.searchGlobal(query.trim());
+  });
 }

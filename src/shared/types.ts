@@ -98,6 +98,13 @@ export interface AppSettings {
 // Export formats
 export type ExportFormat = 'csv' | 'json' | 'pdf';
 
+// Search types
+export interface SearchResult {
+  projects: Array<Project & { match_field: string }>;
+  timeEntries: Array<TimeEntry & { project_name: string; hourly_rate?: number; match_field: string }>;
+  invoices: Array<Invoice & { match_field: string }>;
+}
+
 // IPC Channel names
 export const IPC_CHANNELS = {
   // Projects
@@ -143,4 +150,7 @@ export const IPC_CHANNELS = {
   INVOICE_CANCEL: 'invoice:cancel',
   INVOICE_GET_UNBILLED_ENTRIES: 'invoice:get-unbilled-entries',
   INVOICE_GENERATE_NUMBER: 'invoice:generate-number',
+
+  // Search
+  SEARCH_GLOBAL: 'search:global',
 } as const;

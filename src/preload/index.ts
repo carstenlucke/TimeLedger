@@ -47,6 +47,9 @@ const IPC_CHANNELS = {
   INVOICE_CANCEL: 'invoice:cancel',
   INVOICE_GET_UNBILLED_ENTRIES: 'invoice:get-unbilled-entries',
   INVOICE_GENERATE_NUMBER: 'invoice:generate-number',
+
+  // Search
+  SEARCH_GLOBAL: 'search:global',
 } as const;
 
 // Define the API that will be exposed to the renderer
@@ -147,6 +150,12 @@ const api = {
       ipcRenderer.invoke(IPC_CHANNELS.INVOICE_GET_UNBILLED_ENTRIES),
     generateNumber: (): Promise<string> =>
       ipcRenderer.invoke(IPC_CHANNELS.INVOICE_GENERATE_NUMBER),
+  },
+
+  // Search methods
+  search: {
+    global: (query: string): Promise<any> =>
+      ipcRenderer.invoke(IPC_CHANNELS.SEARCH_GLOBAL, query),
   },
 };
 

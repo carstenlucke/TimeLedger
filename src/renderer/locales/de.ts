@@ -45,6 +45,17 @@ export const de: TranslationKeys = {
     settings: 'Einstellungen',
   },
 
+  // Search
+  search: {
+    placeholder: 'Projekte, Einträge, Rechnungen suchen...',
+    noResults: 'Keine Ergebnisse gefunden',
+    searching: 'Suche läuft...',
+    projects: 'Projekte',
+    timeEntries: 'Zeiteinträge',
+    invoices: 'Rechnungen',
+    matchedIn: 'Übereinstimmung in',
+  },
+
   // Dashboard
   dashboard: {
     title: 'Dashboard',

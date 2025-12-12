@@ -43,6 +43,17 @@ export const en = {
     settings: 'Settings',
   },
 
+  // Search
+  search: {
+    placeholder: 'Search projects, entries, invoices...',
+    noResults: 'No results found',
+    searching: 'Searching...',
+    projects: 'Projects',
+    timeEntries: 'Time Entries',
+    invoices: 'Invoices',
+    matchedIn: 'Matched in',
+  },
+
   // Dashboard
   dashboard: {
     title: 'Dashboard',

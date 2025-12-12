@@ -283,6 +283,68 @@ export class DatabaseManager {
     return stmt.all(startDate, endDate) as TimeEntry[];
   }
 
+  // Search methods
+  public searchGlobal(query: string): {
+    projects: Array<Project & { match_field: string }>;
+    timeEntries: Array<any>;
+    invoices: Array<Invoice & { match_field: string }>;
+  } {
+    const searchPattern = `%${query}%`;
+
+    // Search Projects (name, client_name)
+    const projectsStmt = this.db.prepare(`
+      SELECT
+        *,
+        CASE
+          WHEN name LIKE ? THEN 'name'
+          WHEN client_name LIKE ? THEN 'client_name'
+          ELSE 'unknown'
+        END as match_field
+      FROM projects
+      WHERE name LIKE ? OR client_name LIKE ?
+      ORDER BY name
+      LIMIT 10
+    `);
+    const projects = projectsStmt.all(searchPattern, searchPattern, searchPattern, searchPattern) as Array<Project & { match_field: string }>;
+
+    // Search Time Entries (description + joined project name)
+    const entriesStmt = this.db.prepare(`
+      SELECT
+        te.*,
+        p.name as project_name,
+        p.hourly_rate,
+        CASE
+          WHEN te.description LIKE ? THEN 'description'
+          WHEN p.name LIKE ? THEN 'project_name'
+          ELSE 'unknown'
+        END as match_field
+      FROM time_entries te
+      LEFT JOIN projects p ON te.project_id = p.id
+      WHERE te.description LIKE ? OR p.name LIKE ?
+      ORDER BY te.date DESC
+      LIMIT 10
+    `);
+    const timeEntries = entriesStmt.all(searchPattern, searchPattern, searchPattern, searchPattern) as any[];
+
+    // Search Invoices (invoice_number, notes)
+    const invoicesStmt = this.db.prepare(`
+      SELECT
+        *,
+        CASE
+          WHEN invoice_number LIKE ? THEN 'invoice_number'
+          WHEN notes LIKE ? THEN 'notes'
+          ELSE 'unknown'
+        END as match_field
+      FROM invoices
+      WHERE invoice_number LIKE ? OR notes LIKE ?
+      ORDER BY invoice_date DESC
+      LIMIT 10
+    `);
+    const invoices = invoicesStmt.all(searchPattern, searchPattern, searchPattern, searchPattern) as Array<Invoice & { match_field: string }>;
+
+    return { projects, timeEntries, invoices };
+  }
+
   // Reporting methods
   public generateReport(filter: ReportFilter): ProjectReport[] {
     const { start_date, end_date, project_ids } = filter;
