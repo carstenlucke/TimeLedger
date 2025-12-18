@@ -10,10 +10,10 @@ const Reports: React.FC = () => {
   const [report, setReport] = useState<ProjectReport[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
-  const [useDateFilter, setUseDateFilter] = useState(true);
+  const [useDateFilter, setUseDateFilter] = useState(false);
   const [filter, setFilter] = useState<ReportFilter>({
-    start_date: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
-    end_date: new Date().toISOString().split('T')[0],
+    start_date: '',
+    end_date: '',
     project_ids: undefined,
   });
   const [selectedProjects, setSelectedProjects] = useState<number[]>([]);
@@ -258,9 +258,6 @@ const Reports: React.FC = () => {
               </button>
               <button className="btn btn-success" onClick={() => handleExport('json')}>
                 {t.reports.exportJSON}
-              </button>
-              <button className="btn btn-success" onClick={() => handleExport('pdf')}>
-                {t.reports.exportPDF}
               </button>
             </>
           )}
