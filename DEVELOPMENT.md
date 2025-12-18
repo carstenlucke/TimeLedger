@@ -28,7 +28,6 @@ This guide provides detailed information for developers working on TimeLedger.
    - Vite
    - better-sqlite3
    - electron-builder
-   - PDFKit (for PDF export)
 
 3. Verify installation:
    ```bash
@@ -179,26 +178,6 @@ The Dashboard provides an overview of time tracking activities:
 - **Color Management**: Uses a 12-color palette for project differentiation
 - **Empty State Handling**: Friendly messages when no data exists
 
-### PDF Export
-
-PDF export uses PDFKit to generate professional reports:
-
-**Implementation:**
-- `src/main/export.ts`: Contains `exportReportAsPDF()` function
-- Generates formatted reports with summary and detailed breakdowns
-- Saves to user's Downloads folder
-- File naming: `timeledger-report-YYYY-MM-DD.pdf`
-
-**Features:**
-- Summary cards with total hours and value
-- Per-project breakdowns with detailed entries
-- Professional formatting with proper spacing
-- Supports theme colors (but generates print-friendly PDFs)
-
-**Dependencies:**
-- `pdfkit`: PDF generation library
-- `@types/pdfkit`: TypeScript definitions
-
 ### Database Schema
 
 #### Projects Table
@@ -281,7 +260,7 @@ src/
 │   ├── index.ts       # Entry point, window management
 │   ├── database.ts    # Database operations
 │   ├── backup.ts      # Backup/restore
-│   ├── export.ts      # Export to CSV/JSON/PDF
+│   ├── export.ts      # Export to CSV/JSON
 │   └── ipc-handlers.ts # IPC communication
 ├── renderer/          # Frontend
 │   ├── pages/         # Page components
@@ -369,7 +348,7 @@ Before each release, test:
 
 **Reports & Export:**
 - [ ] Generate reports with various filters
-- [ ] Export CSV, JSON, and PDF
+- [ ] Export CSV and JSON
 - [ ] Verify data accuracy in exports
 
 **Settings & Backup:**
@@ -469,7 +448,6 @@ SELECT * FROM time_entries;
 **Current formats:**
 - CSV: Tabular format for spreadsheets
 - JSON: Structured data format
-- PDF: Professional reports using PDFKit
 
 ## Performance Optimization
 

@@ -95,9 +95,6 @@ export function setupIpcHandlers(): void {
     } else if (format === 'json') {
       extension = 'json';
       filterName = 'JSON';
-    } else if (format === 'pdf') {
-      extension = 'pdf';
-      filterName = 'PDF';
     } else {
       throw new Error(`Unsupported format: ${format}`);
     }
@@ -118,8 +115,6 @@ export function setupIpcHandlers(): void {
       } else if (format === 'json') {
         const content = exportManager.exportToJSON(report);
         await exportManager.saveToFile(content, result.filePath);
-      } else if (format === 'pdf') {
-        await exportManager.exportToPDF(report, result.filePath);
       }
       return result.filePath;
     }

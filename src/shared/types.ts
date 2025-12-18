@@ -96,7 +96,7 @@ export interface AppSettings {
 }
 
 // Export formats
-export type ExportFormat = 'csv' | 'json' | 'pdf';
+export type ExportFormat = 'csv' | 'json';
 
 // Search types
 export interface SearchResult {

@@ -264,7 +264,7 @@ Generated reports include:
 
 ### Export Formats
 
-Reports can be exported in three formats:
+Reports can be exported in two formats:
 
 **CSV (Comma-Separated Values):**
 - Spreadsheet-compatible format
@@ -279,14 +279,6 @@ Reports can be exported in three formats:
 - Preserves data types and relationships
 - Useful for integrations, custom processing, or backups
 - Contains complete project and entry information
-
-**PDF (Portable Document Format):**
-- Professional formatted reports
-- Ready to share with clients
-- Includes summary cards and project breakdowns
-- Print-ready format
-- Automatically saved to Downloads folder
-- Filename format: `timeledger-report-YYYY-MM-DD.pdf`
 
 ## Backups and Data Safety
 
@@ -409,9 +401,8 @@ View application metadata:
 
 - Generate weekly reports to monitor productivity and billing
 - Run reports before creating invoices to verify completeness
-- Export important reports as PDF/CSV for permanent records
+- Export important reports as CSV/JSON for permanent records
 - Use consistent date ranges (weekly, monthly, quarterly) for trend analysis
-- Use PDF export for professional client-facing reports
 
 ### Data Safety
 
@@ -426,7 +417,7 @@ View application metadata:
 - **Daily Routine:** Check Dashboard → Record completed work → Review entries for accuracy
 - **Weekly Invoicing:** Review unbilled entries → Create invoice → Verify totals → Finalize → Export report
 - **Monthly Review:** Generate monthly report → Review project distribution → Identify trends → Export for records
-- **Project Completion:** Generate final report → Export as PDF and CSV → Create manual backup → Archive or delete project
+- **Project Completion:** Generate final report → Export as CSV or JSON → Create manual backup → Archive or delete project
 
 ## Keyboard and Navigation
 

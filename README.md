@@ -13,7 +13,7 @@ A simple desktop time tracking application for freelancers and side projects. Bu
 - **Billing Status Tracking**: Time entries automatically track billing status (unbilled, in draft, invoiced)
 - **Dashboard**: Overview with weekly bar charts and key statistics
 - **Reporting**: Generate detailed reports by date range and project
-- **Export**: Export reports as CSV, JSON, or PDF
+- **Export**: Export reports as CSV or JSON
 - **Multi-Language Support**: Available in English and German
 - **Dark/Light Theme**: Toggle between dark and light themes for comfortable viewing
 - **Automatic Backups**: Hourly backups and backup on app exit (only when data changed)
@@ -149,7 +149,7 @@ This ensures your data is automatically backed up to the cloud.
 2. Select date range
 3. Optionally filter by specific projects
 4. Click **Generate Report**
-5. Export as CSV, JSON, or PDF if needed
+5. Export as CSV or JSON if needed
 
 ### Managing Backups
 

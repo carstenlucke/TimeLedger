@@ -156,7 +156,6 @@ export const en = {
     export: 'Export',
     exportCSV: 'Export as CSV',
     exportJSON: 'Export as JSON',
-    exportPDF: 'Export as PDF',
     noRestriction: 'No Restriction',
     dateRange: 'Date Range',
   },

@@ -26,11 +26,9 @@
     "postinstall": "node scripts/fix-electron-name.js && electron-rebuild"
   },
   "dependencies": {
-    "@types/pdfkit": "^0.17.4",
     "better-sqlite3": "^9.2.2",
     "electron-log": "^5.0.1",
-    "lucide-react": "^0.458.0",
-    "pdfkit": "^0.17.2"
+    "lucide-react": "^0.458.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.8",
