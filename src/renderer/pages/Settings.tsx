@@ -337,7 +337,7 @@ const Settings: React.FC = () => {
         <p>
           <strong>TimeLedger</strong> - {t.settings.aboutText}
         </p>
-        <p style={{ marginTop: '8px', color: 'var(--text-secondary)', fontSize: '14px' }}>{t.settings.version} {(window as any).__APP_VERSION__}</p>
+        <p style={{ marginTop: '8px', color: 'var(--text-secondary)', fontSize: '14px' }}>{t.settings.version} {__APP_VERSION__}</p>
       </div>
     </div>
   );
