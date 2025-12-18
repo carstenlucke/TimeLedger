@@ -5,12 +5,14 @@ interface ProjectHours {
   projectId: number;
   projectName: string;
   hours: number;
+  revenue: number;
   color: string;
 }
 
 interface WeekData {
   weekLabel: string;
   totalHours: number;
+  totalRevenue: number;
   weekNumber: number;
   year: number;
   projects: ProjectHours[];
@@ -18,10 +20,11 @@ interface WeekData {
 
 interface WeeklyBarChartProps {
   data: WeekData[];
+  metric: 'hours' | 'revenue';
 }
 
-const WeeklyBarChart: React.FC<WeeklyBarChartProps> = ({ data }) => {
-  const { t } = useI18n();
+const WeeklyBarChart: React.FC<WeeklyBarChartProps> = ({ data, metric }) => {
+  const { t, formatCurrency } = useI18n();
 
   if (data.length === 0) {
     return null;
@@ -42,6 +45,13 @@ const WeeklyBarChart: React.FC<WeeklyBarChartProps> = ({ data }) => {
     }
   };
 
+  const formatValue = (value: number): string => {
+    if (metric === 'revenue') {
+      return formatCurrency(value);
+    }
+    return formatHoursMinutes(value);
+  };
+
   // Get all unique projects for legend
   const allProjects = new Map<number, { name: string; color: string }>();
   data.forEach(week => {
@@ -52,7 +62,14 @@ const WeeklyBarChart: React.FC<WeeklyBarChartProps> = ({ data }) => {
     });
   });
 
-  const maxHours = Math.max(...data.map(d => d.totalHours), 1);
+  const getWeekTotal = (week: WeekData): number => (
+    metric === 'revenue' ? week.totalRevenue : week.totalHours
+  );
+  const getProjectValue = (project: ProjectHours): number => (
+    metric === 'revenue' ? project.revenue : project.hours
+  );
+
+  const maxValue = Math.max(...data.map(getWeekTotal), 1);
   const chartHeight = 200;
   const topPadding = 30; // Extra space for labels above bars
   const barWidth = 50;
@@ -78,7 +95,8 @@ const WeeklyBarChart: React.FC<WeeklyBarChartProps> = ({ data }) => {
               <g key={`${week.year}-${week.weekNumber}`}>
                 {/* Stacked bars for each project */}
                 {week.projects.map((project, projIndex) => {
-                  const segmentHeight = (project.hours / maxHours) * chartHeight;
+                  const value = getProjectValue(project);
+                  const segmentHeight = (value / maxValue) * chartHeight;
                   const segmentY = currentY - segmentHeight;
 
                   // Only apply border radius to top segment
@@ -112,7 +130,7 @@ const WeeklyBarChart: React.FC<WeeklyBarChartProps> = ({ data }) => {
                             textShadow: '0 1px 2px rgba(0,0,0,0.3)'
                           }}
                         >
-                          {formatHoursMinutes(project.hours)}
+                          {formatValue(value)}
                         </text>
                       )}
                     </g>
@@ -123,7 +141,7 @@ const WeeklyBarChart: React.FC<WeeklyBarChartProps> = ({ data }) => {
                 })}
 
                 {/* Total hours label on top of bar */}
-                {week.totalHours > 0 && (
+                {getWeekTotal(week) > 0 && (
                   <text
                     x={x + barWidth / 2}
                     y={currentY - 8}
@@ -134,7 +152,7 @@ const WeeklyBarChart: React.FC<WeeklyBarChartProps> = ({ data }) => {
                       fontWeight: '600'
                     }}
                   >
-                    {formatHoursMinutes(week.totalHours)}
+                    {formatValue(getWeekTotal(week))}
                   </text>
                 )}
 

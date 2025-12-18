@@ -73,6 +73,8 @@ export const de: TranslationKeys = {
     week: 'KW',
     clickToEdit: 'Klicken zum Bearbeiten',
     hours: 'Std',
+    hoursToggle: 'Stunden',
+    revenueToggle: 'Umsatz',
   },
 
   // Projects

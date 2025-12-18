@@ -15,12 +15,14 @@ interface WeeklyStat {
 interface WeekData {
   weekLabel: string;
   totalHours: number;
+  totalRevenue: number;
   weekNumber: number;
   year: number;
   projects: Array<{
     projectId: number;
     projectName: string;
     hours: number;
+    revenue: number;
     color: string;
   }>;
 }
@@ -48,6 +50,7 @@ const Dashboard: React.FC = () => {
   const [recentEntries, setRecentEntries] = useState<TimeEntry[]>([]);
   const [weeklyData, setWeeklyData] = useState<WeekData[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [chartMetric, setChartMetric] = useState<'hours' | 'revenue'>('hours');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -65,6 +68,11 @@ const Dashboard: React.FC = () => {
       ]);
 
       setProjects(projectsData);
+
+      const projectMap = new Map<number, Project>();
+      projectsData.forEach((project) => {
+        projectMap.set(project.id, project);
+      });
 
       // Get recent entries (last 10)
       const sortedEntries = [...allEntries].sort((a, b) => {
@@ -88,9 +96,9 @@ const Dashboard: React.FC = () => {
         );
 
         // Group by project
-        const projectHoursMap = new Map<number, { name: string; minutes: number }>();
+        const projectHoursMap = new Map<number, { name: string; minutes: number; hourlyRate: number }>();
         weekEntries.forEach(entry => {
-          const project = projectsData.find(p => p.id === entry.project_id);
+          const project = projectMap.get(entry.project_id);
           if (project) {
             const existing = projectHoursMap.get(entry.project_id);
             if (existing) {
@@ -99,24 +107,32 @@ const Dashboard: React.FC = () => {
               projectHoursMap.set(entry.project_id, {
                 name: project.name,
                 minutes: entry.duration_minutes,
+                hourlyRate: project.hourly_rate || 0,
               });
             }
           }
         });
 
         // Convert to projects array
-        const projects = Array.from(projectHoursMap.entries()).map(([projectId, data]) => ({
-          projectId,
-          projectName: data.name,
-          hours: data.minutes / 60,
-          color: projectColorMap.get(projectId) || PROJECT_COLORS[0],
-        }));
+        const projects = Array.from(projectHoursMap.entries()).map(([projectId, data]) => {
+          const hours = data.minutes / 60;
+          const revenue = hours * data.hourlyRate;
+          return {
+            projectId,
+            projectName: data.name,
+            hours,
+            revenue,
+            color: projectColorMap.get(projectId) || PROJECT_COLORS[0],
+          };
+        });
 
         const totalMinutes = weekEntries.reduce((sum, entry) => sum + entry.duration_minutes, 0);
+        const totalRevenue = projects.reduce((sum, project) => sum + project.revenue, 0);
 
         return {
           weekLabel: `${t.dashboard.week} ${week.weekNumber}`,
           totalHours: totalMinutes / 60,
+          totalRevenue,
           weekNumber: week.weekNumber,
           year: week.year,
           projects,
@@ -197,7 +213,23 @@ const Dashboard: React.FC = () => {
 
       {/* Weekly Bar Chart */}
       <div className="card">
-        <h2>{t.dashboard.lastWeeks}</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <h2>{t.dashboard.lastWeeks}</h2>
+          <div className="btn-group" style={{ marginTop: 0 }}>
+            <button
+              className={`btn ${chartMetric === 'hours' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setChartMetric('hours')}
+            >
+              {t.dashboard.hoursToggle}
+            </button>
+            <button
+              className={`btn ${chartMetric === 'revenue' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setChartMetric('revenue')}
+            >
+              {t.dashboard.revenueToggle}
+            </button>
+          </div>
+        </div>
 
         {weeklyData.length === 0 || weeklyData.every(w => w.totalHours === 0) ? (
           <div className="empty-state">
@@ -205,7 +237,7 @@ const Dashboard: React.FC = () => {
             <p>{t.dashboard.startTracking}</p>
           </div>
         ) : (
-          <WeeklyBarChart data={weeklyData} />
+          <WeeklyBarChart data={weeklyData} metric={chartMetric} />
         )}
       </div>
 

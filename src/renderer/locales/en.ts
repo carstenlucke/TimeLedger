@@ -71,6 +71,8 @@ export const en = {
     week: 'Week',
     clickToEdit: 'Click to edit',
     hours: 'hrs',
+    hoursToggle: 'Hours',
+    revenueToggle: 'Revenue',
   },
 
   // Projects
