@@ -31,6 +31,8 @@ export const en = {
     previous: 'Previous',
     next: 'Next',
     page: 'Page',
+    search: 'Search',
+    searchPlaceholder: 'Search...',
   },
 
   // Navigation

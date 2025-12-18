@@ -33,6 +33,8 @@ export const de: TranslationKeys = {
     previous: 'Zurück',
     next: 'Weiter',
     page: 'Seite',
+    search: 'Suche',
+    searchPlaceholder: 'Suchen...',
   },
 
   // Navigation
