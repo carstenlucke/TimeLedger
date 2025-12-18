@@ -231,7 +231,7 @@ const Settings: React.FC = () => {
       {settings.backup_directory && (
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h2>{t.settings.availableBackups}</h2>
+            <h2>{t.settings.availableBackups} ({backups.length})</h2>
             {backups.length > 0 && (
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>{t.common.show}:</span>
