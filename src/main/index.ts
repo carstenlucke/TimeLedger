@@ -147,7 +147,7 @@ async function setupBackupSchedule(): Promise<void> {
     const dir = await backupManager.selectBackupDirectory();
     if (dir) {
       db.updateSettings({ backup_directory: dir });
-      await createBackup();
+      await createBackup({ force: true });
     }
   }
 
@@ -157,15 +157,24 @@ async function setupBackupSchedule(): Promise<void> {
   }, 60 * 60 * 1000); // 1 hour
 }
 
-async function createBackup(): Promise<void> {
+async function createBackup(options: { force?: boolean } = {}): Promise<void> {
   try {
     const db = getDatabase();
     const settings = db.getSettings();
 
     if (settings.backup_directory) {
+      if (!options.force) {
+        const dataVersion = db.getDataVersion();
+        const lastBackupVersion = db.getLastBackupVersion();
+        if (dataVersion <= lastBackupVersion) {
+          return;
+        }
+      }
+
       const backupManager = new BackupManager(db.getDbPath());
       await backupManager.createBackup(settings.backup_directory);
       db.updateSettings({ last_backup: new Date().toISOString() });
+      db.setLastBackupVersion(db.getDataVersion());
     }
   } catch (error) {
     console.error('Backup failed:', error);

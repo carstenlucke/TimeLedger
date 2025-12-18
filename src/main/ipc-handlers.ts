@@ -153,6 +153,7 @@ export function setupIpcHandlers(): void {
 
     const backupPath = await backupManager.createBackup(settings.backup_directory);
     db.updateSettings({ last_backup: new Date().toISOString() });
+    db.setLastBackupVersion(db.getDataVersion());
     return backupPath;
   });
 

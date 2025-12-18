@@ -92,6 +92,24 @@ export class DatabaseManager {
       )
     `);
 
+    // Create metadata table for versioning
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS meta (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    `);
+
+    // Initialize metadata values if missing
+    this.db.exec(`
+      INSERT INTO meta (key, value) VALUES ('data_version', '1')
+      ON CONFLICT(key) DO NOTHING
+    `);
+    this.db.exec(`
+      INSERT INTO meta (key, value) VALUES ('last_backup_version', '0')
+      ON CONFLICT(key) DO NOTHING
+    `);
+
     // Add invoice-related columns to time_entries if they don't exist
     try {
       this.db.exec(`ALTER TABLE time_entries ADD COLUMN invoice_id INTEGER REFERENCES invoices(id)`);
@@ -123,6 +141,7 @@ export class DatabaseManager {
       VALUES (?, ?, ?, datetime('now'), datetime('now'))
     `);
     const result = stmt.run(input.name, input.hourly_rate, input.client_name);
+    this.bumpDataVersion();
     return this.getProjectById(result.lastInsertRowid as number)!;
   }
 
@@ -150,12 +169,14 @@ export class DatabaseManager {
       UPDATE projects SET ${updates.join(', ')} WHERE id = ?
     `);
     stmt.run(...values);
+    this.bumpDataVersion();
     return this.getProjectById(id)!;
   }
 
   public deleteProject(id: number): void {
     const stmt = this.db.prepare('DELETE FROM projects WHERE id = ?');
     stmt.run(id);
+    this.bumpDataVersion();
   }
 
   public getAllProjects(): Project[] {
@@ -195,6 +216,7 @@ export class DatabaseManager {
       durationMinutes,
       input.description
     );
+    this.bumpDataVersion();
     return this.getTimeEntryById(result.lastInsertRowid as number)!;
   }
 
@@ -251,12 +273,14 @@ export class DatabaseManager {
       UPDATE time_entries SET ${updates.join(', ')} WHERE id = ?
     `);
     stmt.run(...values);
+    this.bumpDataVersion();
     return this.getTimeEntryById(id)!;
   }
 
   public deleteTimeEntry(id: number): void {
     const stmt = this.db.prepare('DELETE FROM time_entries WHERE id = ?');
     stmt.run(id);
+    this.bumpDataVersion();
   }
 
   public getAllTimeEntries(): TimeEntry[] {
@@ -427,6 +451,45 @@ export class DatabaseManager {
     stmt.run(key, value);
   }
 
+  private getMeta(key: string): string | undefined {
+    const stmt = this.db.prepare('SELECT value FROM meta WHERE key = ?');
+    const result = stmt.get(key) as { value: string } | undefined;
+    return result?.value;
+  }
+
+  private setMeta(key: string, value: string): void {
+    const stmt = this.db.prepare(`
+      INSERT INTO meta (key, value) VALUES (?, ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value
+    `);
+    stmt.run(key, value);
+  }
+
+  private getMetaNumber(key: string, defaultValue: number): number {
+    const value = this.getMeta(key);
+    const parsed = value ? Number.parseInt(value, 10) : NaN;
+    return Number.isFinite(parsed) ? parsed : defaultValue;
+  }
+
+  private bumpDataVersion(): void {
+    this.db.prepare(`
+      INSERT INTO meta (key, value) VALUES ('data_version', '1')
+      ON CONFLICT(key) DO UPDATE SET value = CAST(value AS INTEGER) + 1
+    `).run();
+  }
+
+  public getDataVersion(): number {
+    return this.getMetaNumber('data_version', 0);
+  }
+
+  public getLastBackupVersion(): number {
+    return this.getMetaNumber('last_backup_version', 0);
+  }
+
+  public setLastBackupVersion(version: number): void {
+    this.setMeta('last_backup_version', String(version));
+  }
+
   public getSettings(): AppSettings {
     return {
       backup_directory: this.getSetting('backup_directory'),
@@ -456,6 +519,7 @@ export class DatabaseManager {
       input.total_amount || 0,
       input.notes
     );
+    this.bumpDataVersion();
     return this.getInvoiceById(result.lastInsertRowid as number)!;
   }
 
@@ -495,6 +559,7 @@ export class DatabaseManager {
       UPDATE invoices SET ${updates.join(', ')} WHERE id = ?
     `);
     stmt.run(...values);
+    this.bumpDataVersion();
     return this.getInvoiceById(id)!;
   }
 
@@ -510,6 +575,7 @@ export class DatabaseManager {
     // Delete the invoice
     const stmt = this.db.prepare('DELETE FROM invoices WHERE id = ?');
     stmt.run(id);
+    this.bumpDataVersion();
   }
 
   public getAllInvoices(): Invoice[] {
@@ -575,6 +641,7 @@ export class DatabaseManager {
 
     // Recalculate invoice total
     this.recalculateInvoiceTotal(invoiceId);
+    this.bumpDataVersion();
   }
 
   public removeTimeEntriesFromInvoice(entryIds: number[]): void {
@@ -604,6 +671,7 @@ export class DatabaseManager {
     for (const invoiceId of invoiceIds) {
       this.recalculateInvoiceTotal(invoiceId);
     }
+    this.bumpDataVersion();
   }
 
   public finalizeInvoice(id: number): Invoice {
@@ -627,6 +695,7 @@ export class DatabaseManager {
     `);
     updateEntriesStmt.run(id);
 
+    this.bumpDataVersion();
     return this.getInvoiceById(id)!;
   }
 
@@ -653,6 +722,7 @@ export class DatabaseManager {
     `);
     updateEntriesStmt.run(id);
 
+    this.bumpDataVersion();
     return this.getInvoiceById(id)!;
   }
 
