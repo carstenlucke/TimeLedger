@@ -1,16 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
-import type { TimeEntry, Project, ProjectReport } from '../../shared/types';
+import type { TimeEntry, Project } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
 import { AppContext } from '../App';
 import WeeklyBarChart from '../components/WeeklyBarChart';
-
-interface WeeklyStat {
-  project_id: number;
-  project_name: string;
-  total_hours: number;
-  total_value?: number;
-}
 
 interface WeekData {
   weekLabel: string;
@@ -45,7 +38,7 @@ const PROJECT_COLORS = [
 
 const Dashboard: React.FC = () => {
   const { showNotification } = useNotification();
-  const { t, formatCurrency, formatNumber } = useI18n();
+  const { t } = useI18n();
   const { navigateToPage } = useContext(AppContext);
   const [recentEntries, setRecentEntries] = useState<TimeEntry[]>([]);
   const [weeklyData, setWeeklyData] = useState<WeekData[]>([]);
