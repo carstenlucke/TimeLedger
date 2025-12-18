@@ -294,7 +294,7 @@ TimeLedger includes automatic and manual backup functionality to protect your da
 
 ### Automatic Backups
 
-The application creates backups automatically:
+The application creates backups automatically when data has changed since the last backup:
 - **Hourly**: While the application is running
 - **On Exit**: When closing the application
 
@@ -315,7 +315,7 @@ Benefits of cloud-synced backups:
 
 ### Manual Backups
 
-Manual backups can be created at any time, useful:
+Manual backups can be created at any time (even if no data changed), useful:
 - Before making major changes
 - After entering important data
 - Before restoring from an old backup

@@ -16,7 +16,7 @@ A simple desktop time tracking application for freelancers and side projects. Bu
 - **Export**: Export reports as CSV, JSON, or PDF
 - **Multi-Language Support**: Available in English and German
 - **Dark/Light Theme**: Toggle between dark and light themes for comfortable viewing
-- **Automatic Backups**: Hourly automatic backups and backup on app exit
+- **Automatic Backups**: Hourly backups and backup on app exit (only when data changed)
 - **Cloud Sync**: Store backups in iCloud, Dropbox, OneDrive, or any synced folder
 - **Cross-Platform**: Works on macOS, Windows, and Linux
 
@@ -170,10 +170,11 @@ The SQLite database is stored at:
 
 ### Backup System
 
-- Automatic backups occur every hour
-- Backup created on app exit
+- Automatic backups occur every hour if data changed since the last backup
+- Backup created on app exit if data changed since the last backup
 - Backups are stored in your selected cloud-synced folder
 - Backup filename format: `backup-YYYY-MM-DD_HH-mm-ss.sqlite`
+- Manual backups can be created at any time from Settings
 
 ## Building for Production
 
