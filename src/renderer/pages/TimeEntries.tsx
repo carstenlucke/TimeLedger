@@ -27,6 +27,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedEntries, setSelectedEntries] = useState<Set<number>>(new Set());
   const [formData, setFormData] = useState<TimeEntryInput>({
     project_id: 0,
@@ -410,6 +411,22 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
       filtered = filtered.filter(entry => entry.date <= dateTo);
     }
 
+    if (searchQuery.trim()) {
+      const query = searchQuery.trim().toLowerCase();
+      filtered = filtered.filter((entry) => {
+        const projectName = getProjectName(entry.project_id);
+        const haystack = [
+          entry.date,
+          entry.start_time || '',
+          entry.end_time || '',
+          entry.description || '',
+          entry.billing_status || '',
+          projectName,
+        ].join(' ').toLowerCase();
+        return haystack.includes(query);
+      });
+    }
+
     // Sort
     filtered.sort((a, b) => {
       let comparison = 0;
@@ -470,13 +487,30 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
       </div>
 
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
           <h2>
             {projectFilter ? `${t.timeEntries.title}: ${getFilteredProjectName()}` : t.timeEntries.allEntries}
           </h2>
-          <button className="btn btn-primary" onClick={handleAddNew}>
-            {t.timeEntries.addEntry}
-          </button>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <input
+                type="text"
+                id="filter-search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    e.preventDefault();
+                    setSearchQuery('');
+                  }
+                }}
+                placeholder={t.common.searchPlaceholder}
+              />
+            </div>
+            <button className="btn btn-primary" onClick={handleAddNew}>
+              {t.timeEntries.addEntry}
+            </button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -517,13 +551,14 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
             </div>
           </div>
           <div style={{ display: 'flex', gap: '12px', marginTop: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-            {(projectFilter || dateFrom || dateTo) && (
+            {(projectFilter || dateFrom || dateTo || searchQuery) && (
               <button
                 className="btn btn-secondary"
                 onClick={() => {
                   setProjectFilter(undefined);
                   setDateFrom('');
                   setDateTo('');
+                  setSearchQuery('');
                 }}
               >
                 {t.common.clearFilter}
@@ -552,8 +587,10 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
 
         {filteredEntries.length === 0 ? (
           <div className="empty-state">
-            <h3>{projectFilter ? t.timeEntries.noEntriesForProject : t.timeEntries.noEntries}</h3>
-            <p>{t.timeEntries.createFirst}</p>
+            <h3>
+              {searchQuery.trim() ? t.search.noResults : (projectFilter ? t.timeEntries.noEntriesForProject : t.timeEntries.noEntries)}
+            </h3>
+            {!searchQuery.trim() && <p>{t.timeEntries.createFirst}</p>}
             <button className="btn btn-primary" onClick={handleAddNew}>
               {t.timeEntries.createEntry}
             </button>

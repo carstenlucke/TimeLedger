@@ -16,6 +16,7 @@ const Projects: React.FC = () => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [projectEntries, setProjectEntries] = useState<TimeEntry[]>([]);
   const [loadingEntries, setLoadingEntries] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState<ProjectInput>({
     name: '',
     hourly_rate: undefined,
@@ -168,6 +169,19 @@ const Projects: React.FC = () => {
     return getTotalHours() * selectedProject.hourly_rate;
   };
 
+  const normalizeSearchValue = (value: string): string => value.toLowerCase();
+
+  const filteredProjects = projects.filter((project) => {
+    if (!searchQuery.trim()) return true;
+    const query = normalizeSearchValue(searchQuery.trim());
+    const haystack = [
+      project.name,
+      project.client_name || '',
+      project.hourly_rate !== undefined ? String(project.hourly_rate) : '',
+    ].join(' ').toLowerCase();
+    return haystack.includes(query);
+  });
+
   if (isLoading) {
     return <div className="loading">{t.common.loading}</div>;
   }
@@ -180,11 +194,28 @@ const Projects: React.FC = () => {
       </div>
 
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
           <h2>{t.projects.allProjects}</h2>
-          <button className="btn btn-primary" onClick={handleAddNew}>
-            {t.projects.addProject}
-          </button>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <input
+                id="project-search"
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    e.preventDefault();
+                    setSearchQuery('');
+                  }
+                }}
+                placeholder={t.common.searchPlaceholder}
+              />
+            </div>
+            <button className="btn btn-primary" onClick={handleAddNew}>
+              {t.projects.addProject}
+            </button>
+          </div>
         </div>
 
         {projects.length === 0 ? (
@@ -197,49 +228,56 @@ const Projects: React.FC = () => {
           </div>
         ) : (
           <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>{t.projects.projectName}</th>
-                  <th>{t.projects.client}</th>
-                  <th>{t.projects.hourlyRate}</th>
-                  <th>{t.common.actions}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {projects.map((project) => (
-                  <tr key={project.id}>
-                    <td>
-                      <span
-                        onClick={() => handleProjectClick(project)}
-                        style={{
-                          cursor: 'pointer',
-                          color: 'var(--accent-blue)',
-                          fontWeight: '500',
-                          transition: 'opacity 0.2s',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
-                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-                      >
-                        {project.name}
-                      </span>
-                    </td>
-                    <td>{project.client_name || '-'}</td>
-                    <td>{project.hourly_rate ? formatCurrency(project.hourly_rate) : '-'}</td>
-                    <td>
-                      <div className="table-actions">
-                        <button className="btn btn-secondary" onClick={() => handleEdit(project)}>
-                          {t.common.edit}
-                        </button>
-                        <button className="btn btn-danger" onClick={() => handleDelete(project.id)}>
-                          {t.common.delete}
-                        </button>
-                      </div>
-                    </td>
+
+            {filteredProjects.length === 0 ? (
+              <div className="empty-state">
+                <h3>{t.search.noResults}</h3>
+              </div>
+            ) : (
+              <table>
+                <thead>
+                  <tr>
+                    <th>{t.projects.projectName}</th>
+                    <th>{t.projects.client}</th>
+                    <th>{t.projects.hourlyRate}</th>
+                    <th>{t.common.actions}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredProjects.map((project) => (
+                    <tr key={project.id}>
+                      <td>
+                        <span
+                          onClick={() => handleProjectClick(project)}
+                          style={{
+                            cursor: 'pointer',
+                            color: 'var(--accent-blue)',
+                            fontWeight: '500',
+                            transition: 'opacity 0.2s',
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
+                          onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                        >
+                          {project.name}
+                        </span>
+                      </td>
+                      <td>{project.client_name || '-'}</td>
+                      <td>{project.hourly_rate ? formatCurrency(project.hourly_rate) : '-'}</td>
+                      <td>
+                        <div className="table-actions">
+                          <button className="btn btn-secondary" onClick={() => handleEdit(project)}>
+                            {t.common.edit}
+                          </button>
+                          <button className="btn btn-danger" onClick={() => handleDelete(project.id)}>
+                            {t.common.delete}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
       </div>

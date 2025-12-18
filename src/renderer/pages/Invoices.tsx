@@ -21,6 +21,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
   const [selectedEntryIds, setSelectedEntryIds] = useState<number[]>([]);
   const [cancellationReason, setCancellationReason] = useState('');
   const [isEditingFields, setIsEditingFields] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [formData, setFormData] = useState({
     invoice_number: '',
@@ -275,6 +276,19 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
     );
   };
 
+  const filteredInvoices = invoices.filter((invoice) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.trim().toLowerCase();
+    const haystack = [
+      invoice.invoice_number,
+      invoice.invoice_date,
+      invoice.status,
+      invoice.notes || '',
+      String(invoice.total_amount),
+    ].join(' ').toLowerCase();
+    return haystack.includes(query);
+  });
+
   if (loading) {
     return <div className="page">{t.common.loading}</div>;
   }
@@ -298,76 +312,99 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
         </div>
       ) : (
         <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
             <h2>{t.invoices.allInvoices}</h2>
-            <button className="btn btn-primary" onClick={handleCreate}>
-              {t.invoices.addInvoice}
-            </button>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <input
+                  id="invoice-search"
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      e.preventDefault();
+                      setSearchQuery('');
+                    }
+                  }}
+                  placeholder={t.common.searchPlaceholder}
+                />
+              </div>
+              <button className="btn btn-primary" onClick={handleCreate}>
+                {t.invoices.addInvoice}
+              </button>
+            </div>
           </div>
           <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>{t.invoices.invoiceNumber}</th>
-                  <th>{t.invoices.invoiceDate}</th>
-                  <th>{t.invoices.status}</th>
-                  <th>{t.invoices.totalAmount}</th>
-                  <th>{t.common.actions}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoices.map((invoice) => (
-                  <tr key={invoice.id}>
-                    <td>
-                      <span
-                        onClick={() => loadInvoiceDetails(invoice.id)}
-                        style={{
-                          cursor: 'pointer',
-                          color: 'var(--accent-blue)',
-                          fontWeight: '500',
-                          transition: 'opacity 0.2s',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
-                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-                      >
-                        {invoice.invoice_number}
-                      </span>
-                    </td>
-                    <td>{new Date(invoice.invoice_date).toLocaleDateString()}</td>
-                    <td>{getStatusBadge(invoice.status)}</td>
-                    <td>{formatCurrency(invoice.total_amount)}</td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        {invoice.status === 'draft' && (
-                          <>
-                            <button
-                              className="btn btn-success btn-sm"
-                              onClick={() => handleFinalize(invoice)}
-                            >
-                              {t.invoices.finalize}
-                            </button>
+            {filteredInvoices.length === 0 ? (
+              <div className="empty-state">
+                <h2>{t.search.noResults}</h2>
+              </div>
+            ) : (
+              <table>
+                <thead>
+                  <tr>
+                    <th>{t.invoices.invoiceNumber}</th>
+                    <th>{t.invoices.invoiceDate}</th>
+                    <th>{t.invoices.status}</th>
+                    <th>{t.invoices.totalAmount}</th>
+                    <th>{t.common.actions}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredInvoices.map((invoice) => (
+                    <tr key={invoice.id}>
+                      <td>
+                        <span
+                          onClick={() => loadInvoiceDetails(invoice.id)}
+                          style={{
+                            cursor: 'pointer',
+                            color: 'var(--accent-blue)',
+                            fontWeight: '500',
+                            transition: 'opacity 0.2s',
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
+                          onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                        >
+                          {invoice.invoice_number}
+                        </span>
+                      </td>
+                      <td>{new Date(invoice.invoice_date).toLocaleDateString()}</td>
+                      <td>{getStatusBadge(invoice.status)}</td>
+                      <td>{formatCurrency(invoice.total_amount)}</td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          {invoice.status === 'draft' && (
+                            <>
+                              <button
+                                className="btn btn-success btn-sm"
+                                onClick={() => handleFinalize(invoice)}
+                              >
+                                {t.invoices.finalize}
+                              </button>
+                              <button
+                                className="btn btn-danger btn-sm"
+                                onClick={() => handleDelete(invoice)}
+                              >
+                                {t.common.delete}
+                              </button>
+                            </>
+                          )}
+                          {invoice.status === 'cancelled' && (
                             <button
                               className="btn btn-danger btn-sm"
                               onClick={() => handleDelete(invoice)}
                             >
                               {t.common.delete}
                             </button>
-                          </>
-                        )}
-                        {invoice.status === 'cancelled' && (
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => handleDelete(invoice)}
-                          >
-                            {t.common.delete}
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}
