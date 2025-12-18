@@ -1266,11 +1266,13 @@ table tbody tr:hover {
   background-color: transparent;
   border: none;
   transition: all 0.2s;
+  color: var(--text-secondary);
 }
 
 .copy-btn:hover:not(:disabled) {
   background-color: var(--hover-overlay);
   transform: translateY(-1px);
+  color: var(--text-primary);
 }
 
 .copy-btn:active {

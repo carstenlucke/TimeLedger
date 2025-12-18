@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import type { TimeEntry, TimeEntryInput, Project, Invoice, InvoiceWithEntries } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
-import CopyIcon from '../components/CopyIcon';
+import { Copy } from 'lucide-react';
 import { AppContext } from '../App';
 
 interface TimeEntriesProps {
@@ -12,7 +12,7 @@ interface TimeEntriesProps {
 
 const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initialEntryId }) => {
   const { showNotification, showConfirmation } = useNotification();
-  const { t, formatCurrency, formatNumber } = useI18n();
+  const { t, formatCurrency } = useI18n();
   const { navigateToPage } = useContext(AppContext);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -535,7 +535,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
                 onClick={handleCopyAllVisible}
                 title={`Copy all ${filteredEntries.length} visible entries`}
               >
-                <CopyIcon size={16} /> Copy All Visible ({filteredEntries.length})
+                <Copy size={16} strokeWidth={1.75} /> Copy All Visible ({filteredEntries.length})
               </button>
             )}
             {selectedEntries.size > 0 && (
@@ -544,7 +544,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
                 onClick={handleCopySelected}
                 title={`Copy ${selectedEntries.size} selected entries`}
               >
-                <CopyIcon size={16} /> Copy Selected ({selectedEntries.size})
+                <Copy size={16} strokeWidth={1.75} /> Copy Selected ({selectedEntries.size})
               </button>
             )}
           </div>
@@ -665,7 +665,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
                             onClick={() => handleCopySingle(entry)}
                             title="Copy entry"
                           >
-                            <CopyIcon size={16} />
+                            <Copy size={16} strokeWidth={1.75} />
                           </button>
                           <button className="btn btn-secondary" onClick={() => handleEdit(entry)}>
                             {t.common.edit}
