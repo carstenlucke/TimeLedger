@@ -85,18 +85,37 @@ const WeeklyBarChart: React.FC<WeeklyBarChartProps> = ({ data }) => {
                   const isTopSegment = projIndex === week.projects.length - 1;
 
                   const segment = (
-                    <rect
-                      key={`${week.year}-${week.weekNumber}-${project.projectId}`}
-                      x={x}
-                      y={segmentY}
-                      width={barWidth}
-                      height={segmentHeight}
-                      fill={project.color}
-                      rx={isTopSegment ? 4 : 0}
-                      style={{
-                        clipPath: isTopSegment ? undefined : 'inset(0 0 -4px 0)'
-                      }}
-                    />
+                    <g key={`${week.year}-${week.weekNumber}-${project.projectId}`}>
+                      <rect
+                        x={x}
+                        y={segmentY}
+                        width={barWidth}
+                        height={segmentHeight}
+                        fill={project.color}
+                        rx={isTopSegment ? 4 : 0}
+                        style={{
+                          clipPath: isTopSegment ? undefined : 'inset(0 0 -4px 0)'
+                        }}
+                      />
+                      {/* Show hours for each segment only if there are multiple projects and segment is large enough */}
+                      {week.projects.length > 1 && segmentHeight > 25 && (
+                        <text
+                          x={x + barWidth / 2}
+                          y={segmentY + segmentHeight / 2}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          style={{
+                            fontSize: '10px',
+                            fill: 'white',
+                            fontWeight: '600',
+                            pointerEvents: 'none',
+                            textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                          }}
+                        >
+                          {formatHoursMinutes(project.hours)}
+                        </text>
+                      )}
+                    </g>
                   );
 
                   currentY = segmentY;

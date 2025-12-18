@@ -238,7 +238,7 @@ const Settings: React.FC = () => {
                 <select
                   value={backupPageSize}
                   onChange={(e) => handlePageSizeChange(e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value))}
-                  style={{ padding: '6px 12px', fontSize: '14px' }}
+                  style={{ padding: '6px 12px', fontSize: '14px', minWidth: '80px' }}
                 >
                   <option value={20}>20</option>
                   <option value={50}>50</option>
@@ -337,7 +337,7 @@ const Settings: React.FC = () => {
         <p>
           <strong>TimeLedger</strong> - {t.settings.aboutText}
         </p>
-        <p style={{ marginTop: '8px', color: 'var(--text-secondary)', fontSize: '14px' }}>{t.settings.version} 1.0.0</p>
+        <p style={{ marginTop: '8px', color: 'var(--text-secondary)', fontSize: '14px' }}>{t.settings.version} {(window as any).__APP_VERSION__}</p>
       </div>
     </div>
   );

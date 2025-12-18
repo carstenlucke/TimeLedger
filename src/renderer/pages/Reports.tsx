@@ -101,96 +101,148 @@ const Reports: React.FC = () => {
       <div className="card">
         <h2>{t.reports.generateReport}</h2>
 
-        <div className="form-group">
-          <label>{t.reports.dateRange}</label>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              className={!useDateFilter ? 'btn btn-primary' : 'btn btn-secondary'}
-              onClick={() => {
-                setUseDateFilter(false);
-                setFilter({ ...filter, start_date: '', end_date: '' });
-              }}
-              style={{ minWidth: '180px' }}
-            >
-              {t.reports.noRestriction}
-            </button>
+        {/* Date Range Filter Section */}
+        <div style={{
+          padding: '16px',
+          backgroundColor: 'var(--bg-secondary)',
+          borderRadius: '8px',
+          marginBottom: '20px',
+          border: '1px solid var(--border-secondary)',
+        }}>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label style={{ fontSize: '15px', fontWeight: '600', marginBottom: '12px', display: 'block' }}>
+              {t.reports.dateRange}
+            </label>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '180px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '500', marginBottom: 0, visibility: 'hidden' }}>
+                  {/* Invisible label for alignment */}
+                </label>
+                <button
+                  type="button"
+                  className={!useDateFilter ? 'btn btn-primary' : 'btn btn-secondary'}
+                  onClick={() => {
+                    setUseDateFilter(false);
+                    setFilter({ ...filter, start_date: '', end_date: '' });
+                  }}
+                  style={{ width: '100%' }}
+                >
+                  {t.reports.noRestriction}
+                </button>
+              </div>
 
-            {useDateFilter && (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <label htmlFor="start_date" style={{ marginBottom: 0, fontSize: '14px' }}>
-                    {t.reports.startDate}:
-                  </label>
-                  <input
-                    type="date"
-                    id="start_date"
-                    value={filter.start_date}
-                    onChange={(e) => setFilter({ ...filter, start_date: e.target.value })}
-                    style={{ flex: 'none' }}
-                  />
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <label htmlFor="end_date" style={{ marginBottom: 0, fontSize: '14px' }}>
-                    {t.reports.endDate}:
-                  </label>
-                  <input
-                    type="date"
-                    id="end_date"
-                    value={filter.end_date}
-                    onChange={(e) => setFilter({ ...filter, end_date: e.target.value })}
-                    style={{ flex: 'none' }}
-                  />
-                </div>
-              </>
-            )}
+              {useDateFilter && (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '200px' }}>
+                    <label htmlFor="start_date" style={{ marginBottom: 0, fontSize: '13px', fontWeight: '500' }}>
+                      {t.reports.startDate}
+                    </label>
+                    <input
+                      type="date"
+                      id="start_date"
+                      value={filter.start_date}
+                      onChange={(e) => setFilter({ ...filter, start_date: e.target.value })}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '200px' }}>
+                    <label htmlFor="end_date" style={{ marginBottom: 0, fontSize: '13px', fontWeight: '500' }}>
+                      {t.reports.endDate}
+                    </label>
+                    <input
+                      type="date"
+                      id="end_date"
+                      value={filter.end_date}
+                      onChange={(e) => setFilter({ ...filter, end_date: e.target.value })}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                </>
+              )}
 
-            {!useDateFilter && (
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => {
-                  setUseDateFilter(true);
-                  setFilter({
-                    ...filter,
-                    start_date: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
-                    end_date: new Date().toISOString().split('T')[0],
-                  });
-                }}
-                style={{ minWidth: '180px' }}
-              >
-                {t.reports.dateRange}
-              </button>
-            )}
+              {!useDateFilter && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setUseDateFilter(true);
+                    setFilter({
+                      ...filter,
+                      start_date: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+                      end_date: new Date().toISOString().split('T')[0],
+                    });
+                  }}
+                  style={{ minWidth: '180px' }}
+                >
+                  {t.reports.dateRange}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
+        {/* Project Filter Section */}
         {projects.length > 0 && (
-          <div className="form-group">
-            <label>{t.common.project} ({t.reports.allProjects})</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '8px' }}>
-              {projects.map((project) => (
-                <label
-                  key={project.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '6px 12px',
-                    border: '1px solid var(--border-secondary)',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    backgroundColor: selectedProjects.includes(project.id) ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedProjects.includes(project.id)}
-                    onChange={() => toggleProject(project.id)}
-                  />
-                  {project.name}
-                </label>
-              ))}
+          <div style={{
+            padding: '16px',
+            backgroundColor: 'var(--bg-secondary)',
+            borderRadius: '8px',
+            marginBottom: '20px',
+            border: '1px solid var(--border-secondary)',
+          }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label style={{ fontSize: '15px', fontWeight: '600', marginBottom: '12px', display: 'block' }}>
+                {t.common.project} ({t.reports.allProjects})
+              </label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {projects.map((project) => (
+                  <button
+                    key={project.id}
+                    type="button"
+                    onClick={() => toggleProject(project.id)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 14px',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      backgroundColor: selectedProjects.includes(project.id) ? 'var(--accent-blue)' : 'var(--bg-tertiary)',
+                      color: selectedProjects.includes(project.id) ? 'white' : 'var(--text-primary)',
+                      fontWeight: selectedProjects.includes(project.id) ? '600' : '500',
+                      fontSize: '14px',
+                      transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      const el = e.currentTarget as HTMLButtonElement;
+                      if (!selectedProjects.includes(project.id)) {
+                        el.style.backgroundColor = 'var(--bg-secondary)';
+                        el.style.boxShadow = '0 0 0 2px var(--accent-blue)30';
+                      } else {
+                        el.style.opacity = '0.85';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      const el = e.currentTarget as HTMLButtonElement;
+                      el.style.opacity = '1';
+                      el.style.boxShadow = 'none';
+                      el.style.backgroundColor = selectedProjects.includes(project.id) ? 'var(--accent-blue)' : 'var(--bg-tertiary)';
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedProjects.includes(project.id)}
+                      onChange={() => {}}
+                      style={{
+                        cursor: 'pointer',
+                        accentColor: 'currentColor',
+                      }}
+                    />
+                    {project.name}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}

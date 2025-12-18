@@ -286,19 +286,24 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
           <h1>{t.invoices.title}</h1>
           <p className="subtitle">{t.invoices.subtitle}</p>
         </div>
-        <button className="btn btn-primary" onClick={handleCreate}>
-          {t.invoices.addInvoice}
-        </button>
       </div>
 
       {invoices.length === 0 ? (
         <div className="empty-state">
           <h2>{t.invoices.noInvoices}</h2>
           <p>{t.invoices.createFirst}</p>
+          <button className="btn btn-primary" onClick={handleCreate}>
+            {t.invoices.addInvoice}
+          </button>
         </div>
       ) : (
         <div className="card">
-          <h2>{t.invoices.allInvoices}</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h2>{t.invoices.allInvoices}</h2>
+            <button className="btn btn-primary" onClick={handleCreate}>
+              {t.invoices.addInvoice}
+            </button>
+          </div>
           <div className="table-container">
             <table>
               <thead>
@@ -314,13 +319,19 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                 {invoices.map((invoice) => (
                   <tr key={invoice.id}>
                     <td>
-                      <button
-                        className="link-button"
+                      <span
                         onClick={() => loadInvoiceDetails(invoice.id)}
-                        style={{ color: 'var(--accent-blue)', cursor: 'pointer' }}
+                        style={{
+                          cursor: 'pointer',
+                          color: 'var(--accent-blue)',
+                          fontWeight: '500',
+                          transition: 'opacity 0.2s',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                       >
                         {invoice.invoice_number}
-                      </button>
+                      </span>
                     </td>
                     <td>{new Date(invoice.invoice_date).toLocaleDateString()}</td>
                     <td>{getStatusBadge(invoice.status)}</td>

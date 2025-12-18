@@ -211,8 +211,15 @@ const Projects: React.FC = () => {
                   <tr key={project.id}>
                     <td>
                       <span
-                        style={{ cursor: 'pointer', color: '#3498db', textDecoration: 'underline' }}
                         onClick={() => handleProjectClick(project)}
+                        style={{
+                          cursor: 'pointer',
+                          color: 'var(--accent-blue)',
+                          fontWeight: '500',
+                          transition: 'opacity 0.2s',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                       >
                         {project.name}
                       </span>
