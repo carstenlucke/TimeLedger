@@ -97,7 +97,8 @@ const Settings: React.FC = () => {
 
   const formatDate = (date: Date | string): string => {
     const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleString();
+    const localeString = locale === 'de' ? 'de-DE' : 'en-GB';
+    return d.toLocaleString(localeString);
   };
 
   const formatFileSize = (bytes: number): string => {

@@ -5,6 +5,7 @@ import { useI18n } from '../context/I18nContext';
 import { Copy } from 'lucide-react';
 import { AppContext } from '../App';
 import { isTypingInInput, getModifierKey } from '../contexts/KeyboardShortcutContext';
+import { LocalizedDateInput } from '../components/LocalizedDateInput';
 
 interface TimeEntriesProps {
   initialProjectFilter?: number;
@@ -13,7 +14,7 @@ interface TimeEntriesProps {
 
 const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initialEntryId }) => {
   const { showNotification, showConfirmation } = useNotification();
-  const { t, formatCurrency } = useI18n();
+  const { t, formatCurrency, formatDate } = useI18n();
   const { navigateToPage } = useContext(AppContext);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -323,7 +324,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
   const formatSingleEntry = (entry: TimeEntry): string => {
     const parts: string[] = [];
     parts.push(`Project: ${getProjectName(entry.project_id)}`);
-    parts.push(`Date: ${entry.date}`);
+    parts.push(`Date: ${formatDate(entry.date)}`);
 
     if (entry.start_time && entry.end_time) {
       parts.push(`Time: ${entry.start_time} - ${entry.end_time}`);
@@ -363,7 +364,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
           ? ` (${entry.start_time} - ${entry.end_time})`
           : '';
         const descStr = entry.description ? ` - ${entry.description}` : '';
-        parts.push(`• ${entry.date}: ${formatDuration(entry.duration_minutes)}${timeStr}${descStr}`);
+        parts.push(`• ${formatDate(entry.date)}: ${formatDuration(entry.duration_minutes)}${timeStr}${descStr}`);
         projectTotal += entry.duration_minutes;
       });
 
@@ -593,20 +594,18 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label htmlFor="filter-date-from">{t.timeEntries.from}</label>
-              <input
-                type="date"
+              <LocalizedDateInput
                 id="filter-date-from"
                 value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
+                onChange={setDateFrom}
               />
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label htmlFor="filter-date-to">{t.timeEntries.to}</label>
-              <input
-                type="date"
+              <LocalizedDateInput
                 id="filter-date-to"
                 value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
+                onChange={setDateTo}
               />
             </div>
           </div>
@@ -748,7 +747,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
                           onChange={() => handleToggleEntry(entry.id)}
                         />
                       </td>
-                      <td>{entry.date}</td>
+                      <td>{formatDate(entry.date)}</td>
                       <td>{getProjectName(entry.project_id)}</td>
                       <td>{entry.start_time || '-'}</td>
                       <td>{entry.end_time || '-'}</td>
@@ -811,11 +810,10 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
 
               <div className="form-group">
                 <label htmlFor="date">{t.common.date} {t.timeEntries.required}</label>
-                <input
-                  type="date"
+                <LocalizedDateInput
                   id="date"
                   value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  onChange={(value) => setFormData({ ...formData, date: value })}
                   required
                 />
               </div>
@@ -916,7 +914,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
               <div>
                 <h2 style={{ margin: 0 }}>{viewingInvoice.invoice_number}</h2>
                 <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
-                  {new Date(viewingInvoice.invoice_date).toLocaleDateString()}
+                  {formatDate(viewingInvoice.invoice_date)}
                 </p>
               </div>
               {getStatusBadge(viewingInvoice.status)}
@@ -986,7 +984,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
                   <tbody>
                     {viewingInvoice.entries.map((entry: any) => (
                       <tr key={entry.id}>
-                        <td>{new Date(entry.date).toLocaleDateString()}</td>
+                        <td>{formatDate(entry.date)}</td>
                         <td>{entry.project_name}</td>
                         <td>{entry.description || '-'}</td>
                         <td>{formatDuration(entry.duration_minutes)}</td>

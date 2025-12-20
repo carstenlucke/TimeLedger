@@ -7,7 +7,7 @@ import { isTypingInInput, getModifierKey } from '../contexts/KeyboardShortcutCon
 
 const Projects: React.FC = () => {
   const { showNotification, showConfirmation } = useNotification();
-  const { t, formatCurrency, formatNumber } = useI18n();
+  const { t, formatCurrency, formatNumber, formatDate } = useI18n();
   const { navigateToPage } = useContext(AppContext);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -459,7 +459,7 @@ const Projects: React.FC = () => {
                       <tbody>
                         {projectEntries.map((entry) => (
                           <tr key={entry.id}>
-                            <td>{entry.date}</td>
+                            <td>{formatDate(entry.date)}</td>
                             <td>{entry.start_time || '-'}</td>
                             <td>{entry.end_time || '-'}</td>
                             <td>{formatDuration(entry.duration_minutes)}</td>

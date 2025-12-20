@@ -10,6 +10,7 @@ interface I18nContextType {
   t: TranslationKeys;
   formatCurrency: (value: number) => string;
   formatNumber: (value: number, decimals?: number) => string;
+  formatDate: (date: string | Date) => string;
 }
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
@@ -48,12 +49,19 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return withThousands;
   };
 
+  const formatDate = (date: string | Date): string => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    const localeString = locale === 'de' ? 'de-DE' : 'en-GB';
+    return dateObj.toLocaleDateString(localeString);
+  };
+
   const value: I18nContextType = {
     locale,
     setLocale,
     t: translations[locale],
     formatCurrency,
     formatNumber,
+    formatDate,
   };
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;

@@ -3,6 +3,7 @@ import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
 import type { Invoice, InvoiceWithEntries } from '../../shared/types';
 import { isTypingInInput, getModifierKey } from '../contexts/KeyboardShortcutContext';
+import { LocalizedDateInput } from '../components/LocalizedDateInput';
 
 interface InvoicesProps {
   initialInvoiceId?: number;
@@ -10,7 +11,7 @@ interface InvoicesProps {
 
 export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
   const { showNotification, showConfirmation } = useNotification();
-  const { t, formatCurrency } = useI18n();
+  const { t, formatCurrency, formatDate } = useI18n();
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -435,7 +436,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                           {invoice.invoice_number}
                         </span>
                       </td>
-                      <td>{new Date(invoice.invoice_date).toLocaleDateString()}</td>
+                      <td>{formatDate(invoice.invoice_date)}</td>
                       <td>{getStatusBadge(invoice.status)}</td>
                       <td>{formatCurrency(invoice.total_amount)}</td>
                       <td>
@@ -503,10 +504,9 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                         {t.invoices.generateNumber}
                       </button>
                     </div>
-                    <input
-                      type="date"
+                    <LocalizedDateInput
                       value={formData.invoice_date}
-                      onChange={(e) => setFormData({ ...formData, invoice_date: e.target.value })}
+                      onChange={(value) => setFormData({ ...formData, invoice_date: value })}
                       style={{ marginTop: '8px' }}
                     />
                   </div>
@@ -514,7 +514,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                   <>
                     <h2 style={{ margin: 0 }}>{selectedInvoice.invoice_number}</h2>
                     <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
-                      {new Date(selectedInvoice.invoice_date).toLocaleDateString()}
+                      {formatDate(selectedInvoice.invoice_date)}
                     </p>
                   </>
                 )}
@@ -655,7 +655,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                       <tbody>
                         {selectedInvoice.entries.map((entry: any) => (
                           <tr key={entry.id}>
-                            <td>{new Date(entry.date).toLocaleDateString()}</td>
+                            <td>{formatDate(entry.date)}</td>
                             <td>{entry.project_name}</td>
                             <td>{entry.description || '-'}</td>
                             <td>{formatDuration(entry.duration_minutes)}</td>
@@ -752,7 +752,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                             onChange={() => toggleEntrySelection(entry.id)}
                           />
                         </td>
-                        <td>{new Date(entry.date).toLocaleDateString()}</td>
+                        <td>{formatDate(entry.date)}</td>
                         <td>{entry.project_name}</td>
                         <td>{entry.description || '-'}</td>
                         <td>{formatDuration(entry.duration_minutes)}</td>
