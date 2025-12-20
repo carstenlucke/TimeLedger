@@ -1,6 +1,6 @@
 {
   "name": "timeledger",
-  "version": "1.2.5",
+  "version": "1.5.0",
   "description": "A simple desktop time tracking application for freelancers and side projects",
   "main": "./dist/main/index.js",
   "author": {
