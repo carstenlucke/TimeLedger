@@ -80,7 +80,7 @@ export const GlobalSearch: React.FC = () => {
     };
   }, [isOpen]);
 
-  const handleProjectClick = (projectId: number) => {
+  const handleProjectClick = (_projectId: number) => {
     navigateToPage('projects');
     setIsOpen(false);
     setQuery('');
