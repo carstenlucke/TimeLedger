@@ -38,7 +38,7 @@ const PROJECT_COLORS = [
 
 const Dashboard: React.FC = () => {
   const { showNotification } = useNotification();
-  const { t } = useI18n();
+  const { t, formatDate } = useI18n();
   const { navigateToPage } = useContext(AppContext);
   const [recentEntries, setRecentEntries] = useState<TimeEntry[]>([]);
   const [weeklyData, setWeeklyData] = useState<WeekData[]>([]);
@@ -272,7 +272,7 @@ const Dashboard: React.FC = () => {
                       e.currentTarget.style.backgroundColor = '';
                     }}
                   >
-                    <td>{entry.date}</td>
+                    <td>{formatDate(entry.date)}</td>
                     <td>{getProjectName(entry.project_id)}</td>
                     <td>{entry.start_time || '-'}</td>
                     <td>{entry.end_time || '-'}</td>

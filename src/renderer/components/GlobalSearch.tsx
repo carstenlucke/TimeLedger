@@ -12,7 +12,7 @@ export const GlobalSearch: React.FC = () => {
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { navigateToPage } = useContext(AppContext);
-  const { t } = useI18n();
+  const { t, formatDate } = useI18n();
 
   // Debounced search effect
   useEffect(() => {
@@ -176,7 +176,7 @@ export const GlobalSearch: React.FC = () => {
                     {entry.project_name || `Project ID ${entry.project_id}`}
                   </div>
                   <div className="search-result-subtitle">
-                    {entry.date}
+                    {formatDate(entry.date)}
                     {entry.description && ` • ${entry.description}`}
                   </div>
                   <div className="search-result-match">

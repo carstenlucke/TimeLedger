@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import type { Project, ProjectReport, ReportFilter, ExportFormat } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
+import { LocalizedDateInput } from '../components/LocalizedDateInput';
 
 const Reports: React.FC = () => {
   const { showNotification } = useNotification();
-  const { t, formatCurrency, formatNumber } = useI18n();
+  const { t, formatCurrency, formatNumber, formatDate } = useI18n();
   const [projects, setProjects] = useState<Project[]>([]);
   const [report, setReport] = useState<ProjectReport[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -137,11 +138,10 @@ const Reports: React.FC = () => {
                     <label htmlFor="start_date" style={{ marginBottom: 0, fontSize: '13px', fontWeight: '500' }}>
                       {t.reports.startDate}
                     </label>
-                    <input
-                      type="date"
+                    <LocalizedDateInput
                       id="start_date"
-                      value={filter.start_date}
-                      onChange={(e) => setFilter({ ...filter, start_date: e.target.value })}
+                      value={filter.start_date || ''}
+                      onChange={(value) => setFilter({ ...filter, start_date: value })}
                       style={{ width: '100%' }}
                     />
                   </div>
@@ -149,11 +149,10 @@ const Reports: React.FC = () => {
                     <label htmlFor="end_date" style={{ marginBottom: 0, fontSize: '13px', fontWeight: '500' }}>
                       {t.reports.endDate}
                     </label>
-                    <input
-                      type="date"
+                    <LocalizedDateInput
                       id="end_date"
-                      value={filter.end_date}
-                      onChange={(e) => setFilter({ ...filter, end_date: e.target.value })}
+                      value={filter.end_date || ''}
+                      onChange={(value) => setFilter({ ...filter, end_date: value })}
                       style={{ width: '100%' }}
                     />
                   </div>
@@ -332,7 +331,7 @@ const Reports: React.FC = () => {
                       <tbody>
                         {projectReport.entries.map((entry) => (
                           <tr key={entry.id}>
-                            <td>{entry.date}</td>
+                            <td>{formatDate(entry.date)}</td>
                             <td>{entry.start_time || '-'}</td>
                             <td>{entry.end_time || '-'}</td>
                             <td>{formatDuration(entry.duration_minutes)}</td>
