@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import type { Project, ProjectInput, TimeEntry } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
 import { AppContext } from '../App';
+import { isTypingInInput, getModifierKey } from '../contexts/KeyboardShortcutContext';
 
 const Projects: React.FC = () => {
   const { showNotification, showConfirmation } = useNotification();
@@ -17,6 +18,7 @@ const Projects: React.FC = () => {
   const [projectEntries, setProjectEntries] = useState<TimeEntry[]>([]);
   const [loadingEntries, setLoadingEntries] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<ProjectInput>({
     name: '',
     hourly_rate: undefined,
@@ -26,6 +28,63 @@ const Projects: React.FC = () => {
   useEffect(() => {
     loadProjects();
   }, []);
+
+  // ESC key to close modals
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (showEntriesOverlay) {
+          handleCloseEntriesOverlay();
+        } else if (showModal) {
+          handleCloseModal();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showModal, showEntriesOverlay]);
+
+  // 'f' key to focus search field
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'f' && !showModal && !showEntriesOverlay && !isTypingInInput(event)) {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showModal, showEntriesOverlay]);
+
+  // CMD+N / CTRL+N to add new project
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'n' && getModifierKey(event) && !showModal && !showEntriesOverlay) {
+        event.preventDefault();
+        handleAddNew();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showModal, showEntriesOverlay]);
+
+  // CMD+ENTER / CTRL+ENTER to submit form in modal
+  useEffect(() => {
+    if (!showModal) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Enter' && getModifierKey(event)) {
+        event.preventDefault();
+        handleSubmit(new Event('submit') as any);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showModal, formData, editingProject]);
 
   const loadProjects = async () => {
     try {
@@ -199,6 +258,7 @@ const Projects: React.FC = () => {
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <input
+                ref={searchInputRef}
                 id="project-search"
                 type="text"
                 value={searchQuery}

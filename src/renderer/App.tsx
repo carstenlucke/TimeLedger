@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Folder, Clock3, FileText, LineChart, Settings as SettingsIcon } from 'lucide-react';
+import { LayoutDashboard, Folder, Clock3, FileText, LineChart, Settings as SettingsIcon, Keyboard } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import TimeEntries from './pages/TimeEntries';
@@ -9,9 +9,11 @@ import Settings from './pages/Settings';
 import { NotificationProvider } from './context/NotificationContext';
 import { I18nProvider, useI18n } from './context/I18nContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { KeyboardShortcutProvider, useKeyboardShortcut, isTypingInInput, getModifierKey } from './contexts/KeyboardShortcutContext';
 import { NotificationContainer } from './components/NotificationContainer';
 import { ConfirmationDialog } from './components/ConfirmationDialog';
 import { GlobalSearch } from './components/GlobalSearch';
+import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp';
 
 type Page = 'dashboard' | 'projects' | 'entries' | 'invoices' | 'reports' | 'settings';
 
@@ -25,10 +27,12 @@ export const AppContext = React.createContext<AppContextType>({
 
 const AppContent: React.FC = () => {
   const { t } = useI18n();
+  const { isAnyModalOpen, registerModal, unregisterModal } = useKeyboardShortcut();
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [entriesProjectFilter, setEntriesProjectFilter] = useState<number | undefined>(undefined);
   const [entryToEdit, setEntryToEdit] = useState<number | undefined>(undefined);
   const [invoiceToView, setInvoiceToView] = useState<number | undefined>(undefined);
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
 
   const navigateToPage = (page: Page, options?: { projectFilter?: number; entryId?: number; invoiceId?: number }) => {
     setCurrentPage(page);
@@ -68,6 +72,67 @@ const AppContent: React.FC = () => {
 
     return cleanup;
   }, []);
+
+  // Register/unregister shortcuts help modal
+  useEffect(() => {
+    if (showShortcutsHelp) {
+      registerModal('shortcuts-help');
+    } else {
+      unregisterModal('shortcuts-help');
+    }
+    return () => unregisterModal('shortcuts-help');
+  }, [showShortcutsHelp, registerModal, unregisterModal]);
+
+  // Global keyboard shortcuts for navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // '?' to show shortcuts help (Shift + /)
+      if (event.key === '?' && !isAnyModalOpen()) {
+        event.preventDefault();
+        setShowShortcutsHelp(true);
+        return;
+      }
+
+      // Ignore shortcuts when typing in input fields or when modals are open
+      if (isTypingInInput(event) || isAnyModalOpen()) {
+        return;
+      }
+
+      // Navigation shortcuts with CMD/CTRL + number keys
+      if (getModifierKey(event)) {
+        const key = event.key;
+        switch (key) {
+          case '1':
+            event.preventDefault();
+            navigateToPage('dashboard');
+            break;
+          case '2':
+            event.preventDefault();
+            navigateToPage('projects');
+            break;
+          case '3':
+            event.preventDefault();
+            navigateToPage('entries');
+            break;
+          case '4':
+            event.preventDefault();
+            navigateToPage('invoices');
+            break;
+          case '5':
+            event.preventDefault();
+            navigateToPage('reports');
+            break;
+          case '6':
+            event.preventDefault();
+            navigateToPage('settings');
+            break;
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isAnyModalOpen, navigateToPage]);
 
   const renderPage = () => {
     switch (currentPage) {
@@ -170,10 +235,22 @@ const AppContent: React.FC = () => {
               {t.nav.settings}
             </a>
           </nav>
+          <div className="sidebar-footer">
+            <button
+              className="shortcuts-button"
+              onClick={() => setShowShortcutsHelp(true)}
+              aria-label={t.shortcuts.help}
+              title={t.shortcuts.help}
+            >
+              <Keyboard size={20} />
+              <span>{t.shortcuts.help}</span>
+            </button>
+          </div>
         </aside>
         <main className="main-content">{renderPage()}</main>
         <NotificationContainer />
         <ConfirmationDialog />
+        <KeyboardShortcutsHelp isOpen={showShortcutsHelp} onClose={() => setShowShortcutsHelp(false)} />
       </div>
     </AppContext.Provider>
   );
@@ -184,7 +261,9 @@ const App: React.FC = () => {
     <ThemeProvider>
       <I18nProvider>
         <NotificationProvider>
-          <AppContent />
+          <KeyboardShortcutProvider>
+            <AppContent />
+          </KeyboardShortcutProvider>
         </NotificationProvider>
       </I18nProvider>
     </ThemeProvider>

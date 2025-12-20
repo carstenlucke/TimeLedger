@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
 import type { Invoice, InvoiceWithEntries } from '../../shared/types';
+import { isTypingInInput, getModifierKey } from '../contexts/KeyboardShortcutContext';
 
 interface InvoicesProps {
   initialInvoiceId?: number;
@@ -22,6 +23,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
   const [cancellationReason, setCancellationReason] = useState('');
   const [isEditingFields, setIsEditingFields] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     invoice_number: '',
@@ -42,6 +44,69 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
       }
     }
   }, [initialInvoiceId, invoices]);
+
+  // ESC key to close modals
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (showCancelModal) {
+          setShowCancelModal(false);
+          setCancellationReason('');
+        } else if (showAddEntriesModal) {
+          setShowAddEntriesModal(false);
+          setSelectedEntryIds([]);
+        } else if (showInvoiceModal) {
+          setShowInvoiceModal(false);
+          setSelectedInvoice(null);
+          setIsEditingFields(false);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showInvoiceModal, showAddEntriesModal, showCancelModal]);
+
+  // 'f' key to focus search field
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'f' && !showInvoiceModal && !showAddEntriesModal && !showCancelModal && !isTypingInInput(event)) {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showInvoiceModal, showAddEntriesModal, showCancelModal]);
+
+  // CMD+N / CTRL+N to create new invoice
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'n' && getModifierKey(event) && !showInvoiceModal && !showAddEntriesModal && !showCancelModal) {
+        event.preventDefault();
+        handleCreate();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showInvoiceModal, showAddEntriesModal, showCancelModal]);
+
+  // CMD+ENTER / CTRL+ENTER to submit form in modal
+  useEffect(() => {
+    if (!showInvoiceModal || !isEditingFields) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Enter' && getModifierKey(event)) {
+        event.preventDefault();
+        handleSaveFields();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showInvoiceModal, selectedInvoice, formData, isEditingFields]);
 
   const loadInvoices = async () => {
     try {
@@ -317,6 +382,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <input
+                  ref={searchInputRef}
                   id="invoice-search"
                   type="text"
                   value={searchQuery}

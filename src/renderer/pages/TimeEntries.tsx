@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import type { TimeEntry, TimeEntryInput, Project, Invoice, InvoiceWithEntries } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
 import { Copy } from 'lucide-react';
 import { AppContext } from '../App';
+import { isTypingInInput, getModifierKey } from '../contexts/KeyboardShortcutContext';
 
 interface TimeEntriesProps {
   initialProjectFilter?: number;
@@ -28,6 +29,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [selectedEntries, setSelectedEntries] = useState<Set<number>>(new Set());
   const [formData, setFormData] = useState<TimeEntryInput>({
     project_id: 0,
@@ -55,6 +57,63 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
       }
     }
   }, [initialEntryId, entries]);
+
+  // ESC key to close modals
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (viewingInvoice) {
+          setViewingInvoice(null);
+        } else if (showModal) {
+          handleCloseModal();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showModal, viewingInvoice]);
+
+  // 'f' key to focus search field
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'f' && !showModal && !viewingInvoice && !isTypingInInput(event)) {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showModal, viewingInvoice]);
+
+  // CMD+N / CTRL+N to add new time entry
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'n' && getModifierKey(event) && !showModal && !viewingInvoice) {
+        event.preventDefault();
+        handleAddNew();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showModal, viewingInvoice]);
+
+  // CMD+ENTER / CTRL+ENTER to submit form in modal
+  useEffect(() => {
+    if (!showModal) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Enter' && getModifierKey(event)) {
+        event.preventDefault();
+        handleSubmit(new Event('submit') as any);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showModal, formData, editingEntry, inputMode]);
 
   const loadData = async () => {
     try {
@@ -494,6 +553,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <input
+                ref={searchInputRef}
                 type="text"
                 id="filter-search"
                 value={searchQuery}
