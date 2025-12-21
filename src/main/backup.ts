@@ -63,7 +63,8 @@ export class BackupManager {
   /**
    * Restore database from a backup file
    */
-  public async restoreBackup(backupPath: string): Promise<void> {
+  public async restoreBackup(backupDir: string, filename: string): Promise<void> {
+    const backupPath = path.join(backupDir, filename);
     if (!fs.existsSync(backupPath)) {
       throw new Error('Backup file does not exist');
     }

@@ -146,3 +146,19 @@ export class DatabaseManager {
     this.db.close();
   }
 }
+
+let dbManager: DatabaseManager | null = null;
+
+export function getDatabase(): DatabaseManager {
+  if (!dbManager) {
+    dbManager = new DatabaseManager();
+  }
+  return dbManager;
+}
+
+export function closeDatabase(): void {
+  if (dbManager) {
+    dbManager.close();
+    dbManager = null;
+  }
+}

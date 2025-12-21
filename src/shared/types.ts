@@ -8,7 +8,7 @@ export interface BackupFile {
 
 // Settings types
 export interface AppSettings {
-  [key: string]: string;
+  [key: string]: string | undefined;
   backup_directory?: string;
   last_backup?: string;
 }
