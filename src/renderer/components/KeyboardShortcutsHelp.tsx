@@ -57,11 +57,8 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({ is
       title: t.shortcuts.navigation,
       shortcuts: [
         { keys: [modifierKey, '1'], description: t.shortcuts.goDashboard },
-        { keys: [modifierKey, '2'], description: t.shortcuts.goProjects },
-        { keys: [modifierKey, '3'], description: t.shortcuts.goTimeEntries },
-        { keys: [modifierKey, '4'], description: t.shortcuts.goInvoices },
-        { keys: [modifierKey, '5'], description: t.shortcuts.goReports },
-        { keys: [modifierKey, '6'], description: t.shortcuts.goSettings },
+        { keys: [modifierKey, '2'], description: t.shortcuts.goHelloWorld },
+        { keys: [modifierKey, '3'], description: t.shortcuts.goSettings },
       ],
     },
     {
@@ -70,30 +67,6 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({ is
         { keys: [t.shortcuts.esc], description: t.shortcuts.closeModal },
         { keys: ['?'], description: t.shortcuts.showHelp },
         { keys: [modifierKey, 'F'], description: t.shortcuts.globalSearch },
-      ],
-    },
-    {
-      title: t.shortcuts.projects,
-      shortcuts: [
-        { keys: ['F'], description: t.shortcuts.focusSearch },
-        { keys: [modifierKey, 'N'], description: t.shortcuts.addNew },
-        { keys: [modifierKey, t.shortcuts.enter], description: t.shortcuts.submitForm },
-      ],
-    },
-    {
-      title: t.shortcuts.timeEntries,
-      shortcuts: [
-        { keys: ['F'], description: t.shortcuts.focusSearch },
-        { keys: [modifierKey, 'N'], description: t.shortcuts.addNew },
-        { keys: [modifierKey, t.shortcuts.enter], description: t.shortcuts.submitForm },
-      ],
-    },
-    {
-      title: t.shortcuts.invoices,
-      shortcuts: [
-        { keys: ['F'], description: t.shortcuts.focusSearch },
-        { keys: [modifierKey, 'N'], description: t.shortcuts.addNew },
-        { keys: [modifierKey, t.shortcuts.enter], description: t.shortcuts.submitForm },
       ],
     },
   ];

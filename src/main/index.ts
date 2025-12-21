@@ -66,7 +66,7 @@ function createMenu(): void {
   const template: Electron.MenuItemConstructorOptions[] = [
     // macOS app menu
     ...(process.platform === 'darwin' ? [{
-      label: 'TimeLedger',
+      label: 'Electron App',
       submenu: [
         { role: 'about' as const },
         { type: 'separator' as const },
@@ -139,14 +139,14 @@ function createMenu(): void {
 
 async function setupBackupSchedule(): Promise<void> {
   const db = getDatabase();
-  const settings = db.getSettings();
+  const backupDir = db.getSetting('backup_directory');
 
-  if (!settings.backup_directory) {
+  if (!backupDir) {
     // Prompt user to select backup directory on first launch
     const backupManager = new BackupManager(db.getDbPath());
     const dir = await backupManager.selectBackupDirectory();
     if (dir) {
-      db.updateSettings({ backup_directory: dir });
+      db.setSetting('backup_directory', dir);
       await createBackup({ force: true });
     }
   }
@@ -160,21 +160,22 @@ async function setupBackupSchedule(): Promise<void> {
 async function createBackup(options: { force?: boolean } = {}): Promise<void> {
   try {
     const db = getDatabase();
-    const settings = db.getSettings();
+    const backupDir = db.getSetting('backup_directory');
 
-    if (settings.backup_directory) {
+    if (backupDir) {
       if (!options.force) {
-        const dataVersion = db.getDataVersion();
-        const lastBackupVersion = db.getLastBackupVersion();
+        const dataVersion = parseInt(db.getMetaValue('data_version') || '0', 10);
+        const lastBackupVersion = parseInt(db.getMetaValue('last_backup_version') || '0', 10);
         if (dataVersion <= lastBackupVersion) {
           return;
         }
       }
 
       const backupManager = new BackupManager(db.getDbPath());
-      await backupManager.createBackup(settings.backup_directory);
-      db.updateSettings({ last_backup: new Date().toISOString() });
-      db.setLastBackupVersion(db.getDataVersion());
+      await backupManager.createBackup(backupDir);
+      db.setSetting('last_backup', new Date().toISOString());
+      const currentVersion = db.getMetaValue('data_version') || '0';
+      db.setMetaValue('last_backup_version', currentVersion);
     }
   } catch (error) {
     console.error('Backup failed:', error);

@@ -1,265 +1,190 @@
-# TimeLedger
+# Electron App Template
 
-A simple desktop time tracking application for freelancers and side projects. Built with Electron, React, TypeScript, and SQLite.
-
-![TimeLedger](https://img.shields.io/badge/version-1.2.5-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+A modern, production-ready Electron application template with React, TypeScript, SQLite, and comprehensive features.
 
 ## Features
 
-- **Project Management**: Create and manage projects with optional hourly rates and client names
-- **Manual Time Entry**: Track time with either duration or start/end times
-- **Invoice Management**: Create draft invoices from unbilled time entries with automatic numbering and status tracking
-- **Billing Status Tracking**: Time entries automatically track billing status (unbilled, in draft, invoiced)
-- **Dashboard**: Overview with weekly bar charts and key statistics
-- **Reporting**: Generate detailed reports by date range and project
-- **Export**: Export reports as CSV or JSON
-- **Multi-Language Support**: Available in English and German
-- **Dark/Light Theme**: Toggle between dark and light themes for comfortable viewing
-- **Automatic Backups**: Hourly backups and backup on app exit (only when data changed)
-- **Cloud Sync**: Store backups in iCloud, Dropbox, OneDrive, or any synced folder
-- **Cross-Platform**: Works on macOS, Windows, and Linux
+- ✨ **Modern Stack**: Electron + React + TypeScript + Vite
+- 💾 **SQLite Database**: Built-in database with better-sqlite3
+- 🔄 **Automatic Backups**: Hourly backups with restore functionality
+- 🎨 **10 Themes**: Dark, Light, Ocean, Sunset, Forest, Neon, Candy, Lavender, Mint, Peach
+- 🌍 **Internationalization**: English and German locales included
+- ⌨️ **Keyboard Shortcuts**: Global shortcuts with help modal
+- 🔍 **Global Search**: Template for implementing search functionality
+- 📦 **Production Builds**: Configured for macOS, Windows, and Linux
 
-## Technology Stack
-
-- **Desktop Shell**: Electron
-- **Frontend**: React + TypeScript
-- **Database**: SQLite (via better-sqlite3)
-- **Build Tool**: Vite
-- **Bundler**: electron-builder
-
-## Installation
+## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Node.js (v16 or higher)
+- npm or yarn
 
-### Setup
+### Installation
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/TimeLedger.git
-   cd TimeLedger
-   ```
+```bash
+# Clone the repository
+git clone <your-repo-url>
+cd electron-app-template
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+# Install dependencies
+npm install
 
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
+# Run in development mode
+npm run dev
+```
 
-## Development
+### Development
 
-### Available Scripts
+The app will start with hot-reload enabled:
+- Main process: Changes require restart
+- Renderer process: Hot-reload enabled
 
-- `npm run dev` - Start the app in development mode
-- `npm run build` - Build the app for production
-- `npm run start` - Start the built app
-- `npm run dist` - Build and package for macOS (ARM64)
-- `npm run dist:universal` - Build Universal macOS binary (ARM64 + Intel)
-- `npm run postdist` - Clean up auto-update files (runs automatically after dist)
-- `npm run clean` - Clean build artifacts (dist/)
-- `npm run clean:release` - Clean release directory
-- `npm run clean:all` - Clean both dist/ and release/
+Press `CMD+Option+I` (macOS) or `CTRL+Shift+I` (Windows/Linux) to open DevTools.
 
-### Project Structure
+## Project Structure
 
 ```
-TimeLedger/
+electron-app-template/
 ├── src/
-│   ├── main/          # Electron main process
-│   │   ├── index.ts        # Main entry point
-│   │   ├── database.ts     # SQLite database layer
-│   │   ├── backup.ts       # Backup/restore logic
-│   │   ├── export.ts       # CSV/JSON export
-│   │   └── ipc-handlers.ts # IPC communication handlers
-│   ├── renderer/      # React frontend
-│   │   ├── pages/          # Page components
-│   │   ├── components/     # Reusable components
-│   │   ├── App.tsx         # Main app component
-│   │   ├── index.tsx       # React entry point
-│   │   ├── index.html      # HTML template
-│   │   └── styles.css      # Global styles
-│   ├── preload/       # Preload script for IPC
-│   │   └── index.ts
-│   └── shared/        # Shared types and constants
+│   ├── main/              # Main process (Node.js)
+│   │   ├── index.ts       # App initialization
+│   │   ├── database.ts    # SQLite database manager
+│   │   ├── ipc-handlers.ts # IPC communication handlers
+│   │   └── backup.ts      # Backup functionality
+│   ├── renderer/          # Renderer process (React)
+│   │   ├── App.tsx        # Main React component
+│   │   ├── index.tsx      # React entry point
+│   │   ├── styles.css     # Global styles and theme variables
+│   │   ├── pages/         # Page components
+│   │   │   ├── Dashboard.tsx
+│   │   │   ├── HelloWorld.tsx
+│   │   │   └── Settings.tsx
+│   │   ├── components/    # Reusable components
+│   │   ├── context/       # React contexts (Theme, I18n, Notifications)
+│   │   └── locales/       # Translation files (en.ts, de.ts)
+│   ├── preload/           # Preload scripts
+│   │   └── index.ts       # IPC bridge to renderer
+│   └── shared/            # Shared types and constants
 │       └── types.ts
-├── package.json
-├── tsconfig.json      # TypeScript config for renderer
-├── tsconfig.main.json # TypeScript config for main
-├── vite.config.ts     # Vite configuration
-└── README.md
+├── assets/                # Static assets
+│   └── icons/            # App icons
+├── scripts/              # Build and utility scripts
+└── dist/                 # Compiled output
 ```
 
-## Usage
+## Available Scripts
 
-### First Launch
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start the built app
+- `npm run pack` - Package without creating installer
+- `npm run dist` - Create production installer (macOS ARM64)
+- `npm run dist:universal` - Create universal macOS build
+- `npm run clean` - Clean dist folder
+- `npm run clean:all` - Clean dist and release folders
 
-On first launch, you'll be prompted to select a backup directory. Choose a folder in:
-- iCloud Drive
-- Dropbox
-- OneDrive
-- Any other cloud-synced location
+## Keyboard Shortcuts
 
-This ensures your data is automatically backed up to the cloud.
+### Navigation
+- `CMD/CTRL + 1` - Dashboard
+- `CMD/CTRL + 2` - Hello World
+- `CMD/CTRL + 3` - Settings
 
-### Managing Projects
+### General
+- `CMD/CTRL + F` - Global search
+- `?` - Show keyboard shortcuts help
+- `ESC` - Close modal or dialog
 
-1. Navigate to **Projects** in the sidebar
-2. Click **Add Project** to create a new project
-3. Enter project details:
-   - Name (required)
-   - Client name (optional)
-   - Hourly rate (optional)
+## Database
 
-### Tracking Time
+The app uses SQLite with the following tables:
 
-1. Navigate to **Time Entries**
-2. Click **Add Time Entry**
-3. Select a project
-4. Choose input mode:
-   - **Duration**: Enter total minutes worked
-   - **Start/End Times**: Enter specific start and end times
-5. Add an optional description
-6. Click **Create**
+- `settings` - Application settings
+- `meta` - Metadata for versioning
+- `demo_items` - Example table (replace with your own)
 
-### Creating Invoices
+### Adding Your Own Tables
 
-1. Navigate to **Invoices**
-2. Click **Create Invoice**
-3. Automatic invoice number is generated (format: INV-YYYY-NNN)
-4. Select unbilled time entries to include
-5. Review total amount (calculated from hourly rates)
-6. Save as draft or finalize the invoice
-7. Finalized invoices update time entries to "invoiced" status
+1. Edit `src/main/database.ts`
+2. Add your table schema in the `initialize()` method
+3. Add CRUD methods for your table
+4. Update `src/shared/types.ts` with type definitions
 
-**Invoice Features:**
-- Draft invoices can be edited and entries can be added/removed
-- Finalized invoices lock time entries from further billing
-- Invoices can be cancelled with a reason (entries return to unbilled status)
-- Cross-navigation between invoices and related time entries
+## Backup System
 
-### Generating Reports
+- Automatic backups every hour
+- Backup on app close
+- Smart backup (only when data changes)
+- Restore functionality with pre-restore backup
+- Supports cloud sync folders (iCloud, Dropbox, OneDrive)
 
-1. Navigate to **Reports**
-2. Select date range
-3. Optionally filter by specific projects
-4. Click **Generate Report**
-5. Export as CSV or JSON if needed
+## Themes
 
-### Managing Backups
+10 pre-configured themes using CSS variables. To add a new theme:
 
-1. Navigate to **Settings**
-2. View backup configuration and last backup time
-3. Click **Create Backup Now** for manual backups
-4. View available backups in the table
-5. Click **Restore** to restore from a backup (requires app restart)
+1. Open `src/renderer/styles.css`
+2. Add a new `[data-theme="yourtheme"]` section
+3. Define CSS variables for colors
+4. Add theme name to `src/renderer/locales/*.ts`
 
-## Data Storage
+## Internationalization
 
-### Database Location
+Add a new language:
 
-The SQLite database is stored at:
-- **macOS**: `~/Library/Application Support/TimeLedger/db.sqlite`
-- **Windows**: `%APPDATA%/TimeLedger/db.sqlite`
-- **Linux**: `~/.config/TimeLedger/db.sqlite`
+1. Create `src/renderer/locales/xx.ts` (replace xx with language code)
+2. Copy structure from `en.ts`
+3. Translate all strings
+4. Update `src/renderer/context/I18nContext.tsx`
 
-### Backup System
+## Production Builds
 
-- Automatic backups occur every hour if data changed since the last backup
-- Backup created on app exit if data changed since the last backup
-- Backups are stored in your selected cloud-synced folder
-- Backup filename format: `backup-YYYY-MM-DD_HH-mm-ss.sqlite`
-- Manual backups can be created at any time from Settings
-
-## Building for Production
-
-### Automated Multi-Platform Builds (Recommended)
-
-TimeLedger uses GitHub Actions for automated multi-platform releases:
-
-1. Update version: `npm version <new-version>`
-2. Commit and push changes
-3. Create and push a version tag: `git tag v1.0.0 && git push origin v1.0.0`
-4. GitHub Actions automatically builds for all platforms and creates a release
-
-**What gets built automatically:**
-- **macOS**: DMG and ZIP for Intel (x64) and Apple Silicon (arm64)
-- **Windows**: NSIS installer and portable EXE (x64)
-- **Linux**: AppImage and DEB package (x64)
-
-### Local Manual Builds (macOS only)
-
-#### macOS ARM64 (Apple Silicon)
+### macOS
 ```bash
-npm run dist
+npm run dist              # ARM64 only
+npm run dist:universal    # Universal (Intel + ARM64)
 ```
-Creates:
-- DMG installer for ARM64
-- ZIP archive for ARM64
 
-**This is optimized for local development on Apple Silicon Macs.**
-
-#### macOS Universal Binary (Optional)
-```bash
-npm run dist:universal
+### Windows & Linux
+Update `scripts/run-dist.js` to include desired platforms:
+```javascript
+// Add to args array:
+'--windows', '--linux'
 ```
-Creates a single Universal binary that runs on both Intel and Apple Silicon.
 
-**Note:** For Windows and Linux builds, use GitHub Actions (automatic on tag push).
+## Customization
 
-## Security Considerations
+### Change App Name
+1. Update `package.json` - name, description, author
+2. Update `src/renderer/App.tsx` - sidebar title
+3. Update icon files in `assets/icons/`
 
-- All data is stored locally on your machine
-- No cloud backend or external services
-- Backups are plain SQLite files (consider encrypting your cloud storage)
-- No authentication required (single-user desktop app)
+### Add New Pages
+1. Create component in `src/renderer/pages/`
+2. Add route in `src/renderer/App.tsx`
+3. Add navigation item in sidebar
+4. Add keyboard shortcut (optional)
+5. Update translations
 
-## Troubleshooting
+### Add New IPC Channels
+1. Define channel in `src/shared/types.ts`
+2. Add handler in `src/main/ipc-handlers.ts`
+3. Expose in `src/preload/index.ts`
+4. Use in renderer components
 
-### Database Locked Error
+## Technologies
 
-If you see a "database is locked" error:
-1. Close all instances of the app
-2. Delete the `-wal` and `-shm` files next to the database
-3. Restart the app
-
-### Backup Directory Not Found
-
-If backups fail:
-1. Go to Settings
-2. Re-select the backup directory
-3. Ensure the directory exists and is writable
-
-### App Won't Start
-
-1. Check the console for errors
-2. Delete the database and restart (creates fresh database)
-3. Restore from a backup if needed
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+- **Electron** - Desktop app framework
+- **React** - UI library
+- **TypeScript** - Type-safe JavaScript
+- **Vite** - Build tool and dev server
+- **better-sqlite3** - Synchronous SQLite database
+- **lucide-react** - Icon library
+- **electron-builder** - App packaging
 
 ## License
 
-This project is licensed under the MIT License.
-
-## Roadmap
-
-Future enhancements may include:
-- Keyboard shortcuts and menu navigation improvements
-- Timer mode (real-time tracking in addition to manual entry)
-- Enhanced charts and visualizations
-- Multi-currency support
-- Tags and categories for better organization
-- Custom invoice templates
-- Recurring time entries
-- Client portal for invoice sharing
+MIT - feel free to use this template for your own projects!
 
 ## Support
 
@@ -267,4 +192,4 @@ For issues and questions, please open an issue on GitHub.
 
 ---
 
-Built with ❤️ using Electron and React
+**Happy Coding!** 🚀

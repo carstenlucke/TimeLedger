@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Folder, Clock3, FileText, LineChart, Settings as SettingsIcon, Keyboard } from 'lucide-react';
+import { LayoutDashboard, Sparkles, Settings as SettingsIcon, Keyboard } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
-import Projects from './pages/Projects';
-import TimeEntries from './pages/TimeEntries';
-import { Invoices } from './pages/Invoices';
-import Reports from './pages/Reports';
+import HelloWorld from './pages/HelloWorld';
 import Settings from './pages/Settings';
 import { NotificationProvider } from './context/NotificationContext';
 import { I18nProvider, useI18n } from './context/I18nContext';
@@ -15,10 +12,10 @@ import { ConfirmationDialog } from './components/ConfirmationDialog';
 import { GlobalSearch } from './components/GlobalSearch';
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp';
 
-type Page = 'dashboard' | 'projects' | 'entries' | 'invoices' | 'reports' | 'settings';
+type Page = 'dashboard' | 'helloworld' | 'settings';
 
 interface AppContextType {
-  navigateToPage: (page: Page, options?: { projectFilter?: number; entryId?: number; invoiceId?: number }) => void;
+  navigateToPage: (page: Page) => void;
 }
 
 export const AppContext = React.createContext<AppContextType>({
@@ -29,26 +26,10 @@ const AppContent: React.FC = () => {
   const { t } = useI18n();
   const { isAnyModalOpen, registerModal, unregisterModal } = useKeyboardShortcut();
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
-  const [entriesProjectFilter, setEntriesProjectFilter] = useState<number | undefined>(undefined);
-  const [entryToEdit, setEntryToEdit] = useState<number | undefined>(undefined);
-  const [invoiceToView, setInvoiceToView] = useState<number | undefined>(undefined);
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
 
-  const navigateToPage = (page: Page, options?: { projectFilter?: number; entryId?: number; invoiceId?: number }) => {
+  const navigateToPage = (page: Page) => {
     setCurrentPage(page);
-    if (page === 'entries') {
-      setEntriesProjectFilter(options?.projectFilter);
-      setEntryToEdit(options?.entryId);
-      setInvoiceToView(undefined);
-    } else if (page === 'invoices') {
-      setInvoiceToView(options?.invoiceId);
-      setEntriesProjectFilter(undefined);
-      setEntryToEdit(undefined);
-    } else {
-      setEntriesProjectFilter(undefined);
-      setEntryToEdit(undefined);
-      setInvoiceToView(undefined);
-    }
   };
 
   // Listen for navigation events from main process (e.g., menu shortcuts)
@@ -59,14 +40,8 @@ const AppContent: React.FC = () => {
         navigateToPage('settings');
       } else if (path === '/dashboard') {
         navigateToPage('dashboard');
-      } else if (path === '/projects') {
-        navigateToPage('projects');
-      } else if (path === '/entries') {
-        navigateToPage('entries');
-      } else if (path === '/invoices') {
-        navigateToPage('invoices');
-      } else if (path === '/reports') {
-        navigateToPage('reports');
+      } else if (path === '/helloworld') {
+        navigateToPage('helloworld');
       }
     });
 
@@ -108,21 +83,9 @@ const AppContent: React.FC = () => {
             break;
           case '2':
             event.preventDefault();
-            navigateToPage('projects');
+            navigateToPage('helloworld');
             break;
           case '3':
-            event.preventDefault();
-            navigateToPage('entries');
-            break;
-          case '4':
-            event.preventDefault();
-            navigateToPage('invoices');
-            break;
-          case '5':
-            event.preventDefault();
-            navigateToPage('reports');
-            break;
-          case '6':
             event.preventDefault();
             navigateToPage('settings');
             break;
@@ -138,14 +101,8 @@ const AppContent: React.FC = () => {
     switch (currentPage) {
       case 'dashboard':
         return <Dashboard />;
-      case 'projects':
-        return <Projects />;
-      case 'entries':
-        return <TimeEntries initialProjectFilter={entriesProjectFilter} initialEntryId={entryToEdit} />;
-      case 'invoices':
-        return <Invoices initialInvoiceId={invoiceToView} />;
-      case 'reports':
-        return <Reports />;
+      case 'helloworld':
+        return <HelloWorld />;
       case 'settings':
         return <Settings />;
       default:
@@ -159,11 +116,11 @@ const AppContent: React.FC = () => {
         <aside className="sidebar">
           <div className="sidebar-header">
             <div className="sidebar-logo">
-              <img src="./icons/icon_128x128.png" alt="TimeLedger" />
+              <img src="./icons/icon_128x128.png" alt="Electron App" />
             </div>
             <div className="sidebar-title">
-              <h1>TimeLedger</h1>
-              <p>Time Tracking</p>
+              <h1>Electron App</h1>
+              <p>Template</p>
             </div>
           </div>
           <GlobalSearch />
@@ -181,47 +138,14 @@ const AppContent: React.FC = () => {
             </a>
             <a
               href="#"
-              className={currentPage === 'projects' ? 'active' : ''}
+              className={currentPage === 'helloworld' ? 'active' : ''}
               onClick={(e) => {
                 e.preventDefault();
-                navigateToPage('projects');
+                navigateToPage('helloworld');
               }}
             >
-              <Folder className="nav-icon" aria-hidden="true" size={20} strokeWidth={1.75} />
-              {t.nav.projects}
-            </a>
-            <a
-              href="#"
-              className={currentPage === 'entries' ? 'active' : ''}
-              onClick={(e) => {
-                e.preventDefault();
-                navigateToPage('entries');
-              }}
-            >
-              <Clock3 className="nav-icon" aria-hidden="true" size={20} strokeWidth={1.75} />
-              {t.nav.timeEntries}
-            </a>
-            <a
-              href="#"
-              className={currentPage === 'invoices' ? 'active' : ''}
-              onClick={(e) => {
-                e.preventDefault();
-                navigateToPage('invoices');
-              }}
-            >
-              <FileText className="nav-icon" aria-hidden="true" size={20} strokeWidth={1.75} />
-              {t.nav.invoices}
-            </a>
-            <a
-              href="#"
-              className={currentPage === 'reports' ? 'active' : ''}
-              onClick={(e) => {
-                e.preventDefault();
-                navigateToPage('reports');
-              }}
-            >
-              <LineChart className="nav-icon" aria-hidden="true" size={20} strokeWidth={1.75} />
-              {t.nav.reports}
+              <Sparkles className="nav-icon" aria-hidden="true" size={20} strokeWidth={1.75} />
+              {t.nav.helloWorld}
             </a>
             <a
               href="#"

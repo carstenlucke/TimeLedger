@@ -1,11 +1,11 @@
 {
-  "name": "timeledger",
-  "version": "1.5.0",
-  "description": "A simple desktop time tracking application for freelancers and side projects",
+  "name": "electron-app-template",
+  "version": "1.0.0",
+  "description": "A modern Electron application template with React, TypeScript, SQLite, and more",
   "main": "./dist/main/index.js",
   "author": {
-    "name": "TimeLedger",
-    "email": "timeledger@flitzpeople.com"
+    "name": "Your Name",
+    "email": "your.email@example.com"
   },
   "license": "MIT",
   "scripts": {
@@ -49,8 +49,8 @@
   },
   "build": {
     "publish": null,
-    "appId": "com.timeledger.app",
-    "productName": "TimeLedger",
+    "appId": "com.electronapp.template",
+    "productName": "ElectronApp",
     "directories": {
       "output": "release"
     },
