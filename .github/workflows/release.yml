@@ -65,10 +65,16 @@ jobs:
           # APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
           # TEAM_ID: ${{ secrets.TEAM_ID }}
 
-      - name: Clean up auto-update files
+      - name: Clean up auto-update files and temporary artifacts
         run: |
           rm -f release/*.blockmap
           rm -f release/*.yml
+          rm -f release/elevate.exe
+          rm -f release/builder-*.yml
+          rm -rf release/win-unpacked
+          rm -rf release/mac
+          rm -rf release/mac-arm64
+          rm -rf release/linux-unpacked
         shell: bash
 
       - name: Upload Build Artifacts
