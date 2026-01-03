@@ -305,7 +305,7 @@ const Projects: React.FC = () => {
                 </thead>
                 <tbody>
                   {filteredProjects.map((project) => (
-                    <tr key={project.id}>
+                    <tr key={project.id} onDoubleClick={() => handleEdit(project)}>
                       <td>
                         <span
                           onClick={() => handleProjectClick(project)}

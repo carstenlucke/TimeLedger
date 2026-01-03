@@ -739,6 +739,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
                     <tr
                       key={entry.id}
                       className={selectedEntries.has(entry.id) ? 'selected-row' : ''}
+                      onDoubleClick={() => handleEdit(entry)}
                     >
                       <td style={{ textAlign: 'center' }}>
                         <input

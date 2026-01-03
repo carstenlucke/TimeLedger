@@ -420,7 +420,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                 </thead>
                 <tbody>
                   {filteredInvoices.map((invoice) => (
-                    <tr key={invoice.id}>
+                    <tr key={invoice.id} onDoubleClick={() => loadInvoiceDetails(invoice.id)}>
                       <td>
                         <span
                           onClick={() => loadInvoiceDetails(invoice.id)}
