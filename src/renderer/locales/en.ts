@@ -283,6 +283,13 @@ export const en = {
     copiedEntries: 'Copied {count} entries',
     copyFailed: 'Failed to copy to clipboard',
   },
+  durationPicker: {
+    hours: 'Hours',
+    minutes: 'Minutes',
+    total: 'Total',
+    manualInput: 'Manual input',
+    minutesLabel: 'minutes',
+  },
   shortcuts: {
     title: 'Keyboard Shortcuts',
     help: 'Shortcuts',

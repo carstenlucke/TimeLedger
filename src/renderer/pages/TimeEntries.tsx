@@ -6,6 +6,7 @@ import { Copy } from 'lucide-react';
 import { AppContext } from '../App';
 import { isTypingInInput, getModifierKey } from '../contexts/KeyboardShortcutContext';
 import { LocalizedDateInput } from '../components/LocalizedDateInput';
+import { DurationPicker } from '../components/DurationPicker';
 
 interface TimeEntriesProps {
   initialProjectFilter?: number;
@@ -843,16 +844,13 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
 
               {inputMode === 'duration' ? (
                 <div className="form-group">
-                  <label htmlFor="duration_minutes">{t.timeEntries.durationMinutes} {t.timeEntries.required}</label>
-                  <input
-                    type="number"
-                    id="duration_minutes"
-                    min="1"
-                    value={formData.duration_minutes || ''}
-                    onChange={(e) =>
+                  <label>{t.common.duration} {t.timeEntries.required}</label>
+                  <DurationPicker
+                    value={formData.duration_minutes}
+                    onChange={(minutes) =>
                       setFormData({
                         ...formData,
-                        duration_minutes: e.target.value ? parseInt(e.target.value) : undefined,
+                        duration_minutes: minutes,
                       })
                     }
                     required

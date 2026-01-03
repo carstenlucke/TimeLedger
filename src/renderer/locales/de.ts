@@ -285,6 +285,13 @@ export const de: TranslationKeys = {
     copiedEntries: '{count} Einträge kopiert',
     copyFailed: 'Fehler beim Kopieren in die Zwischenablage',
   },
+  durationPicker: {
+    hours: 'Stunden',
+    minutes: 'Minuten',
+    total: 'Gesamt',
+    manualInput: 'Manuelle Eingabe',
+    minutesLabel: 'Minuten',
+  },
   shortcuts: {
     title: 'Tastenkombinationen',
     help: 'Shortcuts',
