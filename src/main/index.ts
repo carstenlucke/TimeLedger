@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu } from 'electron';
+import { app, BrowserWindow, Menu, screen } from 'electron';
 import path from 'path';
 import { getDatabase, closeDatabase } from './database';
 import { setupIpcHandlers } from './ipc-handlers';
@@ -6,12 +6,45 @@ import { BackupManager } from './backup';
 
 let mainWindow: BrowserWindow | null = null;
 let backupIntervalId: NodeJS.Timeout | null = null;
+let windowStateChangeTimeout: NodeJS.Timeout | null = null;
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
 // Set app name for all platforms
 if (app.setName) {
   app.setName('TimeLedger');
+}
+
+function saveWindowState(): void {
+  if (!mainWindow) return;
+
+  const db = getDatabase();
+  const isMaximized = mainWindow.isMaximized();
+
+  // Only save non-maximized bounds
+  if (!isMaximized) {
+    const bounds = mainWindow.getBounds();
+    db.updateSettings({
+      window_x: bounds.x,
+      window_y: bounds.y,
+      window_width: bounds.width,
+      window_height: bounds.height,
+      window_maximized: false,
+    });
+  } else {
+    db.updateSettings({
+      window_maximized: true,
+    });
+  }
+}
+
+function debouncedSaveWindowState(): void {
+  if (windowStateChangeTimeout) {
+    clearTimeout(windowStateChangeTimeout);
+  }
+  windowStateChangeTimeout = setTimeout(() => {
+    saveWindowState();
+  }, 500);
 }
 
 function createWindow(): void {
@@ -28,7 +61,12 @@ function createWindow(): void {
     ? path.join(__dirname, '../../assets/icons', iconFileName)
     : path.join(process.resourcesPath, 'assets/icons', iconFileName);
 
-  mainWindow = new BrowserWindow({
+  // Get saved window state
+  const db = getDatabase();
+  const settings = db.getSettings();
+
+  // Default window size
+  let windowOptions: Electron.BrowserWindowConstructorOptions = {
     width: 1200,
     height: 800,
     minWidth: 800,
@@ -40,7 +78,35 @@ function createWindow(): void {
       nodeIntegration: false,
     },
     show: false,
-  });
+  };
+
+  // Restore saved window state if available
+  if (settings.window_width && settings.window_height) {
+    windowOptions.width = settings.window_width;
+    windowOptions.height = settings.window_height;
+
+    // Only restore position if it's within screen bounds
+    if (settings.window_x !== undefined && settings.window_y !== undefined) {
+      // Check if the saved position is visible on any screen
+      const displays = screen.getAllDisplays();
+      const isVisible = displays.some((display) => {
+        const { x, y, width, height } = display.bounds;
+        return (
+          settings.window_x! >= x &&
+          settings.window_x! < x + width &&
+          settings.window_y! >= y &&
+          settings.window_y! < y + height
+        );
+      });
+
+      if (isVisible) {
+        windowOptions.x = settings.window_x;
+        windowOptions.y = settings.window_y;
+      }
+    }
+  }
+
+  mainWindow = new BrowserWindow(windowOptions);
 
   // Load the app
   if (isDev) {
@@ -51,7 +117,25 @@ function createWindow(): void {
   }
 
   mainWindow.once('ready-to-show', () => {
+    // Restore maximized state
+    if (settings.window_maximized) {
+      mainWindow?.maximize();
+    }
     mainWindow?.show();
+  });
+
+  // Save window state on resize and move
+  mainWindow.on('resize', debouncedSaveWindowState);
+  mainWindow.on('move', debouncedSaveWindowState);
+  mainWindow.on('maximize', saveWindowState);
+  mainWindow.on('unmaximize', saveWindowState);
+
+  mainWindow.on('close', () => {
+    // Save final window state before closing
+    if (windowStateChangeTimeout) {
+      clearTimeout(windowStateChangeTimeout);
+    }
+    saveWindowState();
   });
 
   mainWindow.on('closed', () => {

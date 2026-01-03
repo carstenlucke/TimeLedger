@@ -93,6 +93,11 @@ export interface BackupFile {
 export interface AppSettings {
   backup_directory?: string;
   last_backup?: string;
+  window_x?: number;
+  window_y?: number;
+  window_width?: number;
+  window_height?: number;
+  window_maximized?: boolean;
 }
 
 // Export formats

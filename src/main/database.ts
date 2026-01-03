@@ -491,9 +491,20 @@ export class DatabaseManager {
   }
 
   public getSettings(): AppSettings {
+    const windowX = this.getSetting('window_x');
+    const windowY = this.getSetting('window_y');
+    const windowWidth = this.getSetting('window_width');
+    const windowHeight = this.getSetting('window_height');
+    const windowMaximized = this.getSetting('window_maximized');
+
     return {
       backup_directory: this.getSetting('backup_directory'),
       last_backup: this.getSetting('last_backup'),
+      window_x: windowX ? parseInt(windowX, 10) : undefined,
+      window_y: windowY ? parseInt(windowY, 10) : undefined,
+      window_width: windowWidth ? parseInt(windowWidth, 10) : undefined,
+      window_height: windowHeight ? parseInt(windowHeight, 10) : undefined,
+      window_maximized: windowMaximized === 'true',
     };
   }
 
@@ -503,6 +514,21 @@ export class DatabaseManager {
     }
     if (settings.last_backup !== undefined) {
       this.setSetting('last_backup', settings.last_backup);
+    }
+    if (settings.window_x !== undefined) {
+      this.setSetting('window_x', settings.window_x.toString());
+    }
+    if (settings.window_y !== undefined) {
+      this.setSetting('window_y', settings.window_y.toString());
+    }
+    if (settings.window_width !== undefined) {
+      this.setSetting('window_width', settings.window_width.toString());
+    }
+    if (settings.window_height !== undefined) {
+      this.setSetting('window_height', settings.window_height.toString());
+    }
+    if (settings.window_maximized !== undefined) {
+      this.setSetting('window_maximized', settings.window_maximized.toString());
     }
   }
 
