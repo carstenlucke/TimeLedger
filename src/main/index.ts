@@ -10,6 +10,9 @@ let windowStateChangeTimeout: NodeJS.Timeout | null = null;
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
+// Backup interval in milliseconds (1 hour)
+const BACKUP_INTERVAL_MS = 60 * 60 * 1000;
+
 // Set app name for all platforms
 if (app.setName) {
   app.setName('TimeLedger');
@@ -238,7 +241,7 @@ async function setupBackupSchedule(): Promise<void> {
   // Schedule hourly backups
   backupIntervalId = setInterval(async () => {
     await createBackup();
-  }, 60 * 60 * 1000); // 1 hour
+  }, BACKUP_INTERVAL_MS);
 }
 
 async function createBackup(options: { force?: boolean } = {}): Promise<void> {
