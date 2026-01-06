@@ -217,6 +217,7 @@ const Settings: React.FC = () => {
       <div className="card">
         <h2>{t.settings.dataStorage}</h2>
 
+        {/* Database Location */}
         <div className="form-group">
           <label>{t.settings.databaseLocation}</label>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -237,10 +238,11 @@ const Settings: React.FC = () => {
             {t.settings.databaseHint}
           </p>
         </div>
-      </div>
 
-      <div className="card">
-        <h2>{t.settings.backupConfig}</h2>
+        <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '24px 0' }} />
+
+        {/* Backup Directory */}
+        <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>{t.settings.backupConfig}</h3>
 
         <div className="form-group">
           <label>{t.settings.backupDirectory}</label>
@@ -260,132 +262,144 @@ const Settings: React.FC = () => {
           </p>
         </div>
 
-        {settings.last_backup && (
-          <div className="alert alert-info">
-            {t.settings.lastBackup}: {formatDate(settings.last_backup)}
+        {/* Backup Status and Actions */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+          padding: '12px 16px',
+          backgroundColor: 'var(--bg-tertiary)',
+          borderRadius: '6px',
+          marginTop: '8px'
+        }}>
+          <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+            {settings.last_backup ? (
+              <span>{t.settings.lastBackup}: <strong>{formatDate(settings.last_backup)}</strong></span>
+            ) : (
+              <span>{t.settings.noBackups}</span>
+            )}
+            <span style={{ margin: '0 8px', color: 'var(--text-tertiary)' }}>·</span>
+            <span>{t.settings.backupNote}</span>
           </div>
-        )}
-
-        <div className="btn-group">
           <button
             className="btn btn-primary"
             onClick={handleCreateBackup}
             disabled={!settings.backup_directory || isCreatingBackup}
+            style={{ whiteSpace: 'nowrap' }}
           >
             {isCreatingBackup ? t.settings.creatingBackup : t.settings.createBackup}
           </button>
         </div>
 
-        <div style={{ marginTop: '16px', padding: '12px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '4px' }}>
-          <p style={{ fontSize: '14px', margin: 0, color: 'var(--text-secondary)' }}>
-            <strong>Note:</strong> {t.settings.backupNote}
-          </p>
-        </div>
-      </div>
+        {/* Available Backups */}
+        {settings.backup_directory && (
+          <>
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '24px 0' }} />
 
-      {settings.backup_directory && (
-        <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h2>{t.settings.availableBackups} ({backups.length})</h2>
-            {backups.length > 0 && (
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>{t.common.show}:</span>
-                <select
-                  value={backupPageSize}
-                  onChange={(e) => handlePageSizeChange(e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value))}
-                  style={{ padding: '6px 12px', fontSize: '14px', minWidth: '80px' }}
-                >
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                  <option value="ALL">{t.common.all}</option>
-                </select>
-              </div>
-            )}
-          </div>
-
-          {backups.length === 0 ? (
-            <div className="empty-state">
-              <h3>{t.settings.noBackups}</h3>
-              <p>{t.settings.createFirstBackup}</p>
-            </div>
-          ) : (
-            <>
-              <div className="table-container">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>{t.settings.filename}</th>
-                      <th>{t.common.date}</th>
-                      <th>{t.settings.size}</th>
-                      <th>{t.common.actions}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {getDisplayedBackups().map((backup) => (
-                      <tr key={backup.path}>
-                        <td>{backup.filename}</td>
-                        <td>{formatDate(backup.date)}</td>
-                        <td>{formatFileSize(backup.size)}</td>
-                        <td>
-                          <button
-                            className="btn btn-danger"
-                            onClick={() => handleRestoreBackup(backup.path)}
-                          >
-                            {t.common.restore}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {backupPageSize !== 'ALL' && getTotalPages() > 1 && (
-                <div style={{
-                  marginTop: '16px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '12px',
-                  backgroundColor: 'var(--bg-tertiary)',
-                  borderRadius: '4px'
-                }}>
-                  <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-                    {t.settings.showing} {((currentPage - 1) * (backupPageSize as number)) + 1}-{Math.min(currentPage * (backupPageSize as number), backups.length)} {t.settings.of} {backups.length} {t.settings.backups}
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      className="btn btn-secondary"
-                      onClick={handlePreviousPage}
-                      disabled={currentPage === 1}
-                      style={{ padding: '6px 12px', fontSize: '14px' }}
-                    >
-                      ← {t.common.previous}
-                    </button>
-                    <span style={{
-                      padding: '6px 12px',
-                      fontSize: '14px',
-                      color: 'var(--text-primary)',
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}>
-                      {t.common.page} {currentPage} / {getTotalPages()}
-                    </span>
-                    <button
-                      className="btn btn-secondary"
-                      onClick={handleNextPage}
-                      disabled={currentPage === getTotalPages()}
-                      style={{ padding: '6px 12px', fontSize: '14px' }}
-                    >
-                      {t.common.next} →
-                    </button>
-                  </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 600, margin: 0 }}>
+                {t.settings.availableBackups} ({backups.length})
+              </h3>
+              {backups.length > 0 && (
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>{t.common.show}:</span>
+                  <select
+                    value={backupPageSize}
+                    onChange={(e) => handlePageSizeChange(e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value))}
+                    style={{ padding: '6px 12px', fontSize: '14px', minWidth: '80px' }}
+                  >
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                    <option value="ALL">{t.common.all}</option>
+                  </select>
                 </div>
               )}
-            </>
-          )}
-        </div>
-      )}
+            </div>
+
+            {backups.length === 0 ? (
+              <div className="empty-state" style={{ padding: '24px' }}>
+                <p style={{ margin: 0, color: 'var(--text-secondary)' }}>{t.settings.createFirstBackup}</p>
+              </div>
+            ) : (
+              <>
+                <div className="table-container">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>{t.settings.filename}</th>
+                        <th>{t.common.date}</th>
+                        <th>{t.settings.size}</th>
+                        <th>{t.common.actions}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {getDisplayedBackups().map((backup) => (
+                        <tr key={backup.path}>
+                          <td>{backup.filename}</td>
+                          <td>{formatDate(backup.date)}</td>
+                          <td>{formatFileSize(backup.size)}</td>
+                          <td>
+                            <button
+                              className="btn btn-danger"
+                              onClick={() => handleRestoreBackup(backup.path)}
+                            >
+                              {t.common.restore}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {backupPageSize !== 'ALL' && getTotalPages() > 1 && (
+                  <div style={{
+                    marginTop: '16px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '12px',
+                    backgroundColor: 'var(--bg-tertiary)',
+                    borderRadius: '4px'
+                  }}>
+                    <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+                      {t.settings.showing} {((currentPage - 1) * (backupPageSize as number)) + 1}-{Math.min(currentPage * (backupPageSize as number), backups.length)} {t.settings.of} {backups.length} {t.settings.backups}
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        className="btn btn-secondary"
+                        onClick={handlePreviousPage}
+                        disabled={currentPage === 1}
+                        style={{ padding: '6px 12px', fontSize: '14px' }}
+                      >
+                        ← {t.common.previous}
+                      </button>
+                      <span style={{
+                        padding: '6px 12px',
+                        fontSize: '14px',
+                        color: 'var(--text-primary)',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}>
+                        {t.common.page} {currentPage} / {getTotalPages()}
+                      </span>
+                      <button
+                        className="btn btn-secondary"
+                        onClick={handleNextPage}
+                        disabled={currentPage === getTotalPages()}
+                        style={{ padding: '6px 12px', fontSize: '14px' }}
+                      >
+                        {t.common.next} →
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </div>
 
       <div className="card">
         <h2>{t.settings.about}</h2>
