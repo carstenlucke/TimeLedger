@@ -105,16 +105,17 @@ const WeeklyBarChart: React.FC<WeeklyBarChartProps> = ({ data, metric, onWeekCli
                 onMouseLeave={() => setHoveredWeek(null)}
                 onClick={() => onWeekClick?.(week)}
               >
-                {/* Hover background */}
-                {isHovered && (
+                {/* Hover border around the bar stack */}
+                {isHovered && getWeekTotal(week) > 0 && (
                   <rect
-                    x={x - 4}
-                    y={topPadding}
-                    width={barWidth + 8}
-                    height={chartHeight + 30}
-                    fill="var(--bg-tertiary)"
+                    x={x - 3}
+                    y={topPadding + chartHeight - (getWeekTotal(week) / maxValue) * chartHeight - 3}
+                    width={barWidth + 6}
+                    height={(getWeekTotal(week) / maxValue) * chartHeight + 6}
+                    fill="none"
+                    stroke="var(--text-secondary)"
+                    strokeWidth={2}
                     rx={6}
-                    style={{ opacity: 0.5 }}
                   />
                 )}
                 {/* Stacked bars for each project */}
