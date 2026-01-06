@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useI18n } from '../context/I18nContext';
 
 interface ProjectHours {
@@ -9,22 +9,26 @@ interface ProjectHours {
   color: string;
 }
 
-interface WeekData {
+export interface WeekData {
   weekLabel: string;
   totalHours: number;
   totalRevenue: number;
   weekNumber: number;
   year: number;
+  startDate: string;
+  endDate: string;
   projects: ProjectHours[];
 }
 
 interface WeeklyBarChartProps {
   data: WeekData[];
   metric: 'hours' | 'revenue';
+  onWeekClick?: (week: WeekData) => void;
 }
 
-const WeeklyBarChart: React.FC<WeeklyBarChartProps> = ({ data, metric }) => {
+const WeeklyBarChart: React.FC<WeeklyBarChartProps> = ({ data, metric, onWeekClick }) => {
   const { t, formatCurrency } = useI18n();
+  const [hoveredWeek, setHoveredWeek] = useState<string | null>(null);
 
   if (data.length === 0) {
     return null;
@@ -90,9 +94,29 @@ const WeeklyBarChart: React.FC<WeeklyBarChartProps> = ({ data, metric }) => {
           {data.map((week, index) => {
             const x = index * (barWidth + gap);
             let currentY = topPadding + chartHeight;
+            const weekKey = `${week.year}-${week.weekNumber}`;
+            const isHovered = hoveredWeek === weekKey;
 
             return (
-              <g key={`${week.year}-${week.weekNumber}`}>
+              <g
+                key={weekKey}
+                style={{ cursor: onWeekClick ? 'pointer' : 'default' }}
+                onMouseEnter={() => setHoveredWeek(weekKey)}
+                onMouseLeave={() => setHoveredWeek(null)}
+                onClick={() => onWeekClick?.(week)}
+              >
+                {/* Hover background */}
+                {isHovered && (
+                  <rect
+                    x={x - 4}
+                    y={topPadding}
+                    width={barWidth + 8}
+                    height={chartHeight + 30}
+                    fill="var(--bg-tertiary)"
+                    rx={6}
+                    style={{ opacity: 0.5 }}
+                  />
+                )}
                 {/* Stacked bars for each project */}
                 {week.projects.map((project, projIndex) => {
                   const value = getProjectValue(project);

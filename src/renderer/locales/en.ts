@@ -75,6 +75,7 @@ export const en = {
     hours: 'hrs',
     hoursToggle: 'Hours',
     revenueToggle: 'Revenue',
+    totalTime: 'Total Time',
   },
 
   // Projects

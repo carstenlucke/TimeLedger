@@ -77,6 +77,7 @@ export const de: TranslationKeys = {
     hours: 'Std',
     hoursToggle: 'Stunden',
     revenueToggle: 'Umsatz',
+    totalTime: 'Gesamtzeit',
   },
 
   // Projects

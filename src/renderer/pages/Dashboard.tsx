@@ -3,22 +3,8 @@ import type { TimeEntry, Project } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
 import { AppContext } from '../App';
-import WeeklyBarChart from '../components/WeeklyBarChart';
-
-interface WeekData {
-  weekLabel: string;
-  totalHours: number;
-  totalRevenue: number;
-  weekNumber: number;
-  year: number;
-  projects: Array<{
-    projectId: number;
-    projectName: string;
-    hours: number;
-    revenue: number;
-    color: string;
-  }>;
-}
+import WeeklyBarChart, { WeekData } from '../components/WeeklyBarChart';
+import WeekDetailDrawer from '../components/WeekDetailDrawer';
 
 // Color palette for projects
 const PROJECT_COLORS = [
@@ -43,8 +29,10 @@ const Dashboard: React.FC = () => {
   const [recentEntries, setRecentEntries] = useState<TimeEntry[]>([]);
   const [weeklyData, setWeeklyData] = useState<WeekData[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [projectColorMap, setProjectColorMap] = useState<Map<number, string>>(new Map());
   const [chartMetric, setChartMetric] = useState<'hours' | 'revenue'>('hours');
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedWeek, setSelectedWeek] = useState<WeekData | null>(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -76,10 +64,11 @@ const Dashboard: React.FC = () => {
       setRecentEntries(sortedEntries.slice(0, 10));
 
       // Create a color map for projects
-      const projectColorMap = new Map<number, string>();
+      const colorMap = new Map<number, string>();
       projectsData.forEach((project, index) => {
-        projectColorMap.set(project.id, PROJECT_COLORS[index % PROJECT_COLORS.length]);
+        colorMap.set(project.id, PROJECT_COLORS[index % PROJECT_COLORS.length]);
       });
+      setProjectColorMap(colorMap);
 
       // Calculate weekly data for last 10 weeks with project breakdown
       const weeks = getLast10Weeks();
@@ -107,7 +96,7 @@ const Dashboard: React.FC = () => {
         });
 
         // Convert to projects array
-        const projects = Array.from(projectHoursMap.entries()).map(([projectId, data]) => {
+        const weekProjects = Array.from(projectHoursMap.entries()).map(([projectId, data]) => {
           const hours = data.minutes / 60;
           const revenue = hours * data.hourlyRate;
           return {
@@ -115,12 +104,12 @@ const Dashboard: React.FC = () => {
             projectName: data.name,
             hours,
             revenue,
-            color: projectColorMap.get(projectId) || PROJECT_COLORS[0],
+            color: colorMap.get(projectId) || PROJECT_COLORS[0],
           };
         });
 
         const totalMinutes = weekEntries.reduce((sum, entry) => sum + entry.duration_minutes, 0);
-        const totalRevenue = projects.reduce((sum, project) => sum + project.revenue, 0);
+        const totalRevenue = weekProjects.reduce((sum, project) => sum + project.revenue, 0);
 
         return {
           weekLabel: `${t.dashboard.week} ${week.weekNumber}`,
@@ -128,7 +117,9 @@ const Dashboard: React.FC = () => {
           totalRevenue,
           weekNumber: week.weekNumber,
           year: week.year,
-          projects,
+          startDate: week.startDate,
+          endDate: week.endDate,
+          projects: weekProjects,
         };
       });
 
@@ -230,7 +221,11 @@ const Dashboard: React.FC = () => {
             <p>{t.dashboard.startTracking}</p>
           </div>
         ) : (
-          <WeeklyBarChart data={weeklyData} metric={chartMetric} />
+          <WeeklyBarChart
+            data={weeklyData}
+            metric={chartMetric}
+            onWeekClick={(week) => setSelectedWeek(week)}
+          />
         )}
       </div>
 
@@ -285,6 +280,18 @@ const Dashboard: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Week Detail Drawer */}
+      <WeekDetailDrawer
+        week={selectedWeek}
+        onClose={() => setSelectedWeek(null)}
+        projects={projects}
+        projectColors={projectColorMap}
+        onEntryClick={(entryId) => {
+          setSelectedWeek(null);
+          navigateToPage('entries', { entryId });
+        }}
+      />
     </div>
   );
 };
