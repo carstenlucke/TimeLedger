@@ -18,11 +18,13 @@ const Settings: React.FC = () => {
   const [backupPageSize, setBackupPageSize] = useState<number | 'ALL'>(20);
   const [currentPage, setCurrentPage] = useState(1);
   const [databasePath, setDatabasePath] = useState<string>('');
+  const [backupIntervalMs, setBackupIntervalMs] = useState<number>(0);
 
   useEffect(() => {
     loadSettings();
     loadBackups();
     loadDatabasePath();
+    loadBackupInterval();
   }, []);
 
   const loadDatabasePath = async () => {
@@ -31,6 +33,32 @@ const Settings: React.FC = () => {
       setDatabasePath(path);
     } catch (error) {
       console.error('Failed to load database path:', error);
+    }
+  };
+
+  const loadBackupInterval = async () => {
+    try {
+      const interval = await window.api.app.getBackupInterval();
+      setBackupIntervalMs(interval);
+    } catch (error) {
+      console.error('Failed to load backup interval:', error);
+    }
+  };
+
+  const formatBackupInterval = (ms: number): string => {
+    const hours = Math.floor(ms / (60 * 60 * 1000));
+    const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+
+    if (hours > 0 && minutes > 0) {
+      const hourUnit = hours === 1 ? t.settings.hour : t.settings.hours;
+      const minuteUnit = minutes === 1 ? t.settings.minute : t.settings.minutes;
+      return `${hours} ${hourUnit} ${minutes} ${minuteUnit}`;
+    } else if (hours > 0) {
+      const hourUnit = hours === 1 ? t.settings.hour : t.settings.hours;
+      return `${hours} ${hourUnit}`;
+    } else {
+      const minuteUnit = minutes === 1 ? t.settings.minute : t.settings.minutes;
+      return `${minutes} ${minuteUnit}`;
     }
   };
 
@@ -280,7 +308,7 @@ const Settings: React.FC = () => {
               <span>{t.settings.noBackups}</span>
             )}
             <span style={{ margin: '0 8px', color: 'var(--text-tertiary)' }}>·</span>
-            <span>{t.settings.backupNote}</span>
+            <span>{t.settings.backupNote.replace('{interval}', formatBackupInterval(backupIntervalMs))}</span>
           </div>
           <button
             className="btn btn-primary"

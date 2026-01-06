@@ -54,6 +54,9 @@ const IPC_CHANNELS = {
   // Database
   DATABASE_GET_PATH: 'database:get-path',
 
+  // App Config
+  APP_GET_BACKUP_INTERVAL: 'app:get-backup-interval',
+
   // Shell
   SHELL_SHOW_ITEM_IN_FOLDER: 'shell:show-item-in-folder',
 } as const;
@@ -168,6 +171,12 @@ const api = {
   database: {
     getPath: (): Promise<string> =>
       ipcRenderer.invoke(IPC_CHANNELS.DATABASE_GET_PATH),
+  },
+
+  // App Config methods
+  app: {
+    getBackupInterval: (): Promise<number> =>
+      ipcRenderer.invoke(IPC_CHANNELS.APP_GET_BACKUP_INTERVAL),
   },
 
   // Shell methods

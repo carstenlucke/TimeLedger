@@ -236,7 +236,7 @@ export const en = {
     lastBackup: 'Last backup',
     createBackup: 'Create Backup Now',
     creatingBackup: 'Creating Backup...',
-    backupNote: 'Backups are created automatically every hour and when you close the app.',
+    backupNote: 'Backups are created automatically every {interval} and when you close the app.',
     availableBackups: 'Available Backups',
     noBackups: 'No backups found',
     createFirstBackup: 'Create your first backup to see it here',
@@ -257,6 +257,10 @@ export const en = {
     databaseHint: 'This is where TimeLedger stores all your data',
     copyPath: 'Copy Path',
     showInFolder: 'Show in Finder',
+    hour: 'hour',
+    hours: 'hours',
+    minute: 'minute',
+    minutes: 'minutes',
   },
 
   // Notifications

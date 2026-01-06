@@ -238,7 +238,7 @@ export const de: TranslationKeys = {
     lastBackup: 'Letztes Backup',
     createBackup: 'Backup jetzt erstellen',
     creatingBackup: 'Erstelle Backup...',
-    backupNote: 'Backups werden automatisch jede Stunde und beim Schließen der App erstellt.',
+    backupNote: 'Backups werden automatisch alle {interval} und beim Schließen der App erstellt.',
     availableBackups: 'Verfügbare Backups',
     noBackups: 'Keine Backups gefunden',
     createFirstBackup: 'Erstellen Sie Ihr erstes Backup, um es hier zu sehen',
@@ -259,6 +259,10 @@ export const de: TranslationKeys = {
     databaseHint: 'Hier speichert TimeLedger alle Ihre Daten',
     copyPath: 'Pfad kopieren',
     showInFolder: 'Im Finder anzeigen',
+    hour: 'Stunde',
+    hours: 'Stunden',
+    minute: 'Minute',
+    minutes: 'Minuten',
   },
 
   // Notifications

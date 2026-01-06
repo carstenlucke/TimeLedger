@@ -11,7 +11,7 @@ let windowStateChangeTimeout: NodeJS.Timeout | null = null;
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
 // Backup interval in milliseconds (1 hour)
-const BACKUP_INTERVAL_MS = 60 * 60 * 1000;
+export const BACKUP_INTERVAL_MS = 60 * 60 * 1000;
 
 // Set app name for all platforms
 if (app.setName) {

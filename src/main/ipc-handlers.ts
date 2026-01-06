@@ -3,6 +3,7 @@ import { getDatabase } from './database';
 import { BackupManager } from './backup';
 import { ExportManager } from './export';
 import { IPC_CHANNELS } from '../shared/types';
+import { BACKUP_INTERVAL_MS } from './index';
 import type {
   ProjectInput,
   TimeEntryInput,
@@ -262,6 +263,11 @@ export function setupIpcHandlers(): void {
   // Database handlers
   ipcMain.handle(IPC_CHANNELS.DATABASE_GET_PATH, async () => {
     return db.getDbPath();
+  });
+
+  // App Config handlers
+  ipcMain.handle(IPC_CHANNELS.APP_GET_BACKUP_INTERVAL, async () => {
+    return BACKUP_INTERVAL_MS;
   });
 
   // Shell handlers

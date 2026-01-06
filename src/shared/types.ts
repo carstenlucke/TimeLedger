@@ -162,6 +162,9 @@ export const IPC_CHANNELS = {
   // Database
   DATABASE_GET_PATH: 'database:get-path',
 
+  // App Config
+  APP_GET_BACKUP_INTERVAL: 'app:get-backup-interval',
+
   // Shell
   SHELL_SHOW_ITEM_IN_FOLDER: 'shell:show-item-in-folder',
 } as const;
