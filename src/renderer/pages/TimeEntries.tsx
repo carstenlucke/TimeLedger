@@ -50,15 +50,18 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
     setProjectFilter(initialProjectFilter);
   }, [initialProjectFilter]);
 
+  const [handledInitialEntryId, setHandledInitialEntryId] = useState<number | null>(null);
+
   useEffect(() => {
-    // Auto-open edit modal if initialEntryId is provided
-    if (initialEntryId && entries.length > 0) {
+    // Auto-open edit modal if initialEntryId is provided (only once)
+    if (initialEntryId && entries.length > 0 && handledInitialEntryId !== initialEntryId) {
       const entry = entries.find(e => e.id === initialEntryId);
       if (entry) {
+        setHandledInitialEntryId(initialEntryId);
         handleEdit(entry);
       }
     }
-  }, [initialEntryId, entries]);
+  }, [initialEntryId, entries, handledInitialEntryId]);
 
   // ESC key to close modals
   useEffect(() => {
