@@ -4,6 +4,7 @@ import { useI18n } from '../context/I18nContext';
 import type { Invoice, InvoiceWithEntries } from '../../shared/types';
 import { isTypingInInput, getModifierKey } from '../contexts/KeyboardShortcutContext';
 import { LocalizedDateInput } from '../components/LocalizedDateInput';
+import { useSortableData, SortableHeader, SortableColumnConfig } from '../components/SortableTable';
 
 interface InvoicesProps {
   initialInvoiceId?: number;
@@ -355,6 +356,18 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
     return haystack.includes(query);
   });
 
+  const invoiceColumns: SortableColumnConfig<Invoice>[] = [
+    { key: 'invoice_number', label: t.invoices.invoiceNumber },
+    { key: 'invoice_date', label: t.invoices.invoiceDate },
+    { key: 'status', label: t.invoices.status },
+    { key: 'total_amount', label: t.invoices.totalAmount },
+  ];
+
+  const { sortedItems: sortedInvoices, sortConfig, handleSort } = useSortableData(
+    filteredInvoices,
+    { key: 'invoice_date', direction: 'desc' }
+  );
+
   if (loading) {
     return <div className="page">{t.common.loading}</div>;
   }
@@ -409,17 +422,13 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
               </div>
             ) : (
               <table>
-                <thead>
-                  <tr>
-                    <th>{t.invoices.invoiceNumber}</th>
-                    <th>{t.invoices.invoiceDate}</th>
-                    <th>{t.invoices.status}</th>
-                    <th>{t.invoices.totalAmount}</th>
-                    <th>{t.common.actions}</th>
-                  </tr>
-                </thead>
+                <SortableHeader
+                  columns={[...invoiceColumns, { key: 'id' as keyof Invoice, label: t.common.actions, sortable: false }]}
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                />
                 <tbody>
-                  {filteredInvoices.map((invoice) => (
+                  {sortedInvoices.map((invoice) => (
                     <tr key={invoice.id} onDoubleClick={() => loadInvoiceDetails(invoice.id)}>
                       <td>
                         <span

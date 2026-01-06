@@ -4,6 +4,7 @@ import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
 import { AppContext } from '../App';
 import { isTypingInInput, getModifierKey } from '../contexts/KeyboardShortcutContext';
+import { useSortableData, SortableHeader, SortableColumnConfig } from '../components/SortableTable';
 
 const Projects: React.FC = () => {
   const { showNotification, showConfirmation } = useNotification();
@@ -241,6 +242,17 @@ const Projects: React.FC = () => {
     return haystack.includes(query);
   });
 
+  const projectColumns: SortableColumnConfig<Project>[] = [
+    { key: 'name', label: t.projects.projectName },
+    { key: 'client_name', label: t.projects.client },
+    { key: 'hourly_rate', label: t.projects.hourlyRate },
+  ];
+
+  const { sortedItems: sortedProjects, sortConfig, handleSort } = useSortableData(
+    filteredProjects,
+    { key: 'name', direction: 'asc' }
+  );
+
   if (isLoading) {
     return <div className="loading">{t.common.loading}</div>;
   }
@@ -295,16 +307,13 @@ const Projects: React.FC = () => {
               </div>
             ) : (
               <table>
-                <thead>
-                  <tr>
-                    <th>{t.projects.projectName}</th>
-                    <th>{t.projects.client}</th>
-                    <th>{t.projects.hourlyRate}</th>
-                    <th>{t.common.actions}</th>
-                  </tr>
-                </thead>
+                <SortableHeader
+                  columns={[...projectColumns, { key: 'id' as keyof Project, label: t.common.actions, sortable: false }]}
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                />
                 <tbody>
-                  {filteredProjects.map((project) => (
+                  {sortedProjects.map((project) => (
                     <tr key={project.id} onDoubleClick={() => handleEdit(project)}>
                       <td>
                         <span
