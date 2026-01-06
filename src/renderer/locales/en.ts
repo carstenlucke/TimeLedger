@@ -252,6 +252,11 @@ export const en = {
     backups: 'backups',
     language: 'Language',
     languageLabel: 'Application Language',
+    dataStorage: 'Data Storage',
+    databaseLocation: 'Database Location',
+    databaseHint: 'This is where TimeLedger stores all your data',
+    copyPath: 'Copy Path',
+    showInFolder: 'Show in Finder',
   },
 
   // Notifications

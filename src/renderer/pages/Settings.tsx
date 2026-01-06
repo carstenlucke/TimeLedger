@@ -17,11 +17,40 @@ const Settings: React.FC = () => {
   const [isCreatingBackup, setIsCreatingBackup] = useState(false);
   const [backupPageSize, setBackupPageSize] = useState<number | 'ALL'>(20);
   const [currentPage, setCurrentPage] = useState(1);
+  const [databasePath, setDatabasePath] = useState<string>('');
 
   useEffect(() => {
     loadSettings();
     loadBackups();
+    loadDatabasePath();
   }, []);
+
+  const loadDatabasePath = async () => {
+    try {
+      const path = await window.api.database.getPath();
+      setDatabasePath(path);
+    } catch (error) {
+      console.error('Failed to load database path:', error);
+    }
+  };
+
+  const handleCopyDatabasePath = async () => {
+    try {
+      await navigator.clipboard.writeText(databasePath);
+      showNotification(t.notifications.copiedToClipboard, 'success');
+    } catch (error) {
+      console.error('Failed to copy path:', error);
+      showNotification(t.notifications.copyFailed, 'error');
+    }
+  };
+
+  const handleShowInFolder = async () => {
+    try {
+      await window.api.shell.showItemInFolder(databasePath);
+    } catch (error) {
+      console.error('Failed to show in folder:', error);
+    }
+  };
 
   const loadSettings = async () => {
     try {
@@ -182,6 +211,31 @@ const Settings: React.FC = () => {
             <option value="en">English</option>
             <option value="de">Deutsch</option>
           </select>
+        </div>
+      </div>
+
+      <div className="card">
+        <h2>{t.settings.dataStorage}</h2>
+
+        <div className="form-group">
+          <label>{t.settings.databaseLocation}</label>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <input
+              type="text"
+              value={databasePath}
+              readOnly
+              style={{ flex: 1, fontFamily: 'monospace', fontSize: '13px' }}
+            />
+            <button className="btn btn-secondary" onClick={handleCopyDatabasePath} title={t.settings.copyPath}>
+              {t.settings.copyPath}
+            </button>
+            <button className="btn btn-secondary" onClick={handleShowInFolder} title={t.settings.showInFolder}>
+              {t.settings.showInFolder}
+            </button>
+          </div>
+          <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '6px' }}>
+            {t.settings.databaseHint}
+          </p>
         </div>
       </div>
 

@@ -254,6 +254,11 @@ export const de: TranslationKeys = {
     backups: 'Backups',
     language: 'Sprache',
     languageLabel: 'Anwendungssprache',
+    dataStorage: 'Datenspeicher',
+    databaseLocation: 'Datenbank-Speicherort',
+    databaseHint: 'Hier speichert TimeLedger alle Ihre Daten',
+    copyPath: 'Pfad kopieren',
+    showInFolder: 'Im Finder anzeigen',
   },
 
   // Notifications

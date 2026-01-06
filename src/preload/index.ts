@@ -50,6 +50,12 @@ const IPC_CHANNELS = {
 
   // Search
   SEARCH_GLOBAL: 'search:global',
+
+  // Database
+  DATABASE_GET_PATH: 'database:get-path',
+
+  // Shell
+  SHELL_SHOW_ITEM_IN_FOLDER: 'shell:show-item-in-folder',
 } as const;
 
 // Define the API that will be exposed to the renderer
@@ -156,6 +162,18 @@ const api = {
   search: {
     global: (query: string): Promise<any> =>
       ipcRenderer.invoke(IPC_CHANNELS.SEARCH_GLOBAL, query),
+  },
+
+  // Database methods
+  database: {
+    getPath: (): Promise<string> =>
+      ipcRenderer.invoke(IPC_CHANNELS.DATABASE_GET_PATH),
+  },
+
+  // Shell methods
+  shell: {
+    showItemInFolder: (filePath: string): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.SHELL_SHOW_ITEM_IN_FOLDER, filePath),
   },
 };
 

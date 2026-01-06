@@ -158,4 +158,10 @@ export const IPC_CHANNELS = {
 
   // Search
   SEARCH_GLOBAL: 'search:global',
+
+  // Database
+  DATABASE_GET_PATH: 'database:get-path',
+
+  // Shell
+  SHELL_SHOW_ITEM_IN_FOLDER: 'shell:show-item-in-folder',
 } as const;

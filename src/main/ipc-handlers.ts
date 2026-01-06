@@ -1,4 +1,4 @@
-import { ipcMain, dialog } from 'electron';
+import { ipcMain, dialog, shell } from 'electron';
 import { getDatabase } from './database';
 import { BackupManager } from './backup';
 import { ExportManager } from './export';
@@ -257,5 +257,15 @@ export function setupIpcHandlers(): void {
       return { projects: [], timeEntries: [], invoices: [] };
     }
     return db.searchGlobal(query.trim());
+  });
+
+  // Database handlers
+  ipcMain.handle(IPC_CHANNELS.DATABASE_GET_PATH, async () => {
+    return db.getDbPath();
+  });
+
+  // Shell handlers
+  ipcMain.handle(IPC_CHANNELS.SHELL_SHOW_ITEM_IN_FOLDER, async (_, filePath: string) => {
+    shell.showItemInFolder(filePath);
   });
 }
