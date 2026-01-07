@@ -161,18 +161,18 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
         <h3>{t.dashboard.revenueBreakdown}</h3>
         <div className="stat-chart-container">
           {renderRevenueChart()}
-          <div className="stat-values">
-            <div className="stat-value-item">
-              <span className="value-label">{t.projects.status.active}:</span>
-              <span className="value-amount">{formatCurrency(stats.activeRevenue)}</span>
+          <div className="stat-legend">
+            <div className="legend-item">
+              <span className="legend-color" style={{ backgroundColor: '#10B981' }}></span>
+              <span>{t.projects.status.active}: {formatCurrency(stats.activeRevenue)}</span>
             </div>
-            <div className="stat-value-item">
-              <span className="value-label">{t.projects.status.completed}:</span>
-              <span className="value-amount">{formatCurrency(stats.completedRevenue)}</span>
+            <div className="legend-item">
+              <span className="legend-color" style={{ backgroundColor: '#3B82F6' }}></span>
+              <span>{t.projects.status.completed}: {formatCurrency(stats.completedRevenue)}</span>
             </div>
-            <div className="stat-value-item">
-              <span className="value-label">{t.projects.status.paused}:</span>
-              <span className="value-amount">{formatCurrency(stats.pausedRevenue)}</span>
+            <div className="legend-item">
+              <span className="legend-color" style={{ backgroundColor: '#F59E0B' }}></span>
+              <span>{t.projects.status.paused}: {formatCurrency(stats.pausedRevenue)}</span>
             </div>
           </div>
         </div>
