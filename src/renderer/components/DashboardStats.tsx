@@ -7,7 +7,7 @@ interface DashboardStatsProps {
 }
 
 const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
-  const { t, formatCurrency } = useI18n();
+  const { t, formatCurrency, formatNumber } = useI18n();
 
   // Berechne Prozentanteile für Donut Chart
   const total = stats.totalProjects;
@@ -60,7 +60,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
                 fontWeight="700"
                 fill="white"
               >
-                {activePercent.toFixed(2)}%
+                {formatNumber(activePercent, 2)}%
               </text>
             )}
           </>
@@ -87,7 +87,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
                 fontWeight="700"
                 fill="white"
               >
-                {completedPercent.toFixed(2)}%
+                {formatNumber(completedPercent, 2)}%
               </text>
             )}
           </>
@@ -114,7 +114,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
                 fontWeight="700"
                 fill="white"
               >
-                {pausedPercent.toFixed(2)}%
+                {formatNumber(pausedPercent, 2)}%
               </text>
             )}
           </>
@@ -175,7 +175,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
                 fontWeight="700"
                 fill="white"
               >
-                {activeRevPercent.toFixed(2)}%
+                {formatNumber(activeRevPercent, 2)}%
               </text>
             )}
           </>
@@ -201,7 +201,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
                 fontWeight="700"
                 fill="white"
               >
-                {completedRevPercent.toFixed(2)}%
+                {formatNumber(completedRevPercent, 2)}%
               </text>
             )}
           </>
@@ -227,7 +227,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
                 fontWeight="700"
                 fill="white"
               >
-                {pausedRevPercent.toFixed(2)}%
+                {formatNumber(pausedRevPercent, 2)}%
               </text>
             )}
           </>
@@ -289,7 +289,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
           {formatCurrency(stats.unbilledRevenue)}
         </div>
         <div className="stat-subtitle">
-          {stats.unbilledHours.toFixed(1)} {t.common.hours}
+          {formatNumber(stats.unbilledHours, 1)} {t.common.hours}
         </div>
       </div>
     </div>
