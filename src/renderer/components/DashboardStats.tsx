@@ -25,47 +25,99 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
     const completedOffset = (activePercent / 100) * circumference;
     const pausedOffset = ((activePercent + completedPercent) / 100) * circumference;
 
+    // Berechne Positionen für Labels auf dem Ring
+    const getLabelPosition = (startPercent: number, segmentPercent: number) => {
+      const angle = ((startPercent + segmentPercent / 2) / 100) * 2 * Math.PI - Math.PI / 2;
+      const labelRadius = 40;
+      return {
+        x: 60 + labelRadius * Math.cos(angle),
+        y: 60 + labelRadius * Math.sin(angle),
+      };
+    };
+
     return (
       <svg width="120" height="120" viewBox="0 0 120 120">
         <circle cx="60" cy="60" r={radius} fill="transparent" stroke="#e5e7eb" strokeWidth="20" />
 
         {/* Active segment */}
         {activePercent > 0 && (
-          <circle
-            cx="60" cy="60" r={radius}
-            fill="transparent"
-            stroke="#10B981"
-            strokeWidth="20"
-            strokeDasharray={`${(activePercent / 100) * circumference} ${circumference}`}
-            strokeDashoffset={-activeOffset}
-            transform="rotate(-90 60 60)"
-          />
+          <>
+            <circle
+              cx="60" cy="60" r={radius}
+              fill="transparent"
+              stroke="#10B981"
+              strokeWidth="20"
+              strokeDasharray={`${(activePercent / 100) * circumference} ${circumference}`}
+              strokeDashoffset={-activeOffset}
+              transform="rotate(-90 60 60)"
+            />
+            {activePercent > 8 && (
+              <text
+                x={getLabelPosition(0, activePercent).x}
+                y={getLabelPosition(0, activePercent).y}
+                textAnchor="middle"
+                fontSize="7"
+                fontWeight="700"
+                fill="white"
+              >
+                {activePercent.toFixed(2)}%
+              </text>
+            )}
+          </>
         )}
 
         {/* Completed segment */}
         {completedPercent > 0 && (
-          <circle
-            cx="60" cy="60" r={radius}
-            fill="transparent"
-            stroke="#3B82F6"
-            strokeWidth="20"
-            strokeDasharray={`${(completedPercent / 100) * circumference} ${circumference}`}
-            strokeDashoffset={-completedOffset}
-            transform="rotate(-90 60 60)"
-          />
+          <>
+            <circle
+              cx="60" cy="60" r={radius}
+              fill="transparent"
+              stroke="#3B82F6"
+              strokeWidth="20"
+              strokeDasharray={`${(completedPercent / 100) * circumference} ${circumference}`}
+              strokeDashoffset={-completedOffset}
+              transform="rotate(-90 60 60)"
+            />
+            {completedPercent > 8 && (
+              <text
+                x={getLabelPosition(activePercent, completedPercent).x}
+                y={getLabelPosition(activePercent, completedPercent).y}
+                textAnchor="middle"
+                fontSize="7"
+                fontWeight="700"
+                fill="white"
+              >
+                {completedPercent.toFixed(2)}%
+              </text>
+            )}
+          </>
         )}
 
         {/* Paused segment */}
         {pausedPercent > 0 && (
-          <circle
-            cx="60" cy="60" r={radius}
-            fill="transparent"
-            stroke="#F59E0B"
-            strokeWidth="20"
-            strokeDasharray={`${(pausedPercent / 100) * circumference} ${circumference}`}
-            strokeDashoffset={-pausedOffset}
-            transform="rotate(-90 60 60)"
-          />
+          <>
+            <circle
+              cx="60" cy="60" r={radius}
+              fill="transparent"
+              stroke="#F59E0B"
+              strokeWidth="20"
+              strokeDasharray={`${(pausedPercent / 100) * circumference} ${circumference}`}
+              strokeDashoffset={-pausedOffset}
+              transform="rotate(-90 60 60)"
+            />
+            {pausedPercent > 8 && (
+              <text
+                x={getLabelPosition(activePercent + completedPercent, pausedPercent).x}
+                y={getLabelPosition(activePercent + completedPercent, pausedPercent).y}
+                textAnchor="middle"
+                fontSize="7"
+                fontWeight="700"
+                fill="white"
+              >
+                {pausedPercent.toFixed(2)}%
+              </text>
+            )}
+          </>
         )}
 
         <text x="60" y="65" textAnchor="middle" fontSize="24" fontWeight="bold" fill="var(--text-primary)">
@@ -89,44 +141,96 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
     const completedOffset = (activeRevPercent / 100) * circumference;
     const pausedOffset = ((activeRevPercent + completedRevPercent) / 100) * circumference;
 
+    // Berechne Positionen für Labels auf dem Ring
+    const getLabelPosition = (startPercent: number, segmentPercent: number) => {
+      const angle = ((startPercent + segmentPercent / 2) / 100) * 2 * Math.PI - Math.PI / 2;
+      const labelRadius = 40;
+      return {
+        x: 60 + labelRadius * Math.cos(angle),
+        y: 60 + labelRadius * Math.sin(angle),
+      };
+    };
+
     return (
       <svg width="120" height="120" viewBox="0 0 120 120">
         <circle cx="60" cy="60" r={radius} fill="transparent" stroke="#e5e7eb" strokeWidth="20" />
 
         {activeRevPercent > 0 && (
-          <circle
-            cx="60" cy="60" r={radius}
-            fill="transparent"
-            stroke="#10B981"
-            strokeWidth="20"
-            strokeDasharray={`${(activeRevPercent / 100) * circumference} ${circumference}`}
-            strokeDashoffset={-activeOffset}
-            transform="rotate(-90 60 60)"
-          />
+          <>
+            <circle
+              cx="60" cy="60" r={radius}
+              fill="transparent"
+              stroke="#10B981"
+              strokeWidth="20"
+              strokeDasharray={`${(activeRevPercent / 100) * circumference} ${circumference}`}
+              strokeDashoffset={-activeOffset}
+              transform="rotate(-90 60 60)"
+            />
+            {activeRevPercent > 8 && (
+              <text
+                x={getLabelPosition(0, activeRevPercent).x}
+                y={getLabelPosition(0, activeRevPercent).y}
+                textAnchor="middle"
+                fontSize="7"
+                fontWeight="700"
+                fill="white"
+              >
+                {activeRevPercent.toFixed(2)}%
+              </text>
+            )}
+          </>
         )}
 
         {completedRevPercent > 0 && (
-          <circle
-            cx="60" cy="60" r={radius}
-            fill="transparent"
-            stroke="#3B82F6"
-            strokeWidth="20"
-            strokeDasharray={`${(completedRevPercent / 100) * circumference} ${circumference}`}
-            strokeDashoffset={-completedOffset}
-            transform="rotate(-90 60 60)"
-          />
+          <>
+            <circle
+              cx="60" cy="60" r={radius}
+              fill="transparent"
+              stroke="#3B82F6"
+              strokeWidth="20"
+              strokeDasharray={`${(completedRevPercent / 100) * circumference} ${circumference}`}
+              strokeDashoffset={-completedOffset}
+              transform="rotate(-90 60 60)"
+            />
+            {completedRevPercent > 8 && (
+              <text
+                x={getLabelPosition(activeRevPercent, completedRevPercent).x}
+                y={getLabelPosition(activeRevPercent, completedRevPercent).y}
+                textAnchor="middle"
+                fontSize="7"
+                fontWeight="700"
+                fill="white"
+              >
+                {completedRevPercent.toFixed(2)}%
+              </text>
+            )}
+          </>
         )}
 
         {pausedRevPercent > 0 && (
-          <circle
-            cx="60" cy="60" r={radius}
-            fill="transparent"
-            stroke="#F59E0B"
-            strokeWidth="20"
-            strokeDasharray={`${(pausedRevPercent / 100) * circumference} ${circumference}`}
-            strokeDashoffset={-pausedOffset}
-            transform="rotate(-90 60 60)"
-          />
+          <>
+            <circle
+              cx="60" cy="60" r={radius}
+              fill="transparent"
+              stroke="#F59E0B"
+              strokeWidth="20"
+              strokeDasharray={`${(pausedRevPercent / 100) * circumference} ${circumference}`}
+              strokeDashoffset={-pausedOffset}
+              transform="rotate(-90 60 60)"
+            />
+            {pausedRevPercent > 8 && (
+              <text
+                x={getLabelPosition(activeRevPercent + completedRevPercent, pausedRevPercent).x}
+                y={getLabelPosition(activeRevPercent + completedRevPercent, pausedRevPercent).y}
+                textAnchor="middle"
+                fontSize="7"
+                fontWeight="700"
+                fill="white"
+              >
+                {pausedRevPercent.toFixed(2)}%
+              </text>
+            )}
+          </>
         )}
       </svg>
     );
