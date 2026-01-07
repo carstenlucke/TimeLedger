@@ -45,9 +45,9 @@ export function SortableHeader<T>({ columns, sortConfig, onSort }: SortableHeade
             >
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                 {column.label}
-                {isSortable && sortConfig.key === column.key && (
-                  <span style={{ fontSize: '0.8em' }}>
-                    {sortConfig.direction === 'asc' ? '▲' : '▼'}
+                {isSortable && (
+                  <span style={{ fontSize: '0.8em', opacity: sortConfig.key === column.key ? 1 : 0.35 }}>
+                    {sortConfig.key === column.key ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}
                   </span>
                 )}
               </span>
