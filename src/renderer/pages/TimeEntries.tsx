@@ -489,9 +489,25 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
     project_name: getProjectName(entry.project_id),
   }));
 
+  const getBillingStatusSortValue = (entry: TimeEntryRow): string => {
+    const invoice = entry.invoice_id ? invoices.find(inv => inv.id === entry.invoice_id) : undefined;
+    if (invoice?.status === 'cancelled') return t.invoices.statusCancelled;
+
+    const statusMap: Record<string, string> = {
+      unbilled: t.invoices.unbilled,
+      in_draft: t.invoices.inDraft,
+      invoiced: t.invoices.invoiced,
+    };
+
+    return statusMap[entry.billing_status || 'unbilled'];
+  };
+
   const getSortValue = (entry: TimeEntryRow, key: keyof TimeEntryRow) => {
     if (key === 'date') {
       return entry.start_time ? `${entry.date} ${entry.start_time}` : entry.date;
+    }
+    if (key === 'billing_status') {
+      return getBillingStatusSortValue(entry);
     }
 
     return entry[key];
@@ -523,7 +539,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
     { key: 'end_time', label: t.projects.end, sortable: false },
     { key: 'duration_minutes', label: t.common.duration },
     { key: 'description', label: t.common.description, sortable: false },
-    { key: 'billing_status', label: t.invoices.billingStatus, sortable: false },
+    { key: 'billing_status', label: t.invoices.billingStatus },
     { key: 'invoice_id', label: t.common.actions, sortable: false },
   ];
 
