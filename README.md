@@ -76,7 +76,8 @@ TimeLedger/
 │   │   ├── database.ts     # SQLite database layer
 │   │   ├── backup.ts       # Backup/restore logic
 │   │   ├── export.ts       # CSV/JSON export
-│   │   └── ipc-handlers.ts # IPC communication handlers
+│   │   ├── ipc-handlers.ts # IPC communication handlers
+│   │   └── migrations/     # Database migrations
 │   ├── renderer/      # React frontend
 │   │   ├── pages/          # Page components
 │   │   ├── components/     # Reusable components
@@ -88,12 +89,24 @@ TimeLedger/
 │   │   └── index.ts
 │   └── shared/        # Shared types and constants
 │       └── types.ts
+├── docs/              # Documentation
+│   └── database-migrations.md
 ├── package.json
 ├── tsconfig.json      # TypeScript config for renderer
 ├── tsconfig.main.json # TypeScript config for main
 ├── vite.config.ts     # Vite configuration
 └── README.md
 ```
+
+### Database Migrations
+
+TimeLedger uses a versioned migration system for database schema changes. Migrations run automatically on app start.
+
+See [Database Migrations Documentation](docs/database-migrations.md) for details on:
+- How migrations work
+- Creating new migrations
+- Best practices
+- Troubleshooting
 
 ## Usage
 

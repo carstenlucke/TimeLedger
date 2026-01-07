@@ -14,10 +14,12 @@ import type {
   InvoiceInput,
   InvoiceWithEntries,
 } from '../shared/types';
+import { MigrationRunner } from './migrations';
 
 export class DatabaseManager {
   private db: Database.Database;
   private dbPath: string;
+  private migrationRunner: MigrationRunner;
 
   constructor() {
     // Create app data directory if it doesn't exist
@@ -31,8 +33,12 @@ export class DatabaseManager {
     console.log('Database path:', this.dbPath);
     this.db = new Database(this.dbPath);
     this.db.pragma('journal_mode = WAL');
-    console.log('Database opened, initializing tables...');
-    this.initialize();
+
+    // Initialize migration runner
+    this.migrationRunner = new MigrationRunner(this.db);
+
+    console.log('Database opened, running migrations...');
+    this.runMigrations();
     console.log('Database initialization complete');
   }
 
@@ -40,105 +46,43 @@ export class DatabaseManager {
     return this.dbPath;
   }
 
-  private initialize(): void {
-    // Create projects table
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS projects (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        hourly_rate REAL,
-        client_name TEXT,
-        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create time_entries table
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS time_entries (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        project_id INTEGER NOT NULL,
-        date TEXT NOT NULL,
-        start_time TEXT,
-        end_time TEXT,
-        duration_minutes INTEGER NOT NULL,
-        description TEXT,
-        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE
-      )
-    `);
-
-    // Create invoices table
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS invoices (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        invoice_number TEXT NOT NULL UNIQUE,
-        invoice_date TEXT NOT NULL,
-        status TEXT NOT NULL DEFAULT 'draft',
-        total_amount REAL NOT NULL DEFAULT 0,
-        notes TEXT,
-        cancellation_reason TEXT,
-        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create settings table
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS settings (
-        key TEXT PRIMARY KEY,
-        value TEXT NOT NULL
-      )
-    `);
-
-    // Create metadata table for versioning
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS meta (
-        key TEXT PRIMARY KEY,
-        value TEXT NOT NULL
-      )
-    `);
-
-    // Initialize metadata values if missing
-    this.db.exec(`
-      INSERT INTO meta (key, value) VALUES ('data_version', '1')
-      ON CONFLICT(key) DO NOTHING
-    `);
-    this.db.exec(`
-      INSERT INTO meta (key, value) VALUES ('last_backup_version', '0')
-      ON CONFLICT(key) DO NOTHING
-    `);
-
-    // Add invoice-related columns to time_entries if they don't exist
-    try {
-      this.db.exec(`ALTER TABLE time_entries ADD COLUMN invoice_id INTEGER REFERENCES invoices(id)`);
-    } catch (e) {
-      // Column already exists, ignore error
+  /**
+   * Run database migrations
+   */
+  private runMigrations(): void {
+    const { applied, currentVersion } = this.migrationRunner.runMigrations();
+    if (applied > 0) {
+      console.log(`Applied ${applied} migration(s). Schema version: ${currentVersion}`);
     }
+  }
 
-    try {
-      this.db.exec(`ALTER TABLE time_entries ADD COLUMN billing_status TEXT NOT NULL DEFAULT 'unbilled'`);
-    } catch (e) {
-      // Column already exists, ignore error
-    }
+  /**
+   * Get current schema version
+   */
+  public getSchemaVersion(): number {
+    return this.migrationRunner.getCurrentVersion();
+  }
 
-    try {
-      this.db.exec(`ALTER TABLE projects ADD COLUMN status TEXT NOT NULL DEFAULT 'active'`);
-    } catch (e) {
-      // Column already exists, ignore error
-    }
+  /**
+   * Check if migrations are pending
+   */
+  public hasPendingMigrations(): boolean {
+    return this.migrationRunner.needsMigration();
+  }
 
-    // Create indices
-    this.db.exec(`
-      CREATE INDEX IF NOT EXISTS idx_time_entries_project_id ON time_entries(project_id);
-      CREATE INDEX IF NOT EXISTS idx_time_entries_date ON time_entries(date);
-      CREATE INDEX IF NOT EXISTS idx_time_entries_invoice_id ON time_entries(invoice_id);
-      CREATE INDEX IF NOT EXISTS idx_time_entries_billing_status ON time_entries(billing_status);
-      CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
-      CREATE INDEX IF NOT EXISTS idx_invoices_date ON invoices(invoice_date);
-      CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
-    `);
+  /**
+   * Get migration info
+   */
+  public getMigrationInfo(): {
+    currentVersion: number;
+    latestVersion: number;
+    appliedMigrations: { version: number; name: string; applied_at: string }[];
+  } {
+    return {
+      currentVersion: this.migrationRunner.getCurrentVersion(),
+      latestVersion: this.migrationRunner.getLatestVersion(),
+      appliedMigrations: this.migrationRunner.getAppliedMigrations(),
+    };
   }
 
   // Project methods
