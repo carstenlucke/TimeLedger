@@ -86,6 +86,11 @@ export function setupIpcHandlers(): void {
     return db.generateReport(filter);
   });
 
+  // Dashboard handlers
+  ipcMain.handle(IPC_CHANNELS.DASHBOARD_GET_STATISTICS, async () => {
+    return db.getDashboardStatistics();
+  });
+
   ipcMain.handle(IPC_CHANNELS.REPORT_EXPORT, async (_, report, format: ExportFormat) => {
     let extension: string;
     let filterName: string;

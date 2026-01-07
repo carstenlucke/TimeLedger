@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { Project, ProjectReport, ReportFilter, ExportFormat } from '../../shared/types';
+import type { Project, ProjectReport, ReportFilter, ExportFormat, ProjectStatus } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
 import { LocalizedDateInput } from '../components/LocalizedDateInput';
@@ -18,6 +18,7 @@ const Reports: React.FC = () => {
     project_ids: undefined,
   });
   const [selectedProjects, setSelectedProjects] = useState<number[]>([]);
+  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
 
   useEffect(() => {
     loadProjects();
@@ -42,7 +43,17 @@ const Reports: React.FC = () => {
         project_ids: selectedProjects.length > 0 ? selectedProjects : undefined,
       };
       const data = await window.api.report.generate(filterToUse);
-      setReport(data);
+
+      // Apply status filter if needed
+      let filteredData = data;
+      if (statusFilter !== 'all') {
+        filteredData = data.filter(projectReport => {
+          const project = projects.find(p => p.id === projectReport.project_id);
+          return project && project.status === statusFilter;
+        });
+      }
+
+      setReport(filteredData);
       setHasGenerated(true);
       showNotification(t.notifications.success, 'success');
     } catch (error) {
@@ -189,9 +200,13 @@ const Reports: React.FC = () => {
             marginBottom: '20px',
             border: '1px solid var(--border-secondary)',
           }}>
+            <h3 style={{ fontSize: '15px', fontWeight: '600', marginTop: 0, marginBottom: '16px' }}>
+              {t.common.project}
+            </h3>
+
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label style={{ fontSize: '15px', fontWeight: '600', marginBottom: '12px', display: 'block' }}>
-                {t.common.project} ({t.reports.allProjects})
+              <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '8px', display: 'block' }}>
+                {t.reports.allProjects}
               </label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {projects.map((project) => (
@@ -243,6 +258,25 @@ const Reports: React.FC = () => {
                 ))}
               </div>
             </div>
+
+            <div style={{ marginTop: '20px' }}>
+              <label htmlFor="status-filter" style={{ fontSize: '14px', fontWeight: '500', marginBottom: '8px', display: 'block' }}>
+                {t.projects.status.label}
+              </label>
+              <select
+                id="status-filter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as ProjectStatus | 'all')}
+                className="form-control"
+                style={{ maxWidth: '200px' }}
+              >
+                <option value="all">{t.projects.status.all}</option>
+                <option value="active">{t.projects.status.active}</option>
+                <option value="completed">{t.projects.status.completed}</option>
+                <option value="paused">{t.projects.status.paused}</option>
+              </select>
+            </div>
+            
           </div>
         )}
 

@@ -123,6 +123,12 @@ export class DatabaseManager {
       // Column already exists, ignore error
     }
 
+    try {
+      this.db.exec(`ALTER TABLE projects ADD COLUMN status TEXT NOT NULL DEFAULT 'active'`);
+    } catch (e) {
+      // Column already exists, ignore error
+    }
+
     // Create indices
     this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_time_entries_project_id ON time_entries(project_id);
@@ -131,16 +137,17 @@ export class DatabaseManager {
       CREATE INDEX IF NOT EXISTS idx_time_entries_billing_status ON time_entries(billing_status);
       CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
       CREATE INDEX IF NOT EXISTS idx_invoices_date ON invoices(invoice_date);
+      CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
     `);
   }
 
   // Project methods
   public createProject(input: ProjectInput): Project {
     const stmt = this.db.prepare(`
-      INSERT INTO projects (name, hourly_rate, client_name, created_at, updated_at)
-      VALUES (?, ?, ?, datetime('now'), datetime('now'))
+      INSERT INTO projects (name, hourly_rate, client_name, status, created_at, updated_at)
+      VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
     `);
-    const result = stmt.run(input.name, input.hourly_rate, input.client_name);
+    const result = stmt.run(input.name, input.hourly_rate, input.client_name, input.status || 'active');
     this.bumpDataVersion();
     return this.getProjectById(result.lastInsertRowid as number)!;
   }
@@ -160,6 +167,10 @@ export class DatabaseManager {
     if (input.client_name !== undefined) {
       updates.push('client_name = ?');
       values.push(input.client_name);
+    }
+    if (input.status !== undefined) {
+      updates.push('status = ?');
+      values.push(input.status);
     }
 
     updates.push("updated_at = datetime('now')");
@@ -187,6 +198,58 @@ export class DatabaseManager {
   public getProjectById(id: number): Project | undefined {
     const stmt = this.db.prepare('SELECT * FROM projects WHERE id = ?');
     return stmt.get(id) as Project | undefined;
+  }
+
+  public getDashboardStatistics(): any {
+    // Project counts by status
+    const projectCounts = this.db.prepare(`
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active,
+        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+        SUM(CASE WHEN status = 'paused' THEN 1 ELSE 0 END) as paused
+      FROM projects
+    `).get() as any;
+
+    // Revenue breakdown by project status
+    const revenueBreakdown = this.db.prepare(`
+      SELECT
+        p.status,
+        SUM(te.duration_minutes * COALESCE(p.hourly_rate, 0) / 60.0) as revenue
+      FROM projects p
+      LEFT JOIN time_entries te ON p.id = te.project_id
+      GROUP BY p.status
+    `).all() as any[];
+
+    const revenueMap = new Map<string, number>();
+    revenueBreakdown.forEach(row => {
+      revenueMap.set(row.status, row.revenue || 0);
+    });
+
+    // Unbilled revenue
+    const unbilled = this.db.prepare(`
+      SELECT
+        SUM(te.duration_minutes * COALESCE(p.hourly_rate, 0) / 60.0) as unbilled_revenue,
+        SUM(te.duration_minutes) as unbilled_minutes
+      FROM time_entries te
+      JOIN projects p ON te.project_id = p.id
+      WHERE te.billing_status = 'unbilled'
+    `).get() as any;
+
+    return {
+      totalProjects: projectCounts.total || 0,
+      activeProjects: projectCounts.active || 0,
+      completedProjects: projectCounts.completed || 0,
+      pausedProjects: projectCounts.paused || 0,
+
+      totalRevenue: Array.from(revenueMap.values()).reduce((sum, val) => sum + val, 0),
+      activeRevenue: revenueMap.get('active') || 0,
+      completedRevenue: revenueMap.get('completed') || 0,
+      pausedRevenue: revenueMap.get('paused') || 0,
+
+      unbilledRevenue: unbilled?.unbilled_revenue || 0,
+      unbilledHours: (unbilled?.unbilled_minutes || 0) / 60,
+    };
   }
 
   // Time Entry methods

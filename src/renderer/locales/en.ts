@@ -33,6 +33,7 @@ export const en = {
     page: 'Page',
     search: 'Search',
     searchPlaceholder: 'Search...',
+    hours: 'hours',
   },
 
   // Navigation
@@ -76,6 +77,9 @@ export const en = {
     hoursToggle: 'Hours',
     revenueToggle: 'Revenue',
     totalTime: 'Total Time',
+    projectStatus: 'Project Status',
+    revenueBreakdown: 'Revenue Breakdown',
+    unbilledRevenue: 'Unbilled Revenue',
   },
 
   // Projects
@@ -101,6 +105,13 @@ export const en = {
     viewInTimeEntries: 'View in Time Entries',
     start: 'Start',
     end: 'End',
+    status: {
+      label: 'Status',
+      all: 'All Statuses',
+      active: 'Active',
+      completed: 'Completed',
+      paused: 'Paused',
+    },
   },
 
   // Time Entries
