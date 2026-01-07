@@ -7,11 +7,16 @@ import { AppContext } from '../App';
 import { isTypingInInput, getModifierKey } from '../contexts/KeyboardShortcutContext';
 import { LocalizedDateInput } from '../components/LocalizedDateInput';
 import { DurationPicker } from '../components/DurationPicker';
+import { useSortableData, SortableHeader, SortableColumnConfig } from '../components/SortableTable';
 
 interface TimeEntriesProps {
   initialProjectFilter?: number;
   initialEntryId?: number;
 }
+
+type TimeEntryRow = TimeEntry & {
+  project_name: string;
+};
 
 const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initialEntryId }) => {
   const { showNotification, showConfirmation } = useNotification();
@@ -26,8 +31,6 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   const [inputMode, setInputMode] = useState<'duration' | 'times'>('duration');
   const [projectFilter, setProjectFilter] = useState<number | undefined>(initialProjectFilter);
-  const [sortField, setSortField] = useState<'date' | 'project' | 'duration'>('date');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -392,7 +395,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
   };
 
   const handleCopySelected = async () => {
-    const entriesToCopy = filteredEntries.filter(entry => selectedEntries.has(entry.id));
+    const entriesToCopy = sortedEntries.filter(entry => selectedEntries.has(entry.id));
     if (entriesToCopy.length === 0) return;
 
     const text = formatMultipleEntries(entriesToCopy);
@@ -409,14 +412,14 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
   };
 
   const handleCopyAllVisible = async () => {
-    if (filteredEntries.length === 0) return;
+    if (sortedEntries.length === 0) return;
 
-    const text = formatMultipleEntries(filteredEntries);
+    const text = formatMultipleEntries(sortedEntries);
     const success = await copyToClipboard(text);
     if (success) {
       const message = t.notifications.copiedEntries
-        ? t.notifications.copiedEntries.replace('{count}', filteredEntries.length.toString())
-        : `Copied ${filteredEntries.length} entries`;
+        ? t.notifications.copiedEntries.replace('{count}', sortedEntries.length.toString())
+        : `Copied ${sortedEntries.length} entries`;
       showNotification(message, 'success');
     } else {
       showNotification(t.notifications.copyFailed || 'Failed to copy', 'error');
@@ -435,31 +438,17 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
   };
 
   const handleSelectAll = () => {
-    if (selectedEntries.size === filteredEntries.length) {
+    if (selectedEntries.size === sortedEntries.length) {
       // Deselect all
       setSelectedEntries(new Set());
     } else {
       // Select all visible entries
-      const allIds = new Set(filteredEntries.map(entry => entry.id));
+      const allIds = new Set(sortedEntries.map(entry => entry.id));
       setSelectedEntries(allIds);
     }
   };
 
-  const handleSort = (field: 'date' | 'project' | 'duration') => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
-  const getSortIcon = (field: 'date' | 'project' | 'duration'): string => {
-    if (sortField !== field) return '↕';
-    return sortDirection === 'asc' ? '↑' : '↓';
-  };
-
-  const getFilteredAndSortedEntries = (): TimeEntry[] => {
+  const getFilteredEntries = (): TimeEntry[] => {
     let filtered = [...entries];
 
     // Filter by project
@@ -491,30 +480,52 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
       });
     }
 
-    // Sort
-    filtered.sort((a, b) => {
-      let comparison = 0;
-
-      if (sortField === 'date') {
-        comparison = a.date.localeCompare(b.date);
-        if (comparison === 0 && a.start_time && b.start_time) {
-          comparison = a.start_time.localeCompare(b.start_time);
-        }
-      } else if (sortField === 'project') {
-        const projectA = getProjectName(a.project_id);
-        const projectB = getProjectName(b.project_id);
-        comparison = projectA.localeCompare(projectB);
-      } else if (sortField === 'duration') {
-        comparison = a.duration_minutes - b.duration_minutes;
-      }
-
-      return sortDirection === 'asc' ? comparison : -comparison;
-    });
-
     return filtered;
   };
 
-  const filteredEntries = getFilteredAndSortedEntries();
+  const filteredEntries = getFilteredEntries();
+  const entriesWithProjectName: TimeEntryRow[] = filteredEntries.map((entry) => ({
+    ...entry,
+    project_name: getProjectName(entry.project_id),
+  }));
+
+  const getSortValue = (entry: TimeEntryRow, key: keyof TimeEntryRow) => {
+    if (key === 'date') {
+      return entry.start_time ? `${entry.date} ${entry.start_time}` : entry.date;
+    }
+
+    return entry[key];
+  };
+
+  const { sortedItems: sortedEntries, sortConfig, handleSort } = useSortableData(
+    entriesWithProjectName,
+    { key: 'date', direction: 'desc' },
+    getSortValue
+  );
+
+  const entryColumns: SortableColumnConfig<TimeEntryRow>[] = [
+    {
+      key: 'id',
+      label: (
+        <input
+          type="checkbox"
+          checked={selectedEntries.size === sortedEntries.length && sortedEntries.length > 0}
+          onChange={handleSelectAll}
+          title="Select all"
+        />
+      ),
+      sortable: false,
+      headerStyle: { width: '40px', textAlign: 'center' },
+    },
+    { key: 'date', label: t.common.date },
+    { key: 'project_name', label: t.common.project },
+    { key: 'start_time', label: t.projects.start, sortable: false },
+    { key: 'end_time', label: t.projects.end, sortable: false },
+    { key: 'duration_minutes', label: t.common.duration },
+    { key: 'description', label: t.common.description, sortable: false },
+    { key: 'billing_status', label: t.invoices.billingStatus, sortable: false },
+    { key: 'invoice_id', label: t.common.actions, sortable: false },
+  ];
 
   const getFilteredProjectName = (): string => {
     if (!projectFilter) return '';
@@ -627,13 +638,13 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
                 {t.common.clearFilter}
               </button>
             )}
-            {filteredEntries.length > 0 && (
+            {sortedEntries.length > 0 && (
               <button
                 className="btn btn-primary"
                 onClick={handleCopyAllVisible}
-                title={`Copy all ${filteredEntries.length} visible entries`}
+                title={`Copy all ${sortedEntries.length} visible entries`}
               >
-                <Copy size={16} strokeWidth={1.75} /> Copy All Visible ({filteredEntries.length})
+                <Copy size={16} strokeWidth={1.75} /> Copy All Visible ({sortedEntries.length})
               </button>
             )}
             {selectedEntries.size > 0 && (
@@ -648,7 +659,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
           </div>
         </div>
 
-        {filteredEntries.length === 0 ? (
+        {sortedEntries.length === 0 ? (
           <div className="empty-state">
             <h3>
               {searchQuery.trim() ? t.search.noResults : (projectFilter ? t.timeEntries.noEntriesForProject : t.timeEntries.noEntries)}
@@ -661,43 +672,13 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
         ) : (
           <div className="table-container">
             <table>
-              <thead>
-                <tr>
-                  <th style={{ width: '40px', textAlign: 'center' }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedEntries.size === filteredEntries.length && filteredEntries.length > 0}
-                      onChange={handleSelectAll}
-                      title="Select all"
-                    />
-                  </th>
-                  <th
-                    onClick={() => handleSort('date')}
-                    style={{ cursor: 'pointer', userSelect: 'none' }}
-                  >
-                    {t.common.date} {getSortIcon('date')}
-                  </th>
-                  <th
-                    onClick={() => handleSort('project')}
-                    style={{ cursor: 'pointer', userSelect: 'none' }}
-                  >
-                    {t.common.project} {getSortIcon('project')}
-                  </th>
-                  <th>{t.projects.start}</th>
-                  <th>{t.projects.end}</th>
-                  <th
-                    onClick={() => handleSort('duration')}
-                    style={{ cursor: 'pointer', userSelect: 'none' }}
-                  >
-                    {t.common.duration} {getSortIcon('duration')}
-                  </th>
-                  <th>{t.common.description}</th>
-                  <th>{t.invoices.billingStatus}</th>
-                  <th>{t.common.actions}</th>
-                </tr>
-              </thead>
+              <SortableHeader
+                columns={entryColumns}
+                sortConfig={sortConfig}
+                onSort={handleSort}
+              />
               <tbody>
-                {filteredEntries.map((entry) => {
+                {sortedEntries.map((entry) => {
                   const getBillingStatusBadge = (status?: string) => {
                     // Check if the associated invoice is cancelled
                     const invoice = entry.invoice_id ? invoices.find(inv => inv.id === entry.invoice_id) : undefined;
@@ -753,7 +734,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
                         />
                       </td>
                       <td>{formatDate(entry.date)}</td>
-                      <td>{getProjectName(entry.project_id)}</td>
+                      <td>{entry.project_name}</td>
                       <td>{entry.start_time || '-'}</td>
                       <td>{entry.end_time || '-'}</td>
                       <td>{formatDuration(entry.duration_minutes)}</td>

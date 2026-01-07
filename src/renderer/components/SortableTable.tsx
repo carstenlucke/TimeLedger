@@ -9,9 +9,11 @@ export interface SortConfig<T> {
 
 export interface SortableColumnConfig<T> {
   key: keyof T;
-  label: string;
+  label: React.ReactNode;
   sortable?: boolean;
   getValue?: (item: T) => string | number | null | undefined;
+  headerStyle?: React.CSSProperties;
+  headerClassName?: string;
 }
 
 interface SortableHeaderProps<T> {
@@ -24,22 +26,34 @@ export function SortableHeader<T>({ columns, sortConfig, onSort }: SortableHeade
   return (
     <thead>
       <tr>
-        {columns.map((column) => (
-          <th
-            key={String(column.key)}
-            onClick={column.sortable !== false ? () => onSort(column.key) : undefined}
-            style={column.sortable !== false ? { cursor: 'pointer', userSelect: 'none' } : undefined}
-          >
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-              {column.label}
-              {column.sortable !== false && sortConfig.key === column.key && (
-                <span style={{ fontSize: '0.8em' }}>
-                  {sortConfig.direction === 'asc' ? '▲' : '▼'}
-                </span>
-              )}
-            </span>
-          </th>
-        ))}
+        {columns.map((column) => {
+          const isSortable = column.sortable !== false;
+          let style: React.CSSProperties | undefined = column.headerStyle
+            ? { ...column.headerStyle }
+            : undefined;
+
+          if (isSortable) {
+            style = { ...(style ?? {}), cursor: 'pointer', userSelect: 'none' };
+          }
+
+          return (
+            <th
+              key={String(column.key)}
+              onClick={isSortable ? () => onSort(column.key) : undefined}
+              style={style}
+              className={column.headerClassName}
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                {column.label}
+                {isSortable && sortConfig.key === column.key && (
+                  <span style={{ fontSize: '0.8em' }}>
+                    {sortConfig.direction === 'asc' ? '▲' : '▼'}
+                  </span>
+                )}
+              </span>
+            </th>
+          );
+        })}
       </tr>
     </thead>
   );
@@ -47,7 +61,8 @@ export function SortableHeader<T>({ columns, sortConfig, onSort }: SortableHeade
 
 export function useSortableData<T>(
   items: T[],
-  defaultSort?: { key: keyof T; direction: SortDirection }
+  defaultSort?: { key: keyof T; direction: SortDirection },
+  getSortValue?: (item: T, key: keyof T) => string | number | null | undefined
 ) {
   const [sortConfig, setSortConfig] = useState<SortConfig<T>>({
     key: defaultSort?.key ?? null,
@@ -65,8 +80,8 @@ export function useSortableData<T>(
     if (!sortConfig.key) return items;
 
     return [...items].sort((a, b) => {
-      const aValue = a[sortConfig.key!];
-      const bValue = b[sortConfig.key!];
+      const aValue = getSortValue ? getSortValue(a, sortConfig.key!) : a[sortConfig.key!];
+      const bValue = getSortValue ? getSortValue(b, sortConfig.key!) : b[sortConfig.key!];
 
       // Handle null/undefined values
       if (aValue == null && bValue == null) return 0;
