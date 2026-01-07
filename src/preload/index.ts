@@ -54,6 +54,9 @@ const IPC_CHANNELS = {
   // Database
   DATABASE_GET_PATH: 'database:get-path',
 
+  // Dashboard
+  DASHBOARD_GET_STATISTICS: 'dashboard:get-statistics',
+
   // App Config
   APP_GET_BACKUP_INTERVAL: 'app:get-backup-interval',
 
@@ -171,6 +174,12 @@ const api = {
   database: {
     getPath: (): Promise<string> =>
       ipcRenderer.invoke(IPC_CHANNELS.DATABASE_GET_PATH),
+  },
+
+  // Dashboard methods
+  dashboard: {
+    getStatistics: (): Promise<any> =>
+      ipcRenderer.invoke(IPC_CHANNELS.DASHBOARD_GET_STATISTICS),
   },
 
   // App Config methods

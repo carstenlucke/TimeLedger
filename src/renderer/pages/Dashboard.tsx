@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
-import type { TimeEntry, Project } from '../../shared/types';
+import type { TimeEntry, Project, DashboardStatistics } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
 import { AppContext } from '../App';
 import WeeklyBarChart, { WeekData } from '../components/WeeklyBarChart';
 import WeekDetailDrawer from '../components/WeekDetailDrawer';
+import DashboardStats from '../components/DashboardStats';
 
 // Color palette for projects
 const PROJECT_COLORS = [
@@ -33,6 +34,7 @@ const Dashboard: React.FC = () => {
   const [chartMetric, setChartMetric] = useState<'hours' | 'revenue'>('hours');
   const [isLoading, setIsLoading] = useState(true);
   const [selectedWeek, setSelectedWeek] = useState<WeekData | null>(null);
+  const [statistics, setStatistics] = useState<DashboardStatistics | null>(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -42,13 +44,15 @@ const Dashboard: React.FC = () => {
     try {
       setIsLoading(true);
 
-      // Load projects and all time entries
-      const [projectsData, allEntries] = await Promise.all([
+      // Load projects, all time entries, and statistics
+      const [projectsData, allEntries, stats] = await Promise.all([
         window.api.project.getAll(),
         window.api.timeEntry.getAll(),
+        window.api.dashboard.getStatistics(),
       ]);
 
       setProjects(projectsData);
+      setStatistics(stats);
 
       const projectMap = new Map<number, Project>();
       projectsData.forEach((project) => {
@@ -194,6 +198,9 @@ const Dashboard: React.FC = () => {
         <h1>{t.dashboard.title}</h1>
         <p>{t.dashboard.subtitle}</p>
       </div>
+
+      {/* Dashboard Statistics */}
+      {statistics && <DashboardStats stats={statistics} />}
 
       {/* Weekly Bar Chart */}
       <div className="card">

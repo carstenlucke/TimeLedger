@@ -35,6 +35,7 @@ export const de: TranslationKeys = {
     page: 'Seite',
     search: 'Suche',
     searchPlaceholder: 'Suchen...',
+    hours: 'Stunden',
   },
 
   // Navigation
@@ -78,6 +79,9 @@ export const de: TranslationKeys = {
     hoursToggle: 'Stunden',
     revenueToggle: 'Umsatz',
     totalTime: 'Gesamtzeit',
+    projectStatus: 'Projekt-Status',
+    revenueBreakdown: 'Umsatzverteilung',
+    unbilledRevenue: 'Nicht abgerechnet',
   },
 
   // Projects
@@ -103,6 +107,13 @@ export const de: TranslationKeys = {
     viewInTimeEntries: 'In Zeiteinträgen anzeigen',
     start: 'Start',
     end: 'Ende',
+    status: {
+      label: 'Status',
+      all: 'Alle Status',
+      active: 'Aktiv',
+      completed: 'Abgeschlossen',
+      paused: 'Pausiert',
+    },
   },
 
   // Time Entries

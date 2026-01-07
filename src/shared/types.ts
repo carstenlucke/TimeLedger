@@ -1,9 +1,12 @@
 // Database models
+export type ProjectStatus = 'active' | 'completed' | 'paused';
+
 export interface Project {
   id: number;
   name: string;
   hourly_rate?: number;
   client_name?: string;
+  status: ProjectStatus;
   created_at: string;
   updated_at: string;
 }
@@ -43,6 +46,7 @@ export interface ProjectInput {
   name: string;
   hourly_rate?: number;
   client_name?: string;
+  status?: ProjectStatus;
 }
 
 export interface TimeEntryInput {
@@ -79,6 +83,24 @@ export interface ProjectReport {
   total_hours: number;
   total_value?: number;
   entries: TimeEntry[];
+}
+
+export interface DashboardStatistics {
+  // Projekt-Counts
+  totalProjects: number;
+  activeProjects: number;
+  completedProjects: number;
+  pausedProjects: number;
+
+  // Revenue Breakdown
+  totalRevenue: number;
+  activeRevenue: number;
+  completedRevenue: number;
+  pausedRevenue: number;
+
+  // Unbilled Revenue
+  unbilledRevenue: number;
+  unbilledHours: number;
 }
 
 // Backup types
@@ -161,6 +183,9 @@ export const IPC_CHANNELS = {
 
   // Database
   DATABASE_GET_PATH: 'database:get-path',
+
+  // Dashboard
+  DASHBOARD_GET_STATISTICS: 'dashboard:get-statistics',
 
   // App Config
   APP_GET_BACKUP_INTERVAL: 'app:get-backup-interval',

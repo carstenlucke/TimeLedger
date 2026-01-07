@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import type { Project, ProjectInput, TimeEntry } from '../../shared/types';
+import type { Project, ProjectInput, TimeEntry, ProjectStatus } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
 import { AppContext } from '../App';
@@ -19,11 +19,13 @@ const Projects: React.FC = () => {
   const [projectEntries, setProjectEntries] = useState<TimeEntry[]>([]);
   const [loadingEntries, setLoadingEntries] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<ProjectInput>({
     name: '',
     hourly_rate: undefined,
     client_name: '',
+    status: 'active',
   });
 
   useEffect(() => {
@@ -118,7 +120,7 @@ const Projects: React.FC = () => {
 
       setShowModal(false);
       setEditingProject(null);
-      setFormData({ name: '', hourly_rate: undefined, client_name: '' });
+      setFormData({ name: '', hourly_rate: undefined, client_name: '', status: 'active' });
       await loadProjects();
     } catch (error) {
       console.error('Failed to save project:', error);
@@ -132,6 +134,7 @@ const Projects: React.FC = () => {
       name: project.name,
       hourly_rate: project.hourly_rate,
       client_name: project.client_name || '',
+      status: project.status,
     });
     setShowModal(true);
   };
@@ -155,14 +158,14 @@ const Projects: React.FC = () => {
 
   const handleAddNew = () => {
     setEditingProject(null);
-    setFormData({ name: '', hourly_rate: undefined, client_name: '' });
+    setFormData({ name: '', hourly_rate: undefined, client_name: '', status: 'active' });
     setShowModal(true);
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingProject(null);
-    setFormData({ name: '', hourly_rate: undefined, client_name: '' });
+    setFormData({ name: '', hourly_rate: undefined, client_name: '', status: 'active' });
   };
 
   const handleProjectClick = async (project: Project) => {
@@ -232,6 +235,10 @@ const Projects: React.FC = () => {
   const normalizeSearchValue = (value: string): string => value.toLowerCase();
 
   const filteredProjects = projects.filter((project) => {
+    // Status filter
+    if (statusFilter !== 'all' && project.status !== statusFilter) return false;
+
+    // Search filter
     if (!searchQuery.trim()) return true;
     const query = normalizeSearchValue(searchQuery.trim());
     const haystack = [
@@ -246,6 +253,7 @@ const Projects: React.FC = () => {
     { key: 'name', label: t.projects.projectName },
     { key: 'client_name', label: t.projects.client },
     { key: 'hourly_rate', label: t.projects.hourlyRate },
+    { key: 'status', label: t.projects.status.label },
   ];
 
   const { sortedItems: sortedProjects, sortConfig, handleSort } = useSortableData(
@@ -268,6 +276,19 @@ const Projects: React.FC = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
           <h2>{t.projects.allProjects}</h2>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as ProjectStatus | 'all')}
+                className="form-control"
+                style={{ width: '150px' }}
+              >
+                <option value="all">{t.projects.status.all}</option>
+                <option value="active">{t.projects.status.active}</option>
+                <option value="completed">{t.projects.status.completed}</option>
+                <option value="paused">{t.projects.status.paused}</option>
+              </select>
+            </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <input
                 ref={searchInputRef}
@@ -333,6 +354,11 @@ const Projects: React.FC = () => {
                       <td>{project.client_name || '-'}</td>
                       <td>{project.hourly_rate ? formatCurrency(project.hourly_rate) : '-'}</td>
                       <td>
+                        <span className={`status-badge status-${project.status}`}>
+                          {t.projects.status[project.status]}
+                        </span>
+                      </td>
+                      <td>
                         <div className="table-actions">
                           <button className="btn btn-secondary" onClick={() => handleEdit(project)}>
                             {t.common.edit}
@@ -396,6 +422,20 @@ const Projects: React.FC = () => {
                     })
                   }
                 />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="status">{t.projects.status.label}</label>
+                <select
+                  id="status"
+                  value={formData.status || 'active'}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as ProjectStatus })}
+                  className="form-control"
+                >
+                  <option value="active">{t.projects.status.active}</option>
+                  <option value="completed">{t.projects.status.completed}</option>
+                  <option value="paused">{t.projects.status.paused}</option>
+                </select>
               </div>
 
               <div className="modal-footer">

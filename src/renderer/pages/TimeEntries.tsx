@@ -262,6 +262,11 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
     return project ? project.name : 'Unknown';
   };
 
+  const getProjectStatus = (projectId: number): string => {
+    const project = projects.find((p) => p.id === projectId);
+    return project?.status || 'active';
+  };
+
   const formatDuration = (minutes: number): string => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
@@ -750,7 +755,13 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
                         />
                       </td>
                       <td>{formatDate(entry.date)}</td>
-                      <td>{entry.project_name}</td>
+                      <td>
+                        {entry.project_name}
+                        {' '}
+                        <span className={`status-badge-small status-${getProjectStatus(entry.project_id)}`}>
+                          {t.projects.status[getProjectStatus(entry.project_id) as 'active' | 'completed' | 'paused']}
+                        </span>
+                      </td>
                       <td>{entry.start_time || '-'}</td>
                       <td>{entry.end_time || '-'}</td>
                       <td>{formatDuration(entry.duration_minutes)}</td>
