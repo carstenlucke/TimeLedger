@@ -19,12 +19,14 @@ const Settings: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [databasePath, setDatabasePath] = useState<string>('');
   const [backupIntervalMs, setBackupIntervalMs] = useState<number>(0);
+  const [schemaVersion, setSchemaVersion] = useState<number>(0);
 
   useEffect(() => {
     loadSettings();
     loadBackups();
     loadDatabasePath();
     loadBackupInterval();
+    loadSchemaVersion();
   }, []);
 
   const loadDatabasePath = async () => {
@@ -42,6 +44,15 @@ const Settings: React.FC = () => {
       setBackupIntervalMs(interval);
     } catch (error) {
       console.error('Failed to load backup interval:', error);
+    }
+  };
+
+  const loadSchemaVersion = async () => {
+    try {
+      const version = await window.api.database.getSchemaVersion();
+      setSchemaVersion(version);
+    } catch (error) {
+      console.error('Failed to load schema version:', error);
     }
   };
 
@@ -435,6 +446,7 @@ const Settings: React.FC = () => {
           <strong>TimeLedger</strong> - {t.settings.aboutText}
         </p>
         <p style={{ marginTop: '8px', color: 'var(--text-secondary)', fontSize: '14px' }}>{t.settings.version} {__APP_VERSION__}</p>
+        <p style={{ marginTop: '4px', color: 'var(--text-secondary)', fontSize: '14px' }}>{t.settings.schemaVersion} {schemaVersion}</p>
       </div>
     </div>
   );

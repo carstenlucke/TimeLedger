@@ -53,6 +53,7 @@ const IPC_CHANNELS = {
 
   // Database
   DATABASE_GET_PATH: 'database:get-path',
+  DATABASE_GET_SCHEMA_VERSION: 'database:get-schema-version',
 
   // Dashboard
   DASHBOARD_GET_STATISTICS: 'dashboard:get-statistics',
@@ -174,6 +175,8 @@ const api = {
   database: {
     getPath: (): Promise<string> =>
       ipcRenderer.invoke(IPC_CHANNELS.DATABASE_GET_PATH),
+    getSchemaVersion: (): Promise<number> =>
+      ipcRenderer.invoke(IPC_CHANNELS.DATABASE_GET_SCHEMA_VERSION),
   },
 
   // Dashboard methods

@@ -274,6 +274,7 @@ export const de: TranslationKeys = {
     hours: 'Stunden',
     minute: 'Minute',
     minutes: 'Minuten',
+    schemaVersion: 'Schema-Version',
   },
 
   // Notifications

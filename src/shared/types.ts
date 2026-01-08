@@ -183,6 +183,7 @@ export const IPC_CHANNELS = {
 
   // Database
   DATABASE_GET_PATH: 'database:get-path',
+  DATABASE_GET_SCHEMA_VERSION: 'database:get-schema-version',
 
   // Dashboard
   DASHBOARD_GET_STATISTICS: 'dashboard:get-statistics',

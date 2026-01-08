@@ -270,6 +270,10 @@ export function setupIpcHandlers(): void {
     return db.getDbPath();
   });
 
+  ipcMain.handle(IPC_CHANNELS.DATABASE_GET_SCHEMA_VERSION, async () => {
+    return db.getSchemaVersion();
+  });
+
   // App Config handlers
   ipcMain.handle(IPC_CHANNELS.APP_GET_BACKUP_INTERVAL, async () => {
     return BACKUP_INTERVAL_MS;

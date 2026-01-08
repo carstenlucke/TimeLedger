@@ -272,6 +272,7 @@ export const en = {
     hours: 'hours',
     minute: 'minute',
     minutes: 'minutes',
+    schemaVersion: 'Schema Version',
   },
 
   // Notifications
