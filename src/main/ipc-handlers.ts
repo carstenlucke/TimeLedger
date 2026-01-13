@@ -10,6 +10,7 @@ import type {
   ReportFilter,
   ExportFormat,
   InvoiceInput,
+  CustomerInput,
 } from '../shared/types';
 
 export function setupIpcHandlers(): void {
@@ -50,6 +51,41 @@ export function setupIpcHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.PROJECT_GET_BY_ID, async (_, id: number) => {
     return db.getProjectById(id);
+  });
+
+  // Customer handlers
+  ipcMain.handle(IPC_CHANNELS.CUSTOMER_CREATE, async (_, input: CustomerInput) => {
+    try {
+      console.log('Creating customer:', input);
+      return db.createCustomer(input);
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.CUSTOMER_UPDATE, async (_, id: number, input: Partial<CustomerInput>) => {
+    return db.updateCustomer(id, input);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.CUSTOMER_DELETE, async (_, id: number) => {
+    db.deleteCustomer(id);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.CUSTOMER_GET_ALL, async () => {
+    try {
+      console.log('Fetching all customers...');
+      const customers = db.getAllCustomers();
+      console.log(`Found ${customers.length} customers`);
+      return customers;
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.CUSTOMER_GET_BY_ID, async (_, id: number) => {
+    return db.getCustomerById(id);
   });
 
   // Time Entry handlers

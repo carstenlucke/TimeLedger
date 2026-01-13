@@ -11,6 +11,7 @@ import { migration001 } from './001_initial_schema';
 import { migration002 } from './002_add_invoices';
 import { migration003 } from './003_add_billing_status';
 import { migration004 } from './004_add_project_status';
+import { migration005 } from './005_add_customers_table';
 
 // Register all migrations in order
 export const migrations: Migration[] = [
@@ -18,6 +19,7 @@ export const migrations: Migration[] = [
   migration002,
   migration003,
   migration004,
+  migration005,
 ];
 
 export class MigrationRunner {

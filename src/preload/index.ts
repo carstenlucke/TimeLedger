@@ -11,6 +11,13 @@ const IPC_CHANNELS = {
   PROJECT_GET_ALL: 'project:get-all',
   PROJECT_GET_BY_ID: 'project:get-by-id',
 
+  // Customers
+  CUSTOMER_CREATE: 'customer:create',
+  CUSTOMER_UPDATE: 'customer:update',
+  CUSTOMER_DELETE: 'customer:delete',
+  CUSTOMER_GET_ALL: 'customer:get-all',
+  CUSTOMER_GET_BY_ID: 'customer:get-by-id',
+
   // Time Entries
   TIME_ENTRY_CREATE: 'time-entry:create',
   TIME_ENTRY_UPDATE: 'time-entry:update',
@@ -89,6 +96,20 @@ const api = {
       ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_ALL),
     getById: (id: number): Promise<any> =>
       ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_BY_ID, id),
+  },
+
+  // Customer methods
+  customer: {
+    create: (input: any): Promise<any> =>
+      ipcRenderer.invoke(IPC_CHANNELS.CUSTOMER_CREATE, input),
+    update: (id: number, input: any): Promise<any> =>
+      ipcRenderer.invoke(IPC_CHANNELS.CUSTOMER_UPDATE, id, input),
+    delete: (id: number): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.CUSTOMER_DELETE, id),
+    getAll: (): Promise<any[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.CUSTOMER_GET_ALL),
+    getById: (id: number): Promise<any> =>
+      ipcRenderer.invoke(IPC_CHANNELS.CUSTOMER_GET_BY_ID, id),
   },
 
   // Time Entry methods
