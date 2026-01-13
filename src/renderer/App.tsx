@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Folder, Clock3, FileText, LineChart, Settings as SettingsIcon, Keyboard } from 'lucide-react';
+import { LayoutDashboard, Folder, Users, Clock3, FileText, LineChart, Settings as SettingsIcon, Keyboard } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
+import Customers from './pages/Customers';
 import TimeEntries from './pages/TimeEntries';
 import { Invoices } from './pages/Invoices';
 import Reports from './pages/Reports';
@@ -15,7 +16,7 @@ import { ConfirmationDialog } from './components/ConfirmationDialog';
 import { GlobalSearch } from './components/GlobalSearch';
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp';
 
-type Page = 'dashboard' | 'projects' | 'entries' | 'invoices' | 'reports' | 'settings';
+type Page = 'dashboard' | 'projects' | 'customers' | 'entries' | 'invoices' | 'reports' | 'settings';
 
 interface AppContextType {
   navigateToPage: (page: Page, options?: { projectFilter?: number; entryId?: number; invoiceId?: number }) => void;
@@ -61,6 +62,8 @@ const AppContent: React.FC = () => {
         navigateToPage('dashboard');
       } else if (path === '/projects') {
         navigateToPage('projects');
+      } else if (path === '/customers') {
+        navigateToPage('customers');
       } else if (path === '/entries') {
         navigateToPage('entries');
       } else if (path === '/invoices') {
@@ -112,17 +115,21 @@ const AppContent: React.FC = () => {
             break;
           case '3':
             event.preventDefault();
-            navigateToPage('entries');
+            navigateToPage('customers');
             break;
           case '4':
             event.preventDefault();
-            navigateToPage('invoices');
+            navigateToPage('entries');
             break;
           case '5':
             event.preventDefault();
-            navigateToPage('reports');
+            navigateToPage('invoices');
             break;
           case '6':
+            event.preventDefault();
+            navigateToPage('reports');
+            break;
+          case '7':
             event.preventDefault();
             navigateToPage('settings');
             break;
@@ -140,6 +147,8 @@ const AppContent: React.FC = () => {
         return <Dashboard />;
       case 'projects':
         return <Projects />;
+      case 'customers':
+        return <Customers />;
       case 'entries':
         return <TimeEntries initialProjectFilter={entriesProjectFilter} initialEntryId={entryToEdit} />;
       case 'invoices':
@@ -189,6 +198,17 @@ const AppContent: React.FC = () => {
             >
               <Folder className="nav-icon" aria-hidden="true" size={20} strokeWidth={1.75} />
               {t.nav.projects}
+            </a>
+            <a
+              href="#"
+              className={currentPage === 'customers' ? 'active' : ''}
+              onClick={(e) => {
+                e.preventDefault();
+                navigateToPage('customers');
+              }}
+            >
+              <Users className="nav-icon" aria-hidden="true" size={20} strokeWidth={1.75} />
+              {t.nav.customers}
             </a>
             <a
               href="#"
