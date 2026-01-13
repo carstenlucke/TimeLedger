@@ -13,6 +13,8 @@ import type {
   Invoice,
   InvoiceInput,
   InvoiceWithEntries,
+  Customer,
+  CustomerInput,
 } from '../shared/types';
 import { MigrationRunner } from './migrations';
 
@@ -88,10 +90,10 @@ export class DatabaseManager {
   // Project methods
   public createProject(input: ProjectInput): Project {
     const stmt = this.db.prepare(`
-      INSERT INTO projects (name, hourly_rate, client_name, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
+      INSERT INTO projects (name, hourly_rate, client_name, customer_id, status, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `);
-    const result = stmt.run(input.name, input.hourly_rate, input.client_name, input.status || 'active');
+    const result = stmt.run(input.name, input.hourly_rate, input.client_name, input.customer_id, input.status || 'active');
     this.bumpDataVersion();
     return this.getProjectById(result.lastInsertRowid as number)!;
   }
@@ -111,6 +113,10 @@ export class DatabaseManager {
     if (input.client_name !== undefined) {
       updates.push('client_name = ?');
       values.push(input.client_name);
+    }
+    if (input.customer_id !== undefined) {
+      updates.push('customer_id = ?');
+      values.push(input.customer_id);
     }
     if (input.status !== undefined) {
       updates.push('status = ?');
@@ -142,6 +148,74 @@ export class DatabaseManager {
   public getProjectById(id: number): Project | undefined {
     const stmt = this.db.prepare('SELECT * FROM projects WHERE id = ?');
     return stmt.get(id) as Project | undefined;
+  }
+
+  // Customer methods
+  public createCustomer(input: CustomerInput): Customer {
+    const stmt = this.db.prepare(`
+      INSERT INTO customers (name, email, phone, address, notes, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    `);
+    const result = stmt.run(input.name, input.email, input.phone, input.address, input.notes);
+    this.bumpDataVersion();
+    return this.getCustomerById(result.lastInsertRowid as number)!;
+  }
+
+  public updateCustomer(id: number, input: Partial<CustomerInput>): Customer {
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (input.name !== undefined) {
+      updates.push('name = ?');
+      values.push(input.name);
+    }
+    if (input.email !== undefined) {
+      updates.push('email = ?');
+      values.push(input.email);
+    }
+    if (input.phone !== undefined) {
+      updates.push('phone = ?');
+      values.push(input.phone);
+    }
+    if (input.address !== undefined) {
+      updates.push('address = ?');
+      values.push(input.address);
+    }
+    if (input.notes !== undefined) {
+      updates.push('notes = ?');
+      values.push(input.notes);
+    }
+
+    updates.push("updated_at = datetime('now')");
+    values.push(id);
+
+    const stmt = this.db.prepare(`
+      UPDATE customers SET ${updates.join(', ')} WHERE id = ?
+    `);
+    stmt.run(...values);
+    this.bumpDataVersion();
+    return this.getCustomerById(id)!;
+  }
+
+  public deleteCustomer(id: number): void {
+    // Set customer_id to NULL in projects that reference this customer
+    const updateStmt = this.db.prepare('UPDATE projects SET customer_id = NULL WHERE customer_id = ?');
+    updateStmt.run(id);
+
+    // Delete the customer
+    const stmt = this.db.prepare('DELETE FROM customers WHERE id = ?');
+    stmt.run(id);
+    this.bumpDataVersion();
+  }
+
+  public getAllCustomers(): Customer[] {
+    const stmt = this.db.prepare('SELECT * FROM customers ORDER BY name');
+    return stmt.all() as Customer[];
+  }
+
+  public getCustomerById(id: number): Customer | undefined {
+    const stmt = this.db.prepare('SELECT * FROM customers WHERE id = ?');
+    return stmt.get(id) as Customer | undefined;
   }
 
   public getDashboardStatistics(): any {
@@ -317,6 +391,7 @@ export class DatabaseManager {
   // Search methods
   public searchGlobal(query: string): {
     projects: Array<Project & { match_field: string }>;
+    customers: Array<Customer & { match_field: string }>;
     timeEntries: Array<any>;
     invoices: Array<Invoice & { match_field: string }>;
   } {
@@ -337,6 +412,28 @@ export class DatabaseManager {
       LIMIT 10
     `);
     const projects = projectsStmt.all(searchPattern, searchPattern, searchPattern, searchPattern) as Array<Project & { match_field: string }>;
+
+    // Search Customers (name, email, phone, address, notes)
+    const customersStmt = this.db.prepare(`
+      SELECT
+        *,
+        CASE
+          WHEN name LIKE ? THEN 'name'
+          WHEN email LIKE ? THEN 'email'
+          WHEN phone LIKE ? THEN 'phone'
+          WHEN address LIKE ? THEN 'address'
+          WHEN notes LIKE ? THEN 'notes'
+          ELSE 'unknown'
+        END as match_field
+      FROM customers
+      WHERE name LIKE ? OR email LIKE ? OR phone LIKE ? OR address LIKE ? OR notes LIKE ?
+      ORDER BY name
+      LIMIT 10
+    `);
+    const customers = customersStmt.all(
+      searchPattern, searchPattern, searchPattern, searchPattern, searchPattern,
+      searchPattern, searchPattern, searchPattern, searchPattern, searchPattern
+    ) as Array<Customer & { match_field: string }>;
 
     // Search Time Entries (description + joined project name)
     const entriesStmt = this.db.prepare(`
@@ -373,7 +470,7 @@ export class DatabaseManager {
     `);
     const invoices = invoicesStmt.all(searchPattern, searchPattern, searchPattern, searchPattern) as Array<Invoice & { match_field: string }>;
 
-    return { projects, timeEntries, invoices };
+    return { projects, customers, timeEntries, invoices };
   }
 
   // Reporting methods

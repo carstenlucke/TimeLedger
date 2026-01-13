@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import type { Project, ProjectInput, TimeEntry, ProjectStatus } from '../../shared/types';
+import type { Project, ProjectInput, TimeEntry, ProjectStatus, Customer } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
 import { AppContext } from '../App';
@@ -11,6 +11,7 @@ const Projects: React.FC = () => {
   const { t, formatCurrency, formatNumber, formatDate } = useI18n();
   const { navigateToPage } = useContext(AppContext);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -25,11 +26,17 @@ const Projects: React.FC = () => {
     name: '',
     hourly_rate: undefined,
     client_name: '',
+    customer_id: undefined,
     status: 'active',
   });
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
+  const customerInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadProjects();
+    loadCustomers();
   }, []);
 
   // ESC key to close modals
@@ -106,6 +113,15 @@ const Projects: React.FC = () => {
     }
   };
 
+  const loadCustomers = async () => {
+    try {
+      const data = await window.api.customer.getAll();
+      setCustomers(data);
+    } catch (error) {
+      console.error('Failed to load customers:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -120,7 +136,9 @@ const Projects: React.FC = () => {
 
       setShowModal(false);
       setEditingProject(null);
-      setFormData({ name: '', hourly_rate: undefined, client_name: '', status: 'active' });
+      setFormData({ name: '', hourly_rate: undefined, client_name: '', customer_id: undefined, status: 'active' });
+      setCustomerSearch('');
+      setShowNewCustomerForm(false);
       await loadProjects();
     } catch (error) {
       console.error('Failed to save project:', error);
@@ -130,12 +148,19 @@ const Projects: React.FC = () => {
 
   const handleEdit = (project: Project) => {
     setEditingProject(project);
+    
+    // Find customer name if customer_id is set
+    const customer = project.customer_id ? customers.find(c => c.id === project.customer_id) : null;
+    
     setFormData({
       name: project.name,
       hourly_rate: project.hourly_rate,
       client_name: project.client_name || '',
+      customer_id: project.customer_id,
       status: project.status,
     });
+    
+    setCustomerSearch(customer?.name || '');
     setShowModal(true);
   };
 
@@ -158,14 +183,58 @@ const Projects: React.FC = () => {
 
   const handleAddNew = () => {
     setEditingProject(null);
-    setFormData({ name: '', hourly_rate: undefined, client_name: '', status: 'active' });
+    setFormData({ name: '', hourly_rate: undefined, client_name: '', customer_id: undefined, status: 'active' });
+    setCustomerSearch('');
+    setShowNewCustomerForm(false);
     setShowModal(true);
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingProject(null);
-    setFormData({ name: '', hourly_rate: undefined, client_name: '', status: 'active' });
+    setFormData({ name: '', hourly_rate: undefined, client_name: '', customer_id: undefined, status: 'active' });
+    setCustomerSearch('');
+    setShowNewCustomerForm(false);
+    setShowCustomerDropdown(false);
+  };
+
+  const handleSelectCustomer = (customer: Customer) => {
+    setFormData({ ...formData, customer_id: customer.id, client_name: customer.name });
+    setCustomerSearch(customer.name);
+    setShowCustomerDropdown(false);
+    setShowNewCustomerForm(false);
+  };
+
+  const handleCreateNewCustomer = async () => {
+    if (!customerSearch.trim()) {
+      showNotification(t.customers.customerName + ' is required', 'error');
+      return;
+    }
+
+    try {
+      const newCustomer = await window.api.customer.create({ name: customerSearch.trim() });
+      await loadCustomers();
+      setFormData({ ...formData, customer_id: newCustomer.id, client_name: newCustomer.name });
+      setCustomerSearch(newCustomer.name);
+      setShowNewCustomerForm(false);
+      setShowCustomerDropdown(false);
+      showNotification(t.notifications.customerCreated || 'Customer created successfully', 'success');
+    } catch (error) {
+      console.error('Failed to create customer:', error);
+      showNotification(t.notifications.saveFailed, 'error');
+    }
+  };
+
+  const getFilteredCustomers = () => {
+    if (!customerSearch.trim()) return customers;
+    const query = customerSearch.toLowerCase();
+    return customers.filter(c => c.name.toLowerCase().includes(query));
+  };
+
+  const getCustomerNameById = (customerId?: number): string => {
+    if (!customerId) return '';
+    const customer = customers.find(c => c.id === customerId);
+    return customer?.name || '';
   };
 
   const handleProjectClick = async (project: Project) => {
@@ -351,8 +420,8 @@ const Projects: React.FC = () => {
                           {project.name}
                         </span>
                       </td>
-                      <td>{project.client_name || '-'}</td>
-                      <td>{project.hourly_rate ? formatCurrency(project.hourly_rate) : '-'}</td>
+                      <td>{getCustomerNameById(project.customer_id) || project.client_name || '—'}</td>
+                      <td>{project.hourly_rate ? formatCurrency(project.hourly_rate) : '—'}</td>
                       <td>
                         <span className={`status-badge status-${project.status}`}>
                           {t.projects.status[project.status]}
@@ -398,13 +467,131 @@ const Projects: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="client_name">{t.projects.clientName}</label>
-                <input
-                  type="text"
-                  id="client_name"
-                  value={formData.client_name}
-                  onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-                />
+                <label htmlFor="customer">{t.projects.client}</label>
+                <div style={{ position: 'relative', zIndex: 10 }}>
+                  <input
+                    ref={customerInputRef}
+                    type="text"
+                    id="customer"
+                    value={customerSearch}
+                    onChange={(e) => {
+                      setCustomerSearch(e.target.value);
+                      setShowCustomerDropdown(true);
+                      setShowNewCustomerForm(false);
+                      // Clear selection if user types
+                      if (formData.customer_id) {
+                        setFormData({ ...formData, customer_id: undefined, client_name: '' });
+                      }
+                    }}
+                    onFocus={() => setShowCustomerDropdown(true)}
+                    placeholder={t.customers.selectOrCreate}
+                  />
+                  {showCustomerDropdown && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        marginTop: '4px',
+                        backgroundColor: 'var(--bg-elevated)',
+                        border: '1px solid var(--border-secondary)',
+                        borderRadius: '4px',
+                        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+                        maxHeight: '200px',
+                        overflowY: 'auto',
+                        zIndex: 1100,
+                      }}
+                    >
+                      {getFilteredCustomers().length > 0 ? (
+                        <>
+                          {getFilteredCustomers().map((customer) => (
+                            <div
+                              key={customer.id}
+                              onClick={() => handleSelectCustomer(customer)}
+                              style={{
+                                padding: '8px 12px',
+                                cursor: 'pointer',
+                                borderBottom: '1px solid var(--border-primary)',
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--hover-overlay)')}
+                              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                            >
+                              {customer.name}
+                              {customer.email && (
+                                <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
+                                  {customer.email}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </>
+                      ) : null}
+                      {customerSearch.trim() && !getFilteredCustomers().some(c => c.name.toLowerCase() === customerSearch.toLowerCase()) && (
+                        <div
+                          onClick={() => {
+                            setShowNewCustomerForm(true);
+                            setShowCustomerDropdown(false);
+                          }}
+                          style={{
+                            padding: '8px 12px',
+                            cursor: 'pointer',
+                            color: 'var(--accent-blue)',
+                            fontWeight: '500',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--hover-overlay)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          + {t.customers.createNew}: "{customerSearch}"
+                        </div>
+                      )}
+                      <div
+                        onClick={() => {
+                          setShowCustomerDropdown(false);
+                          setCustomerSearch('');
+                          setFormData({ ...formData, customer_id: undefined, client_name: '' });
+                        }}
+                        style={{
+                          padding: '8px 12px',
+                          cursor: 'pointer',
+                          textAlign: 'center',
+                          color: 'var(--text-tertiary)',
+                          fontSize: '12px',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--hover-overlay)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                      >
+                        {t.common.close}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {showNewCustomerForm && (
+                  <div style={{ marginTop: '8px', padding: '12px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '4px' }}>
+                    <p style={{ marginBottom: '8px', fontSize: '14px' }}>
+                      {t.customers.createNew}: <strong>{customerSearch}</strong>
+                    </p>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        onClick={handleCreateNewCustomer}
+                      >
+                        {t.common.create}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          setShowNewCustomerForm(false);
+                          setCustomerSearch('');
+                        }}
+                      >
+                        {t.common.cancel}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="form-group">

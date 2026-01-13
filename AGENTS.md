@@ -59,9 +59,25 @@ All renderer-to-main communication uses typed IPC channels defined in `src/share
 ### Frontend Structure
 
 - Single-page app with client-side routing via `currentPage` state in `App.tsx`
-- Pages: Dashboard, Projects, TimeEntries, Invoices, Reports, Settings
+- Pages: Dashboard, Projects, Customers, TimeEntries, Invoices, Reports, Settings
 - Context providers: ThemeContext, I18nContext, NotificationContext, KeyboardShortcutContext
 - Localization files in `src/renderer/locales/` (en.ts, de.ts)
+
+### Navigation and Keyboard Shortcuts
+
+**IMPORTANT**: When modifying the sidebar navigation in `App.tsx` (adding, removing, or reordering menu items):
+
+1. **Update keyboard shortcuts** in the `handleKeyDown` function (CMD/CTRL + number keys)
+   - The number keys should match the visual order of menu items
+   - Example: If Customers is moved to position 2, update its shortcut to CMD+2
+
+2. **Update the keyboard shortcuts help** (`src/renderer/components/KeyboardShortcutsHelp.tsx`)
+   - Navigation shortcuts section must reflect the new order/items
+   - Ensure all labels and key combinations are correct
+
+3. **Test all shortcuts** after navigation changes to verify correct routing
+
+The navigation order directly affects user muscle memory - consistency between visual order and shortcuts is critical.
 
 ### Build Configuration
 

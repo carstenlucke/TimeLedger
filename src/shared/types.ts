@@ -1,11 +1,23 @@
 // Database models
 export type ProjectStatus = 'active' | 'completed' | 'paused';
 
+export interface Customer {
+  id: number;
+  name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Project {
   id: number;
   name: string;
   hourly_rate?: number;
-  client_name?: string;
+  client_name?: string; // Deprecated: kept for backward compatibility
+  customer_id?: number;
   status: ProjectStatus;
   created_at: string;
   updated_at: string;
@@ -42,10 +54,19 @@ export interface InvoiceWithEntries extends Invoice {
 }
 
 // Input types for creating/updating records
+export interface CustomerInput {
+  name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  notes?: string;
+}
+
 export interface ProjectInput {
   name: string;
   hourly_rate?: number;
-  client_name?: string;
+  client_name?: string; // Deprecated: kept for backward compatibility
+  customer_id?: number;
   status?: ProjectStatus;
 }
 
@@ -128,6 +149,7 @@ export type ExportFormat = 'csv' | 'json';
 // Search types
 export interface SearchResult {
   projects: Array<Project & { match_field: string }>;
+  customers: Array<Customer & { match_field: string }>;
   timeEntries: Array<TimeEntry & { project_name: string; hourly_rate?: number; match_field: string }>;
   invoices: Array<Invoice & { match_field: string }>;
 }
@@ -140,6 +162,13 @@ export const IPC_CHANNELS = {
   PROJECT_DELETE: 'project:delete',
   PROJECT_GET_ALL: 'project:get-all',
   PROJECT_GET_BY_ID: 'project:get-by-id',
+
+  // Customers
+  CUSTOMER_CREATE: 'customer:create',
+  CUSTOMER_UPDATE: 'customer:update',
+  CUSTOMER_DELETE: 'customer:delete',
+  CUSTOMER_GET_ALL: 'customer:get-all',
+  CUSTOMER_GET_BY_ID: 'customer:get-by-id',
 
   // Time Entries
   TIME_ENTRY_CREATE: 'time-entry:create',
