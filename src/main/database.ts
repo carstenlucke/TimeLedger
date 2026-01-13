@@ -391,6 +391,7 @@ export class DatabaseManager {
   // Search methods
   public searchGlobal(query: string): {
     projects: Array<Project & { match_field: string }>;
+    customers: Array<Customer & { match_field: string }>;
     timeEntries: Array<any>;
     invoices: Array<Invoice & { match_field: string }>;
   } {
@@ -411,6 +412,28 @@ export class DatabaseManager {
       LIMIT 10
     `);
     const projects = projectsStmt.all(searchPattern, searchPattern, searchPattern, searchPattern) as Array<Project & { match_field: string }>;
+
+    // Search Customers (name, email, phone, address, notes)
+    const customersStmt = this.db.prepare(`
+      SELECT
+        *,
+        CASE
+          WHEN name LIKE ? THEN 'name'
+          WHEN email LIKE ? THEN 'email'
+          WHEN phone LIKE ? THEN 'phone'
+          WHEN address LIKE ? THEN 'address'
+          WHEN notes LIKE ? THEN 'notes'
+          ELSE 'unknown'
+        END as match_field
+      FROM customers
+      WHERE name LIKE ? OR email LIKE ? OR phone LIKE ? OR address LIKE ? OR notes LIKE ?
+      ORDER BY name
+      LIMIT 10
+    `);
+    const customers = customersStmt.all(
+      searchPattern, searchPattern, searchPattern, searchPattern, searchPattern,
+      searchPattern, searchPattern, searchPattern, searchPattern, searchPattern
+    ) as Array<Customer & { match_field: string }>;
 
     // Search Time Entries (description + joined project name)
     const entriesStmt = this.db.prepare(`
@@ -447,7 +470,7 @@ export class DatabaseManager {
     `);
     const invoices = invoicesStmt.all(searchPattern, searchPattern, searchPattern, searchPattern) as Array<Invoice & { match_field: string }>;
 
-    return { projects, timeEntries, invoices };
+    return { projects, customers, timeEntries, invoices };
   }
 
   // Reporting methods

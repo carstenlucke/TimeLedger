@@ -111,11 +111,11 @@ const AppContent: React.FC = () => {
             break;
           case '2':
             event.preventDefault();
-            navigateToPage('projects');
+            navigateToPage('customers');
             break;
           case '3':
             event.preventDefault();
-            navigateToPage('customers');
+            navigateToPage('projects');
             break;
           case '4':
             event.preventDefault();
@@ -190,17 +190,6 @@ const AppContent: React.FC = () => {
             </a>
             <a
               href="#"
-              className={currentPage === 'projects' ? 'active' : ''}
-              onClick={(e) => {
-                e.preventDefault();
-                navigateToPage('projects');
-              }}
-            >
-              <Folder className="nav-icon" aria-hidden="true" size={20} strokeWidth={1.75} />
-              {t.nav.projects}
-            </a>
-            <a
-              href="#"
               className={currentPage === 'customers' ? 'active' : ''}
               onClick={(e) => {
                 e.preventDefault();
@@ -209,6 +198,17 @@ const AppContent: React.FC = () => {
             >
               <Users className="nav-icon" aria-hidden="true" size={20} strokeWidth={1.75} />
               {t.nav.customers}
+            </a>
+            <a
+              href="#"
+              className={currentPage === 'projects' ? 'active' : ''}
+              onClick={(e) => {
+                e.preventDefault();
+                navigateToPage('projects');
+              }}
+            >
+              <Folder className="nav-icon" aria-hidden="true" size={20} strokeWidth={1.75} />
+              {t.nav.projects}
             </a>
             <a
               href="#"

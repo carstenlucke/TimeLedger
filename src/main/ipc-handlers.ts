@@ -296,7 +296,7 @@ export function setupIpcHandlers(): void {
   // Search handlers
   ipcMain.handle(IPC_CHANNELS.SEARCH_GLOBAL, async (_, query: string) => {
     if (!query || query.trim().length < 2) {
-      return { projects: [], timeEntries: [], invoices: [] };
+      return { projects: [], customers: [], timeEntries: [], invoices: [] };
     }
     return db.searchGlobal(query.trim());
   });

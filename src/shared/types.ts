@@ -149,6 +149,7 @@ export type ExportFormat = 'csv' | 'json';
 // Search types
 export interface SearchResult {
   projects: Array<Project & { match_field: string }>;
+  customers: Array<Customer & { match_field: string }>;
   timeEntries: Array<TimeEntry & { project_name: string; hourly_rate?: number; match_field: string }>;
   invoices: Array<Invoice & { match_field: string }>;
 }

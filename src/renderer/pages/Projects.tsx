@@ -468,7 +468,7 @@ const Projects: React.FC = () => {
 
               <div className="form-group">
                 <label htmlFor="customer">{t.projects.client}</label>
-                <div style={{ position: 'relative' }}>
+                <div style={{ position: 'relative', zIndex: 10 }}>
                   <input
                     ref={customerInputRef}
                     type="text"
@@ -494,13 +494,13 @@ const Projects: React.FC = () => {
                         left: 0,
                         right: 0,
                         marginTop: '4px',
-                        backgroundColor: 'var(--card-bg)',
-                        border: '1px solid var(--border-color)',
+                        backgroundColor: 'var(--bg-elevated)',
+                        border: '1px solid var(--border-secondary)',
                         borderRadius: '4px',
-                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
                         maxHeight: '200px',
                         overflowY: 'auto',
-                        zIndex: 1000,
+                        zIndex: 1100,
                       }}
                     >
                       {getFilteredCustomers().length > 0 ? (
@@ -512,9 +512,9 @@ const Projects: React.FC = () => {
                               style={{
                                 padding: '8px 12px',
                                 cursor: 'pointer',
-                                borderBottom: '1px solid var(--border-color)',
+                                borderBottom: '1px solid var(--border-primary)',
                               }}
-                              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--hover-bg)')}
+                              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--hover-overlay)')}
                               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                             >
                               {customer.name}
@@ -539,7 +539,7 @@ const Projects: React.FC = () => {
                             color: 'var(--accent-blue)',
                             fontWeight: '500',
                           }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--hover-bg)')}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--hover-overlay)')}
                           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                         >
                           + {t.customers.createNew}: "{customerSearch}"
@@ -558,7 +558,7 @@ const Projects: React.FC = () => {
                           color: 'var(--text-tertiary)',
                           fontSize: '12px',
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--hover-bg)')}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--hover-overlay)')}
                         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                       >
                         {t.common.close}
@@ -567,7 +567,7 @@ const Projects: React.FC = () => {
                   )}
                 </div>
                 {showNewCustomerForm && (
-                  <div style={{ marginTop: '8px', padding: '12px', backgroundColor: 'var(--hover-bg)', borderRadius: '4px' }}>
+                  <div style={{ marginTop: '8px', padding: '12px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '4px' }}>
                     <p style={{ marginBottom: '8px', fontSize: '14px' }}>
                       {t.customers.createNew}: <strong>{customerSearch}</strong>
                     </p>

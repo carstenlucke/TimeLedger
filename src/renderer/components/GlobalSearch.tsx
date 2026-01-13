@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { Search, Clock3, Folder, FileText } from 'lucide-react';
+import { Search, Clock3, Folder, FileText, Users } from 'lucide-react';
 import { AppContext } from '../App';
 import { useI18n } from '../context/I18nContext';
 import type { SearchResult } from '../../shared/types';
@@ -86,6 +86,12 @@ export const GlobalSearch: React.FC = () => {
     setQuery('');
   };
 
+  const handleCustomerClick = (_customerId: number) => {
+    navigateToPage('customers');
+    setIsOpen(false);
+    setQuery('');
+  };
+
   const handleTimeEntryClick = (entryId: number) => {
     navigateToPage('entries', { entryId });
     setIsOpen(false);
@@ -100,19 +106,22 @@ export const GlobalSearch: React.FC = () => {
 
   const getMatchFieldLabel = (matchField: string): string => {
     const labels: { [key: string]: string } = {
-      name: t.projects?.projectName || 'Project Name',
+      name: t.projects?.projectName || 'Name',
       client_name: t.projects?.clientName || 'Client Name',
       description: 'Description',
       project_name: t.projects?.projectName || 'Project',
       invoice_number: t.invoices?.invoiceNumber || 'Invoice Number',
       notes: t.invoices?.notes || 'Notes',
+      email: 'Email',
+      phone: 'Phone',
+      address: 'Address',
     };
     return labels[matchField] || matchField;
   };
 
   const hasResults =
     results &&
-    (results.projects.length > 0 || results.timeEntries.length > 0 || results.invoices.length > 0);
+    (results.projects.length > 0 || results.customers.length > 0 || results.timeEntries.length > 0 || results.invoices.length > 0);
 
   const showDropdown = isOpen && query.trim().length >= 2 && (isLoading || hasResults || results);
 
@@ -155,6 +164,29 @@ export const GlobalSearch: React.FC = () => {
                   )}
                   <div className="search-result-match">
                     {t.search?.matchedIn || 'Matched in'}: {getMatchFieldLabel(project.match_field)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {!isLoading && results && results.customers.length > 0 && (
+            <div className="search-results-section">
+              <div className="search-results-header">
+                <Users size={14} />
+                {t.search?.customers || 'Customers'}
+              </div>
+              {results.customers.map((customer) => (
+                <div
+                  key={customer.id}
+                  className="search-result-item"
+                  onClick={() => handleCustomerClick(customer.id)}
+                >
+                  <div className="search-result-title">{customer.name}</div>
+                  {customer.email && (
+                    <div className="search-result-subtitle">{customer.email}</div>
+                  )}
+                  <div className="search-result-match">
+                    {t.search?.matchedIn || 'Matched in'}: {getMatchFieldLabel(customer.match_field)}
                   </div>
                 </div>
               ))}

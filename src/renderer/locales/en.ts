@@ -354,6 +354,7 @@ export const en = {
     timeEntries: 'Time Entries',
     invoices: 'Invoices',
     goDashboard: 'Go to Dashboard',
+    goCustomers: 'Go to Customers',
     goProjects: 'Go to Projects',
     goTimeEntries: 'Go to Time Entries',
     goInvoices: 'Go to Invoices',

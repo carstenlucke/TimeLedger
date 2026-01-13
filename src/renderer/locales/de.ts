@@ -356,6 +356,7 @@ export const de: TranslationKeys = {
     timeEntries: 'Zeiteinträge',
     invoices: 'Rechnungen',
     goDashboard: 'Zum Dashboard',
+    goCustomers: 'Zu Kunden',
     goProjects: 'Zu Projekten',
     goTimeEntries: 'Zu Zeiteinträgen',
     goInvoices: 'Zu Rechnungen',

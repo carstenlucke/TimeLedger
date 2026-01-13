@@ -57,11 +57,12 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({ is
       title: t.shortcuts.navigation,
       shortcuts: [
         { keys: [modifierKey, '1'], description: t.shortcuts.goDashboard },
-        { keys: [modifierKey, '2'], description: t.shortcuts.goProjects },
-        { keys: [modifierKey, '3'], description: t.shortcuts.goTimeEntries },
-        { keys: [modifierKey, '4'], description: t.shortcuts.goInvoices },
-        { keys: [modifierKey, '5'], description: t.shortcuts.goReports },
-        { keys: [modifierKey, '6'], description: t.shortcuts.goSettings },
+        { keys: [modifierKey, '2'], description: t.shortcuts.goCustomers },
+        { keys: [modifierKey, '3'], description: t.shortcuts.goProjects },
+        { keys: [modifierKey, '4'], description: t.shortcuts.goTimeEntries },
+        { keys: [modifierKey, '5'], description: t.shortcuts.goInvoices },
+        { keys: [modifierKey, '6'], description: t.shortcuts.goReports },
+        { keys: [modifierKey, '7'], description: t.shortcuts.goSettings },
       ],
     },
     {
