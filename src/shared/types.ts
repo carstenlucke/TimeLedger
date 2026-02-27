@@ -37,12 +37,18 @@ export interface TimeEntry {
   updated_at: string;
 }
 
+export type InvoiceType = 'internal' | 'external';
+
 export interface Invoice {
   id: number;
   invoice_number: string;
   invoice_date: string;
+  type: InvoiceType;
   status: 'draft' | 'invoiced' | 'cancelled';
   total_amount: number;
+  external_invoice_number?: string;
+  net_amount?: number;
+  gross_amount?: number;
   notes?: string;
   cancellation_reason?: string;
   created_at: string;
@@ -82,8 +88,12 @@ export interface TimeEntryInput {
 export interface InvoiceInput {
   invoice_number: string;
   invoice_date: string;
+  type?: InvoiceType;
   status?: 'draft' | 'invoiced' | 'cancelled';
   total_amount?: number;
+  external_invoice_number?: string;
+  net_amount?: number;
+  gross_amount?: number;
   notes?: string;
   cancellation_reason?: string;
 }
