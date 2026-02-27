@@ -252,6 +252,14 @@ export const de: TranslationKeys = {
     noNotesPlaceholder: 'Keine Notizen',
     notesPlaceholder: 'Fügen Sie Notizen oder Details für diese Rechnung hinzu',
     reasonPlaceholder: 'Grund für die Stornierung',
+    externalInvoice: 'Externe Rechnung',
+    externalInvoiceNumber: 'Externe Rechnungsnummer',
+    netAmount: 'Nettobetrag',
+    grossAmount: 'Bruttobetrag',
+    unbilledDifference: 'Nicht abgerechnete Differenz',
+    typeInternal: 'Intern',
+    typeExternal: 'Extern',
+    linkedEntriesTotal: 'Summe verknüpfter Einträge',
   },
 
   // Settings

@@ -454,21 +454,22 @@ export class DatabaseManager {
     `);
     const timeEntries = entriesStmt.all(searchPattern, searchPattern, searchPattern, searchPattern) as any[];
 
-    // Search Invoices (invoice_number, notes)
+    // Search Invoices (invoice_number, external_invoice_number, notes)
     const invoicesStmt = this.db.prepare(`
       SELECT
         *,
         CASE
           WHEN invoice_number LIKE ? THEN 'invoice_number'
+          WHEN external_invoice_number LIKE ? THEN 'external_invoice_number'
           WHEN notes LIKE ? THEN 'notes'
           ELSE 'unknown'
         END as match_field
       FROM invoices
-      WHERE invoice_number LIKE ? OR notes LIKE ?
+      WHERE invoice_number LIKE ? OR external_invoice_number LIKE ? OR notes LIKE ?
       ORDER BY invoice_date DESC
       LIMIT 10
     `);
-    const invoices = invoicesStmt.all(searchPattern, searchPattern, searchPattern, searchPattern) as Array<Invoice & { match_field: string }>;
+    const invoices = invoicesStmt.all(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern) as Array<Invoice & { match_field: string }>;
 
     return { projects, customers, timeEntries, invoices };
   }
@@ -639,14 +640,18 @@ export class DatabaseManager {
   // Invoice methods
   public createInvoice(input: InvoiceInput): Invoice {
     const stmt = this.db.prepare(`
-      INSERT INTO invoices (invoice_number, invoice_date, status, total_amount, notes, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      INSERT INTO invoices (invoice_number, invoice_date, type, status, total_amount, external_invoice_number, net_amount, gross_amount, notes, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `);
     const result = stmt.run(
       input.invoice_number,
       input.invoice_date,
+      input.type || 'internal',
       input.status || 'draft',
       input.total_amount || 0,
+      input.external_invoice_number || null,
+      input.net_amount ?? null,
+      input.gross_amount ?? null,
       input.notes
     );
     this.bumpDataVersion();
@@ -665,6 +670,10 @@ export class DatabaseManager {
       updates.push('invoice_date = ?');
       values.push(input.invoice_date);
     }
+    if (input.type !== undefined) {
+      updates.push('type = ?');
+      values.push(input.type);
+    }
     if (input.status !== undefined) {
       updates.push('status = ?');
       values.push(input.status);
@@ -672,6 +681,18 @@ export class DatabaseManager {
     if (input.total_amount !== undefined) {
       updates.push('total_amount = ?');
       values.push(input.total_amount);
+    }
+    if (input.external_invoice_number !== undefined) {
+      updates.push('external_invoice_number = ?');
+      values.push(input.external_invoice_number);
+    }
+    if (input.net_amount !== undefined) {
+      updates.push('net_amount = ?');
+      values.push(input.net_amount);
+    }
+    if (input.gross_amount !== undefined) {
+      updates.push('gross_amount = ?');
+      values.push(input.gross_amount);
     }
     if (input.notes !== undefined) {
       updates.push('notes = ?');

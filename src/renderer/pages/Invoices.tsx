@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
-import type { Invoice, InvoiceWithEntries } from '../../shared/types';
+import type { Invoice, InvoiceWithEntries, InvoiceType } from '../../shared/types';
 import { isTypingInInput, getModifierKey } from '../contexts/KeyboardShortcutContext';
 import { LocalizedDateInput } from '../components/LocalizedDateInput';
 import { useSortableData, SortableHeader, SortableColumnConfig } from '../components/SortableTable';
@@ -34,6 +34,10 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
     invoice_number: '',
     invoice_date: new Date().toISOString().split('T')[0],
     notes: '',
+    type: 'internal' as InvoiceType,
+    external_invoice_number: '',
+    net_amount: '',
+    gross_amount: '',
   });
 
   useEffect(() => {
@@ -177,6 +181,10 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
         invoice_number: data.invoice_number,
         invoice_date: data.invoice_date,
         notes: data.notes || '',
+        type: data.type || 'internal',
+        external_invoice_number: data.external_invoice_number || '',
+        net_amount: data.net_amount != null ? String(data.net_amount) : '',
+        gross_amount: data.gross_amount != null ? String(data.gross_amount) : '',
       });
       setIsEditingFields(false);
       setShowInvoiceModal(true);
@@ -193,6 +201,10 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
       invoice_number: generatedNumber,
       invoice_date: new Date().toISOString().split('T')[0],
       notes: '',
+      type: 'internal',
+      external_invoice_number: '',
+      net_amount: '',
+      gross_amount: '',
     });
     setIsEditingFields(true);
     setShowInvoiceModal(true);
@@ -200,14 +212,23 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
 
   const handleSaveFields = async () => {
     try {
+      const invoiceData = {
+        invoice_number: formData.invoice_number,
+        invoice_date: formData.invoice_date,
+        notes: formData.notes,
+        type: formData.type,
+        external_invoice_number: formData.type === 'external' ? formData.external_invoice_number : undefined,
+        net_amount: formData.type === 'external' && formData.net_amount ? parseFloat(formData.net_amount) : undefined,
+        gross_amount: formData.type === 'external' && formData.gross_amount ? parseFloat(formData.gross_amount) : undefined,
+      };
       if (selectedInvoice) {
-        await window.api.invoice.update(selectedInvoice.id, formData);
+        await window.api.invoice.update(selectedInvoice.id, invoiceData);
         showNotification(t.notifications.invoiceUpdated, 'success');
         await loadInvoiceDetails(selectedInvoice.id);
         loadInvoices();
       } else {
         const newInvoice = await window.api.invoice.create({
-          ...formData,
+          ...invoiceData,
           status: 'draft',
           total_amount: 0,
         });
@@ -389,6 +410,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
       invoice.status,
       invoice.notes || '',
       String(invoice.total_amount),
+      invoice.external_invoice_number || '',
     ].join(' ').toLowerCase();
     return haystack.includes(query);
   });
@@ -481,10 +503,27 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                         >
                           {invoice.invoice_number}
                         </span>
+                        {invoice.type === 'external' && (
+                          <span style={{
+                            marginLeft: '6px',
+                            padding: '1px 6px',
+                            borderRadius: '6px',
+                            backgroundColor: 'var(--accent-blue)20',
+                            color: 'var(--accent-blue)',
+                            fontSize: '0.7rem',
+                            fontWeight: '500',
+                          }}>
+                            {t.invoices.typeExternal}
+                          </span>
+                        )}
                       </td>
                       <td>{formatDate(invoice.invoice_date)}</td>
                       <td>{getStatusBadge(invoice.status)}</td>
-                      <td>{formatCurrency(invoice.total_amount)}</td>
+                      <td>
+                        {invoice.type === 'external' && invoice.net_amount != null
+                          ? formatCurrency(invoice.net_amount)
+                          : formatCurrency(invoice.total_amount)}
+                      </td>
                       <td>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           {invoice.status === 'draft' && (
@@ -555,12 +594,78 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                       onChange={(value) => setFormData({ ...formData, invoice_date: value })}
                       style={{ marginTop: '8px' }}
                     />
+                    {/* External Invoice Toggle */}
+                    <div style={{ marginTop: '12px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.9rem' }}>
+                        <input
+                          type="checkbox"
+                          checked={formData.type === 'external'}
+                          onChange={(e) => setFormData({ ...formData, type: e.target.checked ? 'external' : 'internal' })}
+                        />
+                        {t.invoices.externalInvoice}
+                      </label>
+                    </div>
+                    {/* External Invoice Fields */}
+                    {formData.type === 'external' && (
+                      <div style={{ marginTop: '12px', padding: '12px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px' }}>
+                        <div className="form-group" style={{ marginBottom: '8px' }}>
+                          <label>{t.invoices.externalInvoiceNumber}</label>
+                          <input
+                            type="text"
+                            value={formData.external_invoice_number}
+                            onChange={(e) => setFormData({ ...formData, external_invoice_number: e.target.value })}
+                            placeholder={t.invoices.externalInvoiceNumber}
+                          />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                          <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label>{t.invoices.netAmount}</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={formData.net_amount}
+                              onChange={(e) => setFormData({ ...formData, net_amount: e.target.value })}
+                              placeholder="0.00"
+                            />
+                          </div>
+                          <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label>{t.invoices.grossAmount}</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={formData.gross_amount}
+                              onChange={(e) => setFormData({ ...formData, gross_amount: e.target.value })}
+                              placeholder="0.00"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <>
-                    <h2 style={{ margin: 0 }}>{selectedInvoice.invoice_number}</h2>
+                    <h2 style={{ margin: 0 }}>
+                      {selectedInvoice.invoice_number}
+                      {selectedInvoice.type === 'external' && (
+                        <span style={{
+                          marginLeft: '8px',
+                          padding: '2px 8px',
+                          borderRadius: '8px',
+                          backgroundColor: 'var(--accent-blue)20',
+                          color: 'var(--accent-blue)',
+                          fontSize: '0.75rem',
+                          fontWeight: '500',
+                          verticalAlign: 'middle',
+                        }}>
+                          {t.invoices.typeExternal}
+                        </span>
+                      )}
+                    </h2>
                     <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
                       {formatDate(selectedInvoice.invoice_date)}
+                      {selectedInvoice.type === 'external' && selectedInvoice.external_invoice_number && (
+                        <span> · {t.invoices.externalInvoiceNumber}: {selectedInvoice.external_invoice_number}</span>
+                      )}
                     </p>
                   </>
                 )}
@@ -583,6 +688,10 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                           invoice_number: selectedInvoice.invoice_number,
                           invoice_date: selectedInvoice.invoice_date,
                           notes: selectedInvoice.notes || '',
+                          type: selectedInvoice.type || 'internal',
+                          external_invoice_number: selectedInvoice.external_invoice_number || '',
+                          net_amount: selectedInvoice.net_amount != null ? String(selectedInvoice.net_amount) : '',
+                          gross_amount: selectedInvoice.gross_amount != null ? String(selectedInvoice.gross_amount) : '',
                         });
                         setIsEditingFields(false);
                       } else {
@@ -602,24 +711,69 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
             {/* Summary and Notes Section */}
             {selectedInvoice && (
               <div style={{ marginBottom: '20px', padding: '16px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <div>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
-                      {t.invoices.totalAmount}
-                    </p>
-                    <p style={{ fontSize: '1.5rem', fontWeight: '600', margin: 0 }}>
-                      {formatCurrency(selectedInvoice.total_amount)}
-                    </p>
+                {selectedInvoice.type === 'external' ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                        {t.invoices.netAmount}
+                      </p>
+                      <p style={{ fontSize: '1.5rem', fontWeight: '600', margin: 0 }}>
+                        {selectedInvoice.net_amount != null ? formatCurrency(selectedInvoice.net_amount) : '–'}
+                      </p>
+                    </div>
+                    <div>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                        {t.invoices.grossAmount}
+                      </p>
+                      <p style={{ fontSize: '1.5rem', fontWeight: '600', margin: 0 }}>
+                        {selectedInvoice.gross_amount != null ? formatCurrency(selectedInvoice.gross_amount) : '–'}
+                      </p>
+                    </div>
+                    <div>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                        {t.invoices.linkedEntriesTotal}
+                      </p>
+                      <p style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>
+                        {formatCurrency(selectedInvoice.total_amount)}
+                      </p>
+                    </div>
+                    <div>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                        {t.invoices.unbilledDifference}
+                      </p>
+                      <p style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0, color: selectedInvoice.net_amount != null && selectedInvoice.net_amount - selectedInvoice.total_amount !== 0 ? 'var(--accent-orange, #f59e0b)' : undefined }}>
+                        {selectedInvoice.net_amount != null ? formatCurrency(selectedInvoice.net_amount - selectedInvoice.total_amount) : '–'}
+                      </p>
+                    </div>
+                    <div>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                        {t.invoices.totalHours}
+                      </p>
+                      <p style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>
+                        {formatDuration(selectedInvoice.entries.reduce((sum: number, e: any) => sum + e.duration_minutes, 0))}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
-                      {t.invoices.totalHours}
-                    </p>
-                    <p style={{ fontSize: '1.5rem', fontWeight: '600', margin: 0 }}>
-                      {formatDuration(selectedInvoice.entries.reduce((sum: number, e: any) => sum + e.duration_minutes, 0))}
-                    </p>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                        {t.invoices.totalAmount}
+                      </p>
+                      <p style={{ fontSize: '1.5rem', fontWeight: '600', margin: 0 }}>
+                        {formatCurrency(selectedInvoice.total_amount)}
+                      </p>
+                    </div>
+                    <div>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                        {t.invoices.totalHours}
+                      </p>
+                      <p style={{ fontSize: '1.5rem', fontWeight: '600', margin: 0 }}>
+                        {formatDuration(selectedInvoice.entries.reduce((sum: number, e: any) => sum + e.duration_minutes, 0))}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Notes Section */}
                 <div style={{ marginTop: '16px' }}>

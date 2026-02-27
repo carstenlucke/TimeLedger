@@ -250,6 +250,14 @@ export const en = {
     noNotesPlaceholder: 'No notes',
     notesPlaceholder: 'Add notes or details for this invoice',
     reasonPlaceholder: 'Reason for cancellation',
+    externalInvoice: 'External Invoice',
+    externalInvoiceNumber: 'External Invoice Number',
+    netAmount: 'Net Amount',
+    grossAmount: 'Gross Amount',
+    unbilledDifference: 'Unbilled Difference',
+    typeInternal: 'Internal',
+    typeExternal: 'External',
+    linkedEntriesTotal: 'Linked Entries Total',
   },
 
   // Settings

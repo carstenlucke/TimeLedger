@@ -12,6 +12,7 @@ import { migration002 } from './002_add_invoices';
 import { migration003 } from './003_add_billing_status';
 import { migration004 } from './004_add_project_status';
 import { migration005 } from './005_add_customers_table';
+import { migration006 } from './006_add_external_invoices';
 
 // Register all migrations in order
 export const migrations: Migration[] = [
@@ -20,6 +21,7 @@ export const migrations: Migration[] = [
   migration003,
   migration004,
   migration005,
+  migration006,
 ];
 
 export class MigrationRunner {
