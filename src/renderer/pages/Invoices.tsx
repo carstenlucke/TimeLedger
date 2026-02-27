@@ -138,13 +138,13 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
   };
 
   const uniqueProjects = useMemo(() => {
-    const seen = new Map<string, string>();
+    const seen = new Set<string>();
     for (const entry of unbilledEntries) {
-      if (entry.project_name && !seen.has(entry.project_name)) {
-        seen.set(entry.project_name, entry.project_name);
+      if (entry.project_name) {
+        seen.add(entry.project_name);
       }
     }
-    return Array.from(seen.values()).sort();
+    return Array.from(seen).sort();
   }, [unbilledEntries]);
 
   const filteredUnbilledEntries = useMemo(() => {
@@ -160,6 +160,8 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
     }
     return filtered;
   }, [unbilledEntries, entryFilterProject, entryFilterDateFrom, entryFilterDateTo]);
+
+  const selectedEntryIdsSet = useMemo(() => new Set(selectedEntryIds), [selectedEntryIds]);
 
   const resetEntryFilters = () => {
     setEntryFilterProject('');
@@ -820,7 +822,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                           <th style={{ width: '40px' }}>
                             <input
                               type="checkbox"
-                              checked={filteredUnbilledEntries.length > 0 && filteredUnbilledEntries.every(entry => selectedEntryIds.includes(entry.id))}
+                              checked={filteredUnbilledEntries.length > 0 && filteredUnbilledEntries.every(entry => selectedEntryIdsSet.has(entry.id))}
                               onChange={(e) => {
                                 if (e.target.checked) {
                                   const filteredIds = filteredUnbilledEntries.map((entry) => entry.id);
@@ -846,7 +848,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                             <td>
                               <input
                                 type="checkbox"
-                                checked={selectedEntryIds.includes(entry.id)}
+                                checked={selectedEntryIdsSet.has(entry.id)}
                                 onChange={() => toggleEntrySelection(entry.id)}
                               />
                             </td>
