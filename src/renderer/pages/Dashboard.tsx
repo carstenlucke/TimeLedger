@@ -179,7 +179,7 @@ const Dashboard: React.FC = () => {
     // Generate all weeks from earliest to latest (inclusive, filling gaps)
     const weeks: Array<{ startDate: string; endDate: string; weekNumber: number; year: number }> = [];
     const current = new Date(firstWeek.startDate + 'T00:00:00');
-    const end = new Date(lastWeek.startDate + 'T00:00:00');
+    const end = new Date(lastWeek.endDate + 'T00:00:00');
 
     while (current <= end) {
       const weekInfo = getWeekForDate(current.toISOString().split('T')[0]);
