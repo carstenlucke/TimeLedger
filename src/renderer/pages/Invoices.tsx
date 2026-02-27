@@ -504,17 +504,13 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                           {invoice.invoice_number}
                         </span>
                         {invoice.type === 'external' && (
-                          <span style={{
-                            marginLeft: '6px',
-                            padding: '1px 6px',
-                            borderRadius: '6px',
-                            backgroundColor: 'var(--accent-blue)20',
-                            color: 'var(--accent-blue)',
-                            fontSize: '0.7rem',
-                            fontWeight: '500',
+                          <div style={{
+                            marginTop: '2px',
+                            fontSize: '0.75rem',
+                            color: 'var(--text-secondary)',
                           }}>
-                            {t.invoices.typeExternal}
-                          </span>
+                            {t.invoices.typeExternal}{invoice.external_invoice_number ? ` · ${invoice.external_invoice_number}` : ''}
+                          </div>
                         )}
                       </td>
                       <td>{formatDate(invoice.invoice_date)}</td>
