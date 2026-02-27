@@ -256,7 +256,7 @@ export const de: TranslationKeys = {
     externalInvoiceNumber: 'Externe Rechnungsnummer',
     netAmount: 'Nettobetrag',
     grossAmount: 'Bruttobetrag',
-    unbilledDifference: 'Nicht abgerechnete Differenz',
+    unbilledDifference: 'Abweichung Nettobetrag zu Zeiteinträgen',
     typeInternal: 'Intern',
     typeExternal: 'Extern',
     linkedEntriesTotal: 'Summe verknüpfter Einträge',

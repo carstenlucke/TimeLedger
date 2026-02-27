@@ -254,7 +254,7 @@ export const en = {
     externalInvoiceNumber: 'External Invoice Number',
     netAmount: 'Net Amount',
     grossAmount: 'Gross Amount',
-    unbilledDifference: 'Unbilled Difference',
+    unbilledDifference: 'Net amount vs. time entries deviation',
     typeInternal: 'Internal',
     typeExternal: 'External',
     linkedEntriesTotal: 'Linked Entries Total',
