@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
-import type { Invoice, InvoiceWithEntries, InvoiceType } from '../../shared/types';
+import type { Invoice, InvoiceWithEntries, InvoiceType, InvoiceInput } from '../../shared/types';
 import { isTypingInInput, getModifierKey } from '../contexts/KeyboardShortcutContext';
 import { LocalizedDateInput } from '../components/LocalizedDateInput';
 import { useSortableData, SortableHeader, SortableColumnConfig } from '../components/SortableTable';
+
+const DEFAULT_TAX_RATE = '19';
 
 interface InvoicesProps {
   initialInvoiceId?: number;
@@ -38,7 +40,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
     external_invoice_number: '',
     net_amount: '',
     gross_amount: '',
-    tax_rate: '19',
+    tax_rate: DEFAULT_TAX_RATE,
     is_small_business: false,
     service_period_start: '',
     service_period_end: '',
@@ -213,7 +215,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
       external_invoice_number: '',
       net_amount: '',
       gross_amount: '',
-      tax_rate: '19',
+      tax_rate: DEFAULT_TAX_RATE,
       is_small_business: false,
       service_period_start: '',
       service_period_end: '',
@@ -237,16 +239,16 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
       const hasManualServicePeriod = formData.service_period_start || formData.service_period_end;
       const servicePeriodManuallySet = hasManualServicePeriod ? 1 : 0;
 
-      const invoiceData: any = {
+      const invoiceData: Partial<InvoiceInput> & { invoice_number: string; invoice_date: string } = {
         invoice_number: formData.invoice_number,
         invoice_date: formData.invoice_date,
         notes: formData.notes,
         type: formData.type,
         external_invoice_number: formData.type === 'external'
-          ? (formData.external_invoice_number || null)
-          : null,
-        net_amount: parsedNet !== null && Number.isFinite(parsedNet) ? parsedNet : null,
-        gross_amount: parsedGross !== null && Number.isFinite(parsedGross) ? parsedGross : null,
+          ? (formData.external_invoice_number || undefined)
+          : undefined,
+        net_amount: parsedNet !== null && Number.isFinite(parsedNet) ? parsedNet : undefined,
+        gross_amount: parsedGross !== null && Number.isFinite(parsedGross) ? parsedGross : undefined,
         tax_rate: taxRate,
         is_small_business: formData.is_small_business ? 1 : 0,
         service_period_start: formData.service_period_start || null,
@@ -675,7 +677,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                             <input
                               type="checkbox"
                               checked={formData.is_small_business}
-                              onChange={(e) => setFormData({ ...formData, is_small_business: e.target.checked, tax_rate: e.target.checked ? '0' : '19' })}
+                              onChange={(e) => setFormData({ ...formData, is_small_business: e.target.checked, tax_rate: e.target.checked ? '0' : DEFAULT_TAX_RATE })}
                             />
                             {t.invoices.smallBusiness}
                           </label>

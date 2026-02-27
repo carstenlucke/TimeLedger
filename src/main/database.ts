@@ -999,7 +999,7 @@ export class DatabaseManager {
     if (!invoice) return;
 
     const taxRate = invoice.tax_rate || 0;
-    const taxAmount = invoice.type === 'internal' ? Math.round(total * taxRate * 100) / 10000 : 0;
+    const taxAmount = invoice.type === 'internal' ? Math.round(total * (taxRate / 100) * 100) / 100 : 0;
     const grossAmount = invoice.type === 'internal' ? Math.round((total + taxAmount) * 100) / 100 : null;
 
     const updateStmt = this.db.prepare(`
