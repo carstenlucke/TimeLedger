@@ -71,7 +71,7 @@ export const en = {
     startTracking: 'Start tracking your time to see weekly statistics',
     startTrackingRecent: 'Start tracking your time to see recent entries',
     revenue: 'Revenue',
-    lastWeeks: 'Last 10 Calendar Weeks',
+    lastWeeks: 'Calendar Weeks',
     week: 'Week',
     clickToEdit: 'Click to edit',
     hours: 'hrs',
@@ -81,6 +81,7 @@ export const en = {
     projectStatus: 'Project Status',
     revenueBreakdown: 'Revenue Breakdown',
     unbilledRevenue: 'Unbilled Revenue',
+    newTimeEntry: 'New Time Entry',
   },
 
   // Projects

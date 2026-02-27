@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { Plus } from 'lucide-react';
 import type { TimeEntry, Project, DashboardStatistics } from '../../shared/types';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
@@ -74,8 +75,8 @@ const Dashboard: React.FC = () => {
       });
       setProjectColorMap(colorMap);
 
-      // Calculate weekly data for last 10 weeks with project breakdown
-      const weeks = getLast10Weeks();
+      // Calculate weekly data for all weeks that have entries
+      const weeks = getWeeksWithEntries(allEntries);
       const weeklyStats: WeekData[] = weeks.map(week => {
         const weekEntries = allEntries.filter(
           entry => entry.date >= week.startDate && entry.date <= week.endDate
@@ -136,41 +137,57 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const getLast10Weeks = (): Array<{ startDate: string; endDate: string; weekNumber: number; year: number }> => {
-    const weeks = [];
-    const today = new Date();
+  const getWeekForDate = (dateStr: string): { startDate: string; endDate: string; weekNumber: number; year: number } => {
+    const date = new Date(dateStr + 'T00:00:00');
+    const dayOfWeek = date.getDay();
+    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Monday is day 1
 
-    for (let i = 0; i < 10; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - (i * 7));
+    const monday = new Date(date);
+    monday.setDate(date.getDate() + diff);
+    monday.setHours(0, 0, 0, 0);
 
-      const dayOfWeek = date.getDay();
-      const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Monday is day 1
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
 
-      const monday = new Date(date);
-      monday.setDate(date.getDate() + diff);
-      monday.setHours(0, 0, 0, 0);
+    // Calculate ISO week number
+    const tempDate = new Date(monday);
+    tempDate.setHours(0, 0, 0, 0);
+    tempDate.setDate(tempDate.getDate() + 4 - (tempDate.getDay() || 7));
+    const yearStart = new Date(tempDate.getFullYear(), 0, 1);
+    const weekNumber = Math.ceil((((tempDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
 
-      const sunday = new Date(monday);
-      sunday.setDate(monday.getDate() + 6);
-      sunday.setHours(23, 59, 59, 999);
+    return {
+      startDate: monday.toISOString().split('T')[0],
+      endDate: sunday.toISOString().split('T')[0],
+      weekNumber,
+      year: monday.getFullYear(),
+    };
+  };
 
-      // Calculate ISO week number
-      const tempDate = new Date(monday);
-      tempDate.setHours(0, 0, 0, 0);
-      tempDate.setDate(tempDate.getDate() + 4 - (tempDate.getDay() || 7));
-      const yearStart = new Date(tempDate.getFullYear(), 0, 1);
-      const weekNumber = Math.ceil((((tempDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  const getWeeksWithEntries = (entries: TimeEntry[]): Array<{ startDate: string; endDate: string; weekNumber: number; year: number }> => {
+    if (entries.length === 0) return [];
 
-      weeks.push({
-        startDate: monday.toISOString().split('T')[0],
-        endDate: sunday.toISOString().split('T')[0],
-        weekNumber,
-        year: monday.getFullYear(),
-      });
+    // Find the earliest and latest entry dates
+    const dates = entries.map(e => e.date).sort();
+    const earliest = dates[0];
+    const latest = dates[dates.length - 1];
+
+    const firstWeek = getWeekForDate(earliest);
+    const lastWeek = getWeekForDate(latest);
+
+    // Generate all weeks from earliest to latest (inclusive, filling gaps)
+    const weeks: Array<{ startDate: string; endDate: string; weekNumber: number; year: number }> = [];
+    const current = new Date(firstWeek.startDate + 'T00:00:00');
+    const end = new Date(lastWeek.startDate + 'T00:00:00');
+
+    while (current <= end) {
+      const weekInfo = getWeekForDate(current.toISOString().split('T')[0]);
+      weeks.push(weekInfo);
+      current.setDate(current.getDate() + 7);
     }
 
-    return weeks.reverse(); // Show oldest to newest
+    return weeks;
   };
 
   const getProjectName = (projectId: number): string => {
@@ -194,9 +211,28 @@ const Dashboard: React.FC = () => {
 
   return (
     <div>
-      <div className="page-header">
-        <h1>{t.dashboard.title}</h1>
-        <p>{t.dashboard.subtitle}</p>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h1>{t.dashboard.title}</h1>
+          <p>{t.dashboard.subtitle}</p>
+        </div>
+        <button
+          className="btn btn-primary"
+          onClick={() => navigateToPage('entries', { newEntry: true })}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '12px 24px',
+            fontSize: '15px',
+            fontWeight: '600',
+            borderRadius: '12px',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <Plus size={20} strokeWidth={2.5} />
+          {t.dashboard.newTimeEntry}
+        </button>
       </div>
 
       {/* Dashboard Statistics */}

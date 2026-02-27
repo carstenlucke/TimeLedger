@@ -19,7 +19,7 @@ import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp';
 type Page = 'dashboard' | 'projects' | 'customers' | 'entries' | 'invoices' | 'reports' | 'settings';
 
 interface AppContextType {
-  navigateToPage: (page: Page, options?: { projectFilter?: number; entryId?: number; invoiceId?: number }) => void;
+  navigateToPage: (page: Page, options?: { projectFilter?: number; entryId?: number; invoiceId?: number; newEntry?: boolean }) => void;
 }
 
 export const AppContext = React.createContext<AppContextType>({
@@ -32,14 +32,16 @@ const AppContent: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [entriesProjectFilter, setEntriesProjectFilter] = useState<number | undefined>(undefined);
   const [entryToEdit, setEntryToEdit] = useState<number | undefined>(undefined);
+  const [openNewEntry, setOpenNewEntry] = useState(false);
   const [invoiceToView, setInvoiceToView] = useState<number | undefined>(undefined);
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
 
-  const navigateToPage = (page: Page, options?: { projectFilter?: number; entryId?: number; invoiceId?: number }) => {
+  const navigateToPage = (page: Page, options?: { projectFilter?: number; entryId?: number; invoiceId?: number; newEntry?: boolean }) => {
     setCurrentPage(page);
     if (page === 'entries') {
       setEntriesProjectFilter(options?.projectFilter);
       setEntryToEdit(options?.entryId);
+      setOpenNewEntry(options?.newEntry || false);
       setInvoiceToView(undefined);
     } else if (page === 'invoices') {
       setInvoiceToView(options?.invoiceId);
@@ -150,7 +152,7 @@ const AppContent: React.FC = () => {
       case 'customers':
         return <Customers />;
       case 'entries':
-        return <TimeEntries initialProjectFilter={entriesProjectFilter} initialEntryId={entryToEdit} />;
+        return <TimeEntries initialProjectFilter={entriesProjectFilter} initialEntryId={entryToEdit} initialOpenNew={openNewEntry} />;
       case 'invoices':
         return <Invoices initialInvoiceId={invoiceToView} />;
       case 'reports':

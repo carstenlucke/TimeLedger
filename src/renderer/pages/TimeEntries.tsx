@@ -12,13 +12,14 @@ import { useSortableData, SortableHeader, SortableColumnConfig } from '../compon
 interface TimeEntriesProps {
   initialProjectFilter?: number;
   initialEntryId?: number;
+  initialOpenNew?: boolean;
 }
 
 type TimeEntryRow = TimeEntry & {
   project_name: string;
 };
 
-const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initialEntryId }) => {
+const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initialEntryId, initialOpenNew }) => {
   const { showNotification, showConfirmation } = useNotification();
   const { t, formatCurrency, formatDate } = useI18n();
   const { navigateToPage } = useContext(AppContext);
@@ -54,6 +55,7 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
   }, [initialProjectFilter]);
 
   const [handledInitialEntryId, setHandledInitialEntryId] = useState<number | null>(null);
+  const [handledOpenNew, setHandledOpenNew] = useState(false);
 
   useEffect(() => {
     // Auto-open edit modal if initialEntryId is provided (only once)
@@ -65,6 +67,14 @@ const TimeEntries: React.FC<TimeEntriesProps> = ({ initialProjectFilter, initial
       }
     }
   }, [initialEntryId, entries, handledInitialEntryId]);
+
+  useEffect(() => {
+    // Auto-open new entry modal if initialOpenNew is provided (only once)
+    if (initialOpenNew && !handledOpenNew && !isLoading) {
+      setHandledOpenNew(true);
+      handleAddNew();
+    }
+  }, [initialOpenNew, handledOpenNew, isLoading]);
 
   // ESC key to close modals
   useEffect(() => {

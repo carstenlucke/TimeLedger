@@ -73,7 +73,7 @@ export const de: TranslationKeys = {
     startTracking: 'Beginnen Sie mit der Zeiterfassung, um wöchentliche Statistiken zu sehen',
     startTrackingRecent: 'Beginnen Sie mit der Zeiterfassung, um aktuelle Einträge zu sehen',
     revenue: 'Umsatz',
-    lastWeeks: 'Letzte 10 Kalenderwochen',
+    lastWeeks: 'Kalenderwochen',
     week: 'KW',
     clickToEdit: 'Klicken zum Bearbeiten',
     hours: 'Std',
@@ -83,6 +83,7 @@ export const de: TranslationKeys = {
     projectStatus: 'Projekt-Status',
     revenueBreakdown: 'Umsatzverteilung',
     unbilledRevenue: 'Nicht abgerechnet',
+    newTimeEntry: 'Neuer Zeiteintrag',
   },
 
   // Projects

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useI18n } from '../context/I18nContext';
 
 interface ProjectHours {
@@ -29,6 +29,14 @@ interface WeeklyBarChartProps {
 const WeeklyBarChart: React.FC<WeeklyBarChartProps> = ({ data, metric, onWeekClick }) => {
   const { t, formatCurrency } = useI18n();
   const [hoveredWeek, setHoveredWeek] = useState<string | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to the right (newest weeks) on mount and when data changes
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft = scrollContainerRef.current.scrollWidth;
+    }
+  }, [data]);
 
   if (data.length === 0) {
     return null;
@@ -82,14 +90,17 @@ const WeeklyBarChart: React.FC<WeeklyBarChartProps> = ({ data, metric, onWeekCli
 
   return (
     <div>
-      <div style={{
-        overflowX: 'auto',
-        padding: '20px 0',
-      }}>
+      <div
+        ref={scrollContainerRef}
+        style={{
+          overflowX: 'auto',
+          padding: '20px 0',
+        }}
+      >
         <svg
           width={chartWidth}
           height={chartHeight + topPadding + 60}
-          style={{ minWidth: '100%' }}
+          style={{ minWidth: chartWidth < 600 ? '100%' : undefined }}
         >
           {data.map((week, index) => {
             const x = index * (barWidth + gap);
