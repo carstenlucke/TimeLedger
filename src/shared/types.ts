@@ -49,6 +49,12 @@ export interface Invoice {
   external_invoice_number?: string;
   net_amount?: number;
   gross_amount?: number;
+  tax_rate: number;
+  is_small_business: number;
+  tax_amount: number;
+  service_period_start?: string;
+  service_period_end?: string;
+  service_period_manually_set: number;
   notes?: string;
   cancellation_reason?: string;
   created_at: string;
@@ -94,6 +100,12 @@ export interface InvoiceInput {
   external_invoice_number?: string;
   net_amount?: number;
   gross_amount?: number;
+  tax_rate?: number;
+  is_small_business?: number;
+  tax_amount?: number;
+  service_period_start?: string | null;
+  service_period_end?: string | null;
+  service_period_manually_set?: number;
   notes?: string;
   cancellation_reason?: string;
 }

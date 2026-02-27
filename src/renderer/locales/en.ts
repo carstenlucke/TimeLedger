@@ -259,6 +259,15 @@ export const en = {
     typeInternal: 'Internal',
     typeExternal: 'External',
     linkedEntriesTotal: 'Linked Entries Total',
+    taxRate: 'Tax Rate',
+    taxAmount: 'VAT Amount',
+    smallBusiness: 'Small business regulation (§ 19 UStG)',
+    smallBusinessNotice: 'As per § 19 UStG, no VAT is charged.',
+    servicePeriod: 'Service Period',
+    servicePeriodStart: 'Start',
+    servicePeriodEnd: 'End',
+    servicePeriodNone: 'No service period set',
+    servicePeriodTo: 'to',
   },
 
   // Settings

@@ -38,6 +38,10 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
     external_invoice_number: '',
     net_amount: '',
     gross_amount: '',
+    tax_rate: '19',
+    is_small_business: false,
+    service_period_start: '',
+    service_period_end: '',
   });
 
   useEffect(() => {
@@ -185,6 +189,10 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
         external_invoice_number: data.external_invoice_number ?? '',
         net_amount: data.net_amount != null ? String(data.net_amount) : '',
         gross_amount: data.gross_amount != null ? String(data.gross_amount) : '',
+        tax_rate: String(data.tax_rate ?? 0),
+        is_small_business: !!data.is_small_business,
+        service_period_start: data.service_period_start ?? '',
+        service_period_end: data.service_period_end ?? '',
       });
       setIsEditingFields(false);
       setShowInvoiceModal(true);
@@ -205,6 +213,10 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
       external_invoice_number: '',
       net_amount: '',
       gross_amount: '',
+      tax_rate: '19',
+      is_small_business: false,
+      service_period_start: '',
+      service_period_end: '',
     });
     setIsEditingFields(true);
     setShowInvoiceModal(true);
@@ -219,7 +231,13 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
         ? parseFloat(formData.gross_amount)
         : null;
 
-      const invoiceData = {
+      const taxRate = formData.is_small_business ? 0 : parseFloat(formData.tax_rate) || 0;
+
+      // Determine if service period has been manually set
+      const hasManualServicePeriod = formData.service_period_start || formData.service_period_end;
+      const servicePeriodManuallySet = hasManualServicePeriod ? 1 : 0;
+
+      const invoiceData: any = {
         invoice_number: formData.invoice_number,
         invoice_date: formData.invoice_date,
         notes: formData.notes,
@@ -229,6 +247,11 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
           : null,
         net_amount: parsedNet !== null && Number.isFinite(parsedNet) ? parsedNet : null,
         gross_amount: parsedGross !== null && Number.isFinite(parsedGross) ? parsedGross : null,
+        tax_rate: taxRate,
+        is_small_business: formData.is_small_business ? 1 : 0,
+        service_period_start: formData.service_period_start || null,
+        service_period_end: formData.service_period_end || null,
+        service_period_manually_set: servicePeriodManuallySet,
       };
       if (selectedInvoice) {
         await window.api.invoice.update(selectedInvoice.id, invoiceData);
@@ -644,6 +667,56 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                         </div>
                       </div>
                     )}
+                    {/* Tax fields for internal invoices */}
+                    {formData.type === 'internal' && (
+                      <div style={{ marginTop: '12px', padding: '12px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px' }}>
+                        <div style={{ marginBottom: '8px' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.9rem' }}>
+                            <input
+                              type="checkbox"
+                              checked={formData.is_small_business}
+                              onChange={(e) => setFormData({ ...formData, is_small_business: e.target.checked, tax_rate: e.target.checked ? '0' : '19' })}
+                            />
+                            {t.invoices.smallBusiness}
+                          </label>
+                        </div>
+                        {!formData.is_small_business && (
+                          <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label>{t.invoices.taxRate}</label>
+                            <select
+                              value={formData.tax_rate}
+                              onChange={(e) => setFormData({ ...formData, tax_rate: e.target.value })}
+                            >
+                              <option value="19">19%</option>
+                              <option value="7">7%</option>
+                              <option value="0">0%</option>
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {/* Service Period */}
+                    <div style={{ marginTop: '12px', padding: '12px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px' }}>
+                      <label style={{ fontSize: '0.9rem', fontWeight: '500', marginBottom: '8px', display: 'block' }}>
+                        {t.invoices.servicePeriod}
+                      </label>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>{t.invoices.servicePeriodStart}</label>
+                          <LocalizedDateInput
+                            value={formData.service_period_start}
+                            onChange={(value) => setFormData({ ...formData, service_period_start: value })}
+                          />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>{t.invoices.servicePeriodEnd}</label>
+                          <LocalizedDateInput
+                            value={formData.service_period_end}
+                            onChange={(value) => setFormData({ ...formData, service_period_end: value })}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <>
@@ -695,6 +768,10 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                           external_invoice_number: selectedInvoice.external_invoice_number ?? '',
                           net_amount: selectedInvoice.net_amount != null ? String(selectedInvoice.net_amount) : '',
                           gross_amount: selectedInvoice.gross_amount != null ? String(selectedInvoice.gross_amount) : '',
+                          tax_rate: String(selectedInvoice.tax_rate ?? 0),
+                          is_small_business: !!selectedInvoice.is_small_business,
+                          service_period_start: selectedInvoice.service_period_start ?? '',
+                          service_period_end: selectedInvoice.service_period_end ?? '',
                         });
                         setIsEditingFields(false);
                       } else {
@@ -766,12 +843,25 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                         {formatDuration(selectedInvoice.entries.reduce((sum: number, e: any) => sum + e.duration_minutes, 0))}
                       </p>
                     </div>
+                    {/* Service Period for external invoices */}
+                    {(selectedInvoice.service_period_start || selectedInvoice.service_period_end) && (
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                          {t.invoices.servicePeriod}
+                        </p>
+                        <p style={{ fontSize: '1rem', fontWeight: '500', margin: 0 }}>
+                          {selectedInvoice.service_period_start && selectedInvoice.service_period_end
+                            ? `${formatDate(selectedInvoice.service_period_start)} ${t.invoices.servicePeriodTo} ${formatDate(selectedInvoice.service_period_end)}`
+                            : t.invoices.servicePeriodNone}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
                       <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
-                        {t.invoices.totalAmount}
+                        {t.invoices.netAmount}
                       </p>
                       <p style={{ fontSize: '1.5rem', fontWeight: '600', margin: 0 }}>
                         {formatCurrency(selectedInvoice.total_amount)}
@@ -783,6 +873,51 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                       </p>
                       <p style={{ fontSize: '1.5rem', fontWeight: '600', margin: 0 }}>
                         {formatDuration(selectedInvoice.entries.reduce((sum: number, e: any) => sum + e.duration_minutes, 0))}
+                      </p>
+                    </div>
+                    {selectedInvoice.is_small_business ? (
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontStyle: 'italic', margin: 0 }}>
+                          {t.invoices.smallBusinessNotice}
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div>
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                            {t.invoices.taxRate}
+                          </p>
+                          <p style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>
+                            {selectedInvoice.tax_rate}%
+                          </p>
+                        </div>
+                        <div>
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                            {t.invoices.taxAmount}
+                          </p>
+                          <p style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>
+                            {formatCurrency(selectedInvoice.tax_amount || 0)}
+                          </p>
+                        </div>
+                        <div>
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                            {t.invoices.grossAmount}
+                          </p>
+                          <p style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>
+                            {formatCurrency(selectedInvoice.gross_amount ?? selectedInvoice.total_amount)}
+                          </p>
+                        </div>
+                      </>
+                    )}
+                    {/* Service Period */}
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                        {t.invoices.servicePeriod}
+                      </p>
+                      <p style={{ fontSize: '1rem', fontWeight: '500', margin: 0 }}>
+                        {selectedInvoice.service_period_start && selectedInvoice.service_period_end
+                          ? `${formatDate(selectedInvoice.service_period_start)} ${t.invoices.servicePeriodTo} ${formatDate(selectedInvoice.service_period_end)}`
+                          : t.invoices.servicePeriodNone}
                       </p>
                     </div>
                   </div>
