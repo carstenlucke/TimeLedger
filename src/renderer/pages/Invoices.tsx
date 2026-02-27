@@ -525,7 +525,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                       <td>{formatDate(invoice.invoice_date)}</td>
                       <td>{getStatusBadge(invoice.status)}</td>
                       <td>
-                        {formatCurrency(invoice.total_amount)}
+                        {formatCurrency(invoice.type === 'external' && invoice.net_amount != null ? invoice.net_amount : invoice.total_amount)}
                       </td>
                       <td>
                         <div style={{ display: 'flex', gap: '8px' }}>

@@ -218,7 +218,7 @@ export const de: TranslationKeys = {
     invoiceNumber: 'Rechnungsnummer',
     invoiceDate: 'Rechnungsdatum',
     status: 'Status',
-    totalAmount: 'Gesamtbetrag',
+    totalAmount: 'Gesamtbetrag (netto)',
     notes: 'Notizen',
     statusDraft: 'Entwurf',
     statusInvoiced: 'Abgerechnet',

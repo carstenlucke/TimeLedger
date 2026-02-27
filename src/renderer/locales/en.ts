@@ -216,7 +216,7 @@ export const en = {
     invoiceNumber: 'Invoice Number',
     invoiceDate: 'Invoice Date',
     status: 'Status',
-    totalAmount: 'Total Amount',
+    totalAmount: 'Total Amount (net)',
     notes: 'Notes',
     statusDraft: 'Draft',
     statusInvoiced: 'Invoiced',
