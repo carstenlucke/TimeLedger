@@ -181,8 +181,8 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
         invoice_number: data.invoice_number,
         invoice_date: data.invoice_date,
         notes: data.notes || '',
-        type: data.type || 'internal',
-        external_invoice_number: data.external_invoice_number || '',
+        type: data.type ?? 'internal',
+        external_invoice_number: data.external_invoice_number ?? '',
         net_amount: data.net_amount != null ? String(data.net_amount) : '',
         gross_amount: data.gross_amount != null ? String(data.gross_amount) : '',
       });
@@ -688,8 +688,8 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                           invoice_number: selectedInvoice.invoice_number,
                           invoice_date: selectedInvoice.invoice_date,
                           notes: selectedInvoice.notes || '',
-                          type: selectedInvoice.type || 'internal',
-                          external_invoice_number: selectedInvoice.external_invoice_number || '',
+                          type: selectedInvoice.type ?? 'internal',
+                          external_invoice_number: selectedInvoice.external_invoice_number ?? '',
                           net_amount: selectedInvoice.net_amount != null ? String(selectedInvoice.net_amount) : '',
                           gross_amount: selectedInvoice.gross_amount != null ? String(selectedInvoice.gross_amount) : '',
                         });
@@ -741,9 +741,19 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                       <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
                         {t.invoices.unbilledDifference}
                       </p>
-                      <p style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0, color: selectedInvoice.net_amount != null && selectedInvoice.net_amount - selectedInvoice.total_amount !== 0 ? 'var(--accent-orange, #f59e0b)' : undefined }}>
-                        {selectedInvoice.net_amount != null ? formatCurrency(selectedInvoice.net_amount - selectedInvoice.total_amount) : '–'}
-                      </p>
+                      {(() => {
+                        const difference = selectedInvoice.net_amount != null
+                          ? selectedInvoice.net_amount - selectedInvoice.total_amount
+                          : null;
+                        const differenceColor = difference != null && difference !== 0
+                          ? 'var(--accent-orange, #f59e0b)'
+                          : undefined;
+                        return (
+                          <p style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0, color: differenceColor }}>
+                            {difference != null ? formatCurrency(difference) : '–'}
+                          </p>
+                        );
+                      })()}
                     </div>
                     <div>
                       <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>

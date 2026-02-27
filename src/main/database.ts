@@ -646,10 +646,10 @@ export class DatabaseManager {
     const result = stmt.run(
       input.invoice_number,
       input.invoice_date,
-      input.type || 'internal',
-      input.status || 'draft',
-      input.total_amount || 0,
-      input.external_invoice_number || null,
+      input.type ?? 'internal',
+      input.status ?? 'draft',
+      input.total_amount ?? 0,
+      input.external_invoice_number ?? null,
       input.net_amount ?? null,
       input.gross_amount ?? null,
       input.notes
