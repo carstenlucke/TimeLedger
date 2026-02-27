@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
 import type { Invoice, InvoiceWithEntries } from '../../shared/types';
@@ -22,6 +22,9 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceWithEntries | null>(null);
   const [unbilledEntries, setUnbilledEntries] = useState<any[]>([]);
   const [selectedEntryIds, setSelectedEntryIds] = useState<number[]>([]);
+  const [entryFilterProject, setEntryFilterProject] = useState<string>('');
+  const [entryFilterDateFrom, setEntryFilterDateFrom] = useState<string>('');
+  const [entryFilterDateTo, setEntryFilterDateTo] = useState<string>('');
   const [cancellationReason, setCancellationReason] = useState('');
   const [isEditingFields, setIsEditingFields] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,6 +60,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
         } else if (showAddEntriesModal) {
           setShowAddEntriesModal(false);
           setSelectedEntryIds([]);
+          resetEntryFilters();
         } else if (showInvoiceModal) {
           setShowInvoiceModal(false);
           setSelectedInvoice(null);
@@ -131,6 +135,38 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
       console.error('Failed to load unbilled entries:', error);
       showNotification(t.notifications.loadFailed, 'error');
     }
+  };
+
+  const uniqueProjects = useMemo(() => {
+    const seen = new Set<string>();
+    for (const entry of unbilledEntries) {
+      if (entry.project_name) {
+        seen.add(entry.project_name);
+      }
+    }
+    return Array.from(seen).sort();
+  }, [unbilledEntries]);
+
+  const filteredUnbilledEntries = useMemo(() => {
+    let filtered = unbilledEntries;
+    if (entryFilterProject) {
+      filtered = filtered.filter(entry => entry.project_name === entryFilterProject);
+    }
+    if (entryFilterDateFrom) {
+      filtered = filtered.filter(entry => entry.date >= entryFilterDateFrom);
+    }
+    if (entryFilterDateTo) {
+      filtered = filtered.filter(entry => entry.date <= entryFilterDateTo);
+    }
+    return filtered;
+  }, [unbilledEntries, entryFilterProject, entryFilterDateFrom, entryFilterDateTo]);
+
+  const selectedEntryIdsSet = useMemo(() => new Set(selectedEntryIds), [selectedEntryIds]);
+
+  const resetEntryFilters = () => {
+    setEntryFilterProject('');
+    setEntryFilterDateFrom('');
+    setEntryFilterDateTo('');
   };
 
   const loadInvoiceDetails = async (id: number) => {
@@ -272,6 +308,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
       showNotification(t.notifications.entriesAdded, 'success');
       setShowAddEntriesModal(false);
       setSelectedEntryIds([]);
+      resetEntryFilters();
       await loadInvoiceDetails(selectedInvoice.id);
       loadInvoices();
     } catch (error) {
@@ -716,7 +753,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
 
       {/* Add Entries Modal */}
       {showAddEntriesModal && (
-        <div className="modal-overlay" onClick={() => setShowAddEntriesModal(false)}>
+        <div className="modal-overlay" onClick={() => { setShowAddEntriesModal(false); resetEntryFilters(); }}>
           <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '900px' }}>
             <h2>{t.invoices.addTimeEntries}</h2>
             <p style={{ color: 'var(--text-secondary)' }}>{t.invoices.selectEntries}</p>
@@ -726,56 +763,112 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                 <p>{t.invoices.noUnbilledEntries}</p>
               </div>
             ) : (
-              <div className="table-container" style={{ maxHeight: '500px', overflowY: 'auto' }}>
-                <table>
-                  <thead>
-                    <tr>
-                      <th style={{ width: '40px' }}>
-                        <input
-                          type="checkbox"
-                          checked={selectedEntryIds.length === unbilledEntries.length}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedEntryIds(unbilledEntries.map((entry) => entry.id));
-                            } else {
-                              setSelectedEntryIds([]);
-                            }
-                          }}
-                        />
-                      </th>
-                      <th>{t.common.date}</th>
-                      <th>{t.common.project}</th>
-                      <th>{t.common.description}</th>
-                      <th>{t.common.duration}</th>
-                      <th>Rate</th>
-                      <th>Value</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {unbilledEntries.map((entry) => (
-                      <tr key={entry.id}>
-                        <td>
-                          <input
-                            type="checkbox"
-                            checked={selectedEntryIds.includes(entry.id)}
-                            onChange={() => toggleEntrySelection(entry.id)}
-                          />
-                        </td>
-                        <td>{formatDate(entry.date)}</td>
-                        <td>{entry.project_name}</td>
-                        <td>{entry.description || '-'}</td>
-                        <td>{formatDuration(entry.duration_minutes)}</td>
-                        <td>{entry.hourly_rate ? formatCurrency(entry.hourly_rate) + '/hr' : '-'}</td>
-                        <td>{formatCurrency((entry.duration_minutes / 60) * (entry.hourly_rate || 0))}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <>
+                <div style={{ marginBottom: '16px', padding: '16px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '4px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label htmlFor="entry-filter-project">{t.timeEntries.filterByProject}</label>
+                      <select
+                        id="entry-filter-project"
+                        value={entryFilterProject}
+                        onChange={(e) => setEntryFilterProject(e.target.value)}
+                      >
+                        <option value="">{t.invoices.allProjects}</option>
+                        {uniqueProjects.map((name) => (
+                          <option key={name} value={name}>
+                            {name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label htmlFor="entry-filter-date-from">{t.timeEntries.from}</label>
+                      <LocalizedDateInput
+                        id="entry-filter-date-from"
+                        value={entryFilterDateFrom}
+                        onChange={setEntryFilterDateFrom}
+                      />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label htmlFor="entry-filter-date-to">{t.timeEntries.to}</label>
+                      <LocalizedDateInput
+                        id="entry-filter-date-to"
+                        value={entryFilterDateTo}
+                        onChange={setEntryFilterDateTo}
+                      />
+                    </div>
+                  </div>
+                  {(entryFilterProject || entryFilterDateFrom || entryFilterDateTo) && (
+                    <div style={{ marginTop: '12px' }}>
+                      <button
+                        className="btn btn-secondary"
+                        onClick={resetEntryFilters}
+                      >
+                        {t.common.clearFilter}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {filteredUnbilledEntries.length === 0 ? (
+                  <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                    <p>{t.invoices.noMatchingEntries}</p>
+                  </div>
+                ) : (
+                  <div className="table-container" style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th style={{ width: '40px' }}>
+                            <input
+                              type="checkbox"
+                              checked={filteredUnbilledEntries.length > 0 && filteredUnbilledEntries.every(entry => selectedEntryIdsSet.has(entry.id))}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  const filteredIds = filteredUnbilledEntries.map((entry) => entry.id);
+                                  setSelectedEntryIds(prev => [...new Set([...prev, ...filteredIds])]);
+                                } else {
+                                  const filteredIds = new Set(filteredUnbilledEntries.map((entry) => entry.id));
+                                  setSelectedEntryIds(prev => prev.filter(id => !filteredIds.has(id)));
+                                }
+                              }}
+                            />
+                          </th>
+                          <th>{t.common.date}</th>
+                          <th>{t.common.project}</th>
+                          <th>{t.common.description}</th>
+                          <th>{t.common.duration}</th>
+                          <th>Rate</th>
+                          <th>Value</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredUnbilledEntries.map((entry) => (
+                          <tr key={entry.id}>
+                            <td>
+                              <input
+                                type="checkbox"
+                                checked={selectedEntryIdsSet.has(entry.id)}
+                                onChange={() => toggleEntrySelection(entry.id)}
+                              />
+                            </td>
+                            <td>{formatDate(entry.date)}</td>
+                            <td>{entry.project_name}</td>
+                            <td>{entry.description || '-'}</td>
+                            <td>{formatDuration(entry.duration_minutes)}</td>
+                            <td>{entry.hourly_rate ? formatCurrency(entry.hourly_rate) + '/hr' : '-'}</td>
+                            <td>{formatCurrency((entry.duration_minutes / 60) * (entry.hourly_rate || 0))}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
             )}
 
             <div className="form-actions">
-              <button className="btn btn-secondary" onClick={() => setShowAddEntriesModal(false)}>
+              <button className="btn btn-secondary" onClick={() => { setShowAddEntriesModal(false); resetEntryFilters(); }}>
                 {t.common.cancel}
               </button>
               <button
