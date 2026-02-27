@@ -212,14 +212,23 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
 
   const handleSaveFields = async () => {
     try {
+      const parsedNet = formData.type === 'external' && formData.net_amount
+        ? parseFloat(formData.net_amount)
+        : null;
+      const parsedGross = formData.type === 'external' && formData.gross_amount
+        ? parseFloat(formData.gross_amount)
+        : null;
+
       const invoiceData = {
         invoice_number: formData.invoice_number,
         invoice_date: formData.invoice_date,
         notes: formData.notes,
         type: formData.type,
-        external_invoice_number: formData.type === 'external' ? formData.external_invoice_number : undefined,
-        net_amount: formData.type === 'external' && formData.net_amount ? parseFloat(formData.net_amount) : undefined,
-        gross_amount: formData.type === 'external' && formData.gross_amount ? parseFloat(formData.gross_amount) : undefined,
+        external_invoice_number: formData.type === 'external'
+          ? (formData.external_invoice_number || null)
+          : null,
+        net_amount: parsedNet !== null && Number.isFinite(parsedNet) ? parsedNet : null,
+        gross_amount: parsedGross !== null && Number.isFinite(parsedGross) ? parsedGross : null,
       };
       if (selectedInvoice) {
         await window.api.invoice.update(selectedInvoice.id, invoiceData);
@@ -516,9 +525,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                       <td>{formatDate(invoice.invoice_date)}</td>
                       <td>{getStatusBadge(invoice.status)}</td>
                       <td>
-                        {invoice.type === 'external' && invoice.net_amount != null
-                          ? formatCurrency(invoice.net_amount)
-                          : formatCurrency(invoice.total_amount)}
+                        {formatCurrency(invoice.total_amount)}
                       </td>
                       <td>
                         <div style={{ display: 'flex', gap: '8px' }}>

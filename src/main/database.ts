@@ -673,6 +673,22 @@ export class DatabaseManager {
     if (input.type !== undefined) {
       updates.push('type = ?');
       values.push(input.type);
+
+      // Clear external invoice fields when switching to internal
+      if (input.type === 'internal') {
+        if (input.external_invoice_number === undefined) {
+          updates.push('external_invoice_number = ?');
+          values.push(null);
+        }
+        if (input.net_amount === undefined) {
+          updates.push('net_amount = ?');
+          values.push(null);
+        }
+        if (input.gross_amount === undefined) {
+          updates.push('gross_amount = ?');
+          values.push(null);
+        }
+      }
     }
     if (input.status !== undefined) {
       updates.push('status = ?');
