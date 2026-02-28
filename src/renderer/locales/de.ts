@@ -261,6 +261,16 @@ export const de: TranslationKeys = {
     typeInternal: 'Intern',
     typeExternal: 'Extern',
     linkedEntriesTotal: 'Summe verknüpfter Einträge',
+    taxRate: 'Steuersatz',
+    taxAmount: 'MwSt.-Betrag',
+    smallBusiness: 'Kleinunternehmerregelung (§ 19 UStG)',
+    smallBusinessNotice: 'Gem. § 19 UStG wird keine Umsatzsteuer berechnet.',
+    servicePeriod: 'Leistungszeitraum',
+    servicePeriodStart: 'Beginn',
+    servicePeriodEnd: 'Ende',
+    servicePeriodNone: 'Kein Leistungszeitraum festgelegt',
+    servicePeriodTo: 'bis',
+    servicePeriodFromEntries: 'Aus Zeiteinträgen',
   },
 
   // Settings

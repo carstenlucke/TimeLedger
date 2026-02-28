@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNotification } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
-import type { Invoice, InvoiceWithEntries, InvoiceType } from '../../shared/types';
+import type { Invoice, InvoiceWithEntries, InvoiceType, InvoiceInput } from '../../shared/types';
 import { isTypingInInput, getModifierKey } from '../contexts/KeyboardShortcutContext';
 import { LocalizedDateInput } from '../components/LocalizedDateInput';
 import { useSortableData, SortableHeader, SortableColumnConfig } from '../components/SortableTable';
+
+const DEFAULT_TAX_RATE = '19';
 
 interface InvoicesProps {
   initialInvoiceId?: number;
@@ -38,6 +40,12 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
     external_invoice_number: '',
     net_amount: '',
     gross_amount: '',
+    tax_rate: DEFAULT_TAX_RATE,
+    is_small_business: false,
+    service_period_start: '',
+    service_period_end: '',
+    service_period_start_auto: true,
+    service_period_end_auto: true,
   });
 
   useEffect(() => {
@@ -185,6 +193,12 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
         external_invoice_number: data.external_invoice_number ?? '',
         net_amount: data.net_amount != null ? String(data.net_amount) : '',
         gross_amount: data.gross_amount != null ? String(data.gross_amount) : '',
+        tax_rate: String(data.tax_rate ?? 0),
+        is_small_business: !!data.is_small_business,
+        service_period_start: data.service_period_start ?? '',
+        service_period_end: data.service_period_end ?? '',
+        service_period_start_auto: !!data.service_period_start_auto,
+        service_period_end_auto: !!data.service_period_end_auto,
       });
       setIsEditingFields(false);
       setShowInvoiceModal(true);
@@ -205,6 +219,12 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
       external_invoice_number: '',
       net_amount: '',
       gross_amount: '',
+      tax_rate: DEFAULT_TAX_RATE,
+      is_small_business: false,
+      service_period_start: '',
+      service_period_end: '',
+      service_period_start_auto: true,
+      service_period_end_auto: true,
     });
     setIsEditingFields(true);
     setShowInvoiceModal(true);
@@ -219,16 +239,31 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
         ? parseFloat(formData.gross_amount)
         : null;
 
-      const invoiceData = {
+      const taxRate = formData.is_small_business ? 0 : parseFloat(formData.tax_rate) || 0;
+
+      const startAuto = formData.service_period_start_auto ? 1 : 0;
+      const endAuto = formData.service_period_end_auto ? 1 : 0;
+
+      const invoiceData: Partial<InvoiceInput> & { invoice_number: string; invoice_date: string } = {
         invoice_number: formData.invoice_number,
         invoice_date: formData.invoice_date,
         notes: formData.notes,
         type: formData.type,
         external_invoice_number: formData.type === 'external'
-          ? (formData.external_invoice_number || null)
-          : null,
-        net_amount: parsedNet !== null && Number.isFinite(parsedNet) ? parsedNet : null,
-        gross_amount: parsedGross !== null && Number.isFinite(parsedGross) ? parsedGross : null,
+          ? (formData.external_invoice_number?.trim() || null)
+          : undefined,
+        net_amount: formData.type === 'external'
+          ? (parsedNet !== null && Number.isFinite(parsedNet) ? parsedNet : null)
+          : undefined,
+        gross_amount: formData.type === 'external'
+          ? (parsedGross !== null && Number.isFinite(parsedGross) ? parsedGross : null)
+          : undefined,
+        tax_rate: taxRate,
+        is_small_business: formData.is_small_business ? 1 : 0,
+        service_period_start: startAuto ? null : (formData.service_period_start || null),
+        service_period_end: endAuto ? null : (formData.service_period_end || null),
+        service_period_start_auto: startAuto,
+        service_period_end_auto: endAuto,
       };
       if (selectedInvoice) {
         await window.api.invoice.update(selectedInvoice.id, invoiceData);
@@ -382,10 +417,10 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusColors: Record<string, string> = {
-      draft: 'var(--text-secondary)',
-      invoiced: 'var(--accent-green)',
-      cancelled: 'var(--accent-red)',
+    const statusStyles: Record<string, { bg: string; color: string }> = {
+      draft: { bg: 'var(--accent-orange, #f59e0b)', color: '#fff' },
+      invoiced: { bg: 'var(--accent-green)', color: '#fff' },
+      cancelled: { bg: 'var(--accent-red)', color: '#fff' },
     };
 
     const statusLabels: Record<string, string> = {
@@ -394,15 +429,18 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
       cancelled: t.invoices.statusCancelled,
     };
 
+    const style = statusStyles[status] ?? { bg: 'var(--bg-tertiary)', color: 'var(--text-primary)' };
+
     return (
       <span
         style={{
           padding: '4px 12px',
           borderRadius: '12px',
-          backgroundColor: `${statusColors[status]}20`,
-          color: statusColors[status],
-          fontSize: '0.85rem',
-          fontWeight: '500',
+          backgroundColor: style.bg,
+          color: style.color,
+          fontSize: '0.8rem',
+          fontWeight: '600',
+          whiteSpace: 'nowrap',
         }}
       >
         {statusLabels[status]}
@@ -568,11 +606,18 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
       {showInvoiceModal && (
         <div className="modal-overlay" onClick={handleCloseInvoiceModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
+            {/* Status badge row - shown in edit mode above the form */}
+            {selectedInvoice && (isEditingFields || !selectedInvoice) && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+                {getStatusBadge(selectedInvoice.status)}
+              </div>
+            )}
             {/* Header with invoice number/date and edit button */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
               <div style={{ flex: 1 }}>
                 {isEditingFields || !selectedInvoice ? (
                   <div className="form-group" style={{ marginBottom: '8px' }}>
+                    {/* Invoice Number + Generate Button */}
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <input
                         type="text"
@@ -592,58 +637,151 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                         {t.invoices.generateNumber}
                       </button>
                     </div>
-                    <LocalizedDateInput
-                      value={formData.invoice_date}
-                      onChange={(value) => setFormData({ ...formData, invoice_date: value })}
-                      style={{ marginTop: '8px' }}
-                    />
-                    {/* External Invoice Toggle */}
-                    <div style={{ marginTop: '12px' }}>
+                    {/* External Invoice Toggle - grouped with invoice number */}
+                    <div style={{ marginTop: '8px' }}>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.9rem' }}>
                         <input
                           type="checkbox"
                           checked={formData.type === 'external'}
-                          onChange={(e) => setFormData({ ...formData, type: e.target.checked ? 'external' : 'internal' })}
+                          onChange={(e) => {
+                            const newType = e.target.checked ? 'external' : 'internal';
+                            setFormData({
+                              ...formData,
+                              type: newType,
+                              // External invoices have no linked time entries, so disable auto
+                              ...(newType === 'external' ? { service_period_start_auto: false, service_period_end_auto: false } : {}),
+                            });
+                          }}
                         />
                         {t.invoices.externalInvoice}
                       </label>
                     </div>
-                    {/* External Invoice Fields */}
+                    {/* External Invoice Number - shown when external */}
                     {formData.type === 'external' && (
-                      <div style={{ marginTop: '12px', padding: '12px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px' }}>
-                        <div className="form-group" style={{ marginBottom: '8px' }}>
-                          <label>{t.invoices.externalInvoiceNumber}</label>
+                      <div className="form-group" style={{ marginTop: '8px', marginBottom: 0 }}>
+                        <input
+                          type="text"
+                          value={formData.external_invoice_number}
+                          onChange={(e) => setFormData({ ...formData, external_invoice_number: e.target.value })}
+                          placeholder={t.invoices.externalInvoiceNumber}
+                        />
+                      </div>
+                    )}
+                    {/* Invoice Date */}
+                    <div className="form-group" style={{ marginTop: '8px', marginBottom: 0 }}>
+                      <label>{t.invoices.invoiceDate}</label>
+                      <LocalizedDateInput
+                        value={formData.invoice_date}
+                        onChange={(value) => setFormData({ ...formData, invoice_date: value })}
+                      />
+                    </div>
+                    {/* External Invoice Amount Fields */}
+                    {formData.type === 'external' && (
+                      <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>{t.invoices.netAmount}</label>
                           <input
-                            type="text"
-                            value={formData.external_invoice_number}
-                            onChange={(e) => setFormData({ ...formData, external_invoice_number: e.target.value })}
-                            placeholder={t.invoices.externalInvoiceNumber}
+                            type="number"
+                            step="0.01"
+                            value={formData.net_amount}
+                            onChange={(e) => setFormData({ ...formData, net_amount: e.target.value })}
+                            placeholder="0.00"
                           />
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                          <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label>{t.invoices.netAmount}</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={formData.net_amount}
-                              onChange={(e) => setFormData({ ...formData, net_amount: e.target.value })}
-                              placeholder="0.00"
-                            />
-                          </div>
-                          <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label>{t.invoices.grossAmount}</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={formData.gross_amount}
-                              onChange={(e) => setFormData({ ...formData, gross_amount: e.target.value })}
-                              placeholder="0.00"
-                            />
-                          </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>{t.invoices.grossAmount}</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={formData.gross_amount}
+                            onChange={(e) => setFormData({ ...formData, gross_amount: e.target.value })}
+                            placeholder="0.00"
+                          />
                         </div>
                       </div>
                     )}
+                    {/* Tax fields for internal invoices - full width */}
+                    {formData.type === 'internal' && (
+                      <div style={{ marginTop: '12px' }}>
+                        <div style={{ marginBottom: '8px' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.9rem' }}>
+                            <input
+                              type="checkbox"
+                              checked={formData.is_small_business}
+                              onChange={(e) => setFormData({ ...formData, is_small_business: e.target.checked, tax_rate: e.target.checked ? '0' : DEFAULT_TAX_RATE })}
+                            />
+                            {t.invoices.smallBusiness}
+                          </label>
+                        </div>
+                        {!formData.is_small_business && (
+                          <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label>{t.invoices.taxRate}</label>
+                            <select
+                              value={formData.tax_rate}
+                              onChange={(e) => setFormData({ ...formData, tax_rate: e.target.value })}
+                            >
+                              <option value="19">19%</option>
+                              <option value="7">7%</option>
+                              <option value="0">0%</option>
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {/* Service Period - full width */}
+                    <div style={{ marginTop: '12px' }}>
+                      <label style={{ fontSize: '0.9rem', fontWeight: '500', marginBottom: '8px', display: 'block' }}>
+                        {t.invoices.servicePeriod}
+                      </label>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>{t.invoices.servicePeriodStart}</label>
+                          {formData.type === 'internal' && (
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.8rem', marginBottom: '4px', color: 'var(--text-secondary)' }}>
+                              <input
+                                type="checkbox"
+                                checked={formData.service_period_start_auto}
+                                onChange={(e) => setFormData({ ...formData, service_period_start_auto: e.target.checked })}
+                              />
+                              {t.invoices.servicePeriodFromEntries}
+                            </label>
+                          )}
+                          {formData.service_period_start_auto && formData.type === 'internal' ? (
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                              {selectedInvoice?.service_period_start ? formatDate(selectedInvoice.service_period_start) : '—'}
+                            </span>
+                          ) : (
+                            <LocalizedDateInput
+                              value={formData.service_period_start}
+                              onChange={(value) => setFormData({ ...formData, service_period_start: value })}
+                            />
+                          )}
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>{t.invoices.servicePeriodEnd}</label>
+                          {formData.type === 'internal' && (
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.8rem', marginBottom: '4px', color: 'var(--text-secondary)' }}>
+                              <input
+                                type="checkbox"
+                                checked={formData.service_period_end_auto}
+                                onChange={(e) => setFormData({ ...formData, service_period_end_auto: e.target.checked })}
+                              />
+                              {t.invoices.servicePeriodFromEntries}
+                            </label>
+                          )}
+                          {formData.service_period_end_auto && formData.type === 'internal' ? (
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                              {selectedInvoice?.service_period_end ? formatDate(selectedInvoice.service_period_end) : '—'}
+                            </span>
+                          ) : (
+                            <LocalizedDateInput
+                              value={formData.service_period_end}
+                              onChange={(value) => setFormData({ ...formData, service_period_end: value })}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <>
@@ -673,8 +811,8 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                   </>
                 )}
               </div>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                {selectedInvoice && getStatusBadge(selectedInvoice.status)}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+                {selectedInvoice && !isEditingFields && getStatusBadge(selectedInvoice.status)}
                 {selectedInvoice && selectedInvoice.status === 'draft' && !isEditingFields && (
                   <button
                     className="btn btn-secondary btn-sm"
@@ -682,31 +820,6 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                   >
                     {t.common.edit}
                   </button>
-                )}
-                {isEditingFields && (
-                  <>
-                    <button className="btn btn-secondary btn-sm" onClick={() => {
-                      if (selectedInvoice) {
-                        setFormData({
-                          invoice_number: selectedInvoice.invoice_number,
-                          invoice_date: selectedInvoice.invoice_date,
-                          notes: selectedInvoice.notes || '',
-                          type: selectedInvoice.type ?? 'internal',
-                          external_invoice_number: selectedInvoice.external_invoice_number ?? '',
-                          net_amount: selectedInvoice.net_amount != null ? String(selectedInvoice.net_amount) : '',
-                          gross_amount: selectedInvoice.gross_amount != null ? String(selectedInvoice.gross_amount) : '',
-                        });
-                        setIsEditingFields(false);
-                      } else {
-                        handleCloseInvoiceModal();
-                      }
-                    }}>
-                      {t.common.cancel}
-                    </button>
-                    <button className="btn btn-primary btn-sm" onClick={handleSaveFields}>
-                      {t.common.save}
-                    </button>
-                  </>
                 )}
               </div>
             </div>
@@ -766,12 +879,27 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                         {formatDuration(selectedInvoice.entries.reduce((sum: number, e: any) => sum + e.duration_minutes, 0))}
                       </p>
                     </div>
+                    {/* Service Period for external invoices - only in view mode */}
+                    {!isEditingFields && (selectedInvoice.service_period_start || selectedInvoice.service_period_end) && (
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                          {t.invoices.servicePeriod}
+                        </p>
+                        <p style={{ fontSize: '1rem', fontWeight: '500', margin: 0 }}>
+                          {selectedInvoice.service_period_start && selectedInvoice.service_period_end
+                            ? `${formatDate(selectedInvoice.service_period_start)} ${t.invoices.servicePeriodTo} ${formatDate(selectedInvoice.service_period_end)}`
+                            : selectedInvoice.service_period_start
+                              ? formatDate(selectedInvoice.service_period_start)
+                              : formatDate(selectedInvoice.service_period_end as string)}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
                       <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
-                        {t.invoices.totalAmount}
+                        {t.invoices.netAmount}
                       </p>
                       <p style={{ fontSize: '1.5rem', fontWeight: '600', margin: 0 }}>
                         {formatCurrency(selectedInvoice.total_amount)}
@@ -785,6 +913,57 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                         {formatDuration(selectedInvoice.entries.reduce((sum: number, e: any) => sum + e.duration_minutes, 0))}
                       </p>
                     </div>
+                    {selectedInvoice.is_small_business ? (
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontStyle: 'italic', margin: 0 }}>
+                          {t.invoices.smallBusinessNotice}
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div>
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                            {t.invoices.taxRate}
+                          </p>
+                          <p style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>
+                            {selectedInvoice.tax_rate}%
+                          </p>
+                        </div>
+                        <div>
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                            {t.invoices.taxAmount}
+                          </p>
+                          <p style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>
+                            {formatCurrency(selectedInvoice.tax_amount || 0)}
+                          </p>
+                        </div>
+                        <div>
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                            {t.invoices.grossAmount}
+                          </p>
+                          <p style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>
+                            {formatCurrency(selectedInvoice.gross_amount ?? selectedInvoice.total_amount)}
+                          </p>
+                        </div>
+                      </>
+                    )}
+                    {/* Service Period - only show in view mode (edit mode has it in the form above) */}
+                    {!isEditingFields && (
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                          {t.invoices.servicePeriod}
+                        </p>
+                        <p style={{ fontSize: '1rem', fontWeight: '500', margin: 0 }}>
+                          {selectedInvoice.service_period_start || selectedInvoice.service_period_end
+                            ? selectedInvoice.service_period_start && selectedInvoice.service_period_end
+                              ? `${formatDate(selectedInvoice.service_period_start)} ${t.invoices.servicePeriodTo} ${formatDate(selectedInvoice.service_period_end)}`
+                              : selectedInvoice.service_period_start
+                                ? formatDate(selectedInvoice.service_period_start)
+                                : formatDate(selectedInvoice.service_period_end as string)
+                            : t.invoices.servicePeriodNone}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -893,26 +1072,73 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
             )}
 
             {/* Footer Actions */}
-            <div className="form-actions" style={{ marginTop: '20px' }}>
-              {selectedInvoice && selectedInvoice.status === 'draft' && (
-                <button
-                  className="btn btn-success"
-                  onClick={() => handleFinalize(selectedInvoice)}
-                >
-                  {t.invoices.finalize}
-                </button>
-              )}
-              {selectedInvoice && (selectedInvoice.status === 'invoiced' || selectedInvoice.status === 'draft') && (
-                <button
-                  className="btn btn-danger"
-                  onClick={() => setShowCancelModal(true)}
-                >
-                  {t.invoices.cancelInvoice}
-                </button>
-              )}
-              <button className="btn btn-secondary" onClick={handleCloseInvoiceModal}>
-                {t.common.close}
-              </button>
+            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {selectedInvoice && selectedInvoice.status === 'draft' && (
+                  <button
+                    className="btn btn-success"
+                    onClick={() => handleFinalize(selectedInvoice)}
+                  >
+                    {t.invoices.finalize}
+                  </button>
+                )}
+                {selectedInvoice && (selectedInvoice.status === 'invoiced' || selectedInvoice.status === 'draft') && (
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => setShowCancelModal(true)}
+                  >
+                    {t.invoices.cancelInvoice}
+                  </button>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {isEditingFields && (
+                  <>
+                    <button className="btn btn-secondary" onClick={() => {
+                      if (selectedInvoice) {
+                        setFormData({
+                          invoice_number: selectedInvoice.invoice_number,
+                          invoice_date: selectedInvoice.invoice_date,
+                          notes: selectedInvoice.notes || '',
+                          type: selectedInvoice.type ?? 'internal',
+                          external_invoice_number: selectedInvoice.external_invoice_number ?? '',
+                          net_amount: selectedInvoice.net_amount != null ? String(selectedInvoice.net_amount) : '',
+                          gross_amount: selectedInvoice.gross_amount != null ? String(selectedInvoice.gross_amount) : '',
+                          tax_rate: String(selectedInvoice.tax_rate ?? 0),
+                          is_small_business: !!selectedInvoice.is_small_business,
+                          service_period_start: selectedInvoice.service_period_start ?? '',
+                          service_period_end: selectedInvoice.service_period_end ?? '',
+                          service_period_start_auto: !!selectedInvoice.service_period_start_auto,
+                          service_period_end_auto: !!selectedInvoice.service_period_end_auto,
+                        });
+                        setIsEditingFields(false);
+                      } else {
+                        handleCloseInvoiceModal();
+                      }
+                    }}>
+                      {t.common.cancel}
+                    </button>
+                    <button className="btn btn-primary" onClick={handleSaveFields}>
+                      {t.common.save}
+                    </button>
+                  </>
+                )}
+                {!isEditingFields && !selectedInvoice && (
+                  <>
+                    <button className="btn btn-secondary" onClick={handleCloseInvoiceModal}>
+                      {t.common.cancel}
+                    </button>
+                    <button className="btn btn-primary" onClick={handleSaveFields}>
+                      {t.common.save}
+                    </button>
+                  </>
+                )}
+                {!isEditingFields && selectedInvoice && (
+                  <button className="btn btn-secondary" onClick={handleCloseInvoiceModal}>
+                    {t.common.close}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

@@ -640,9 +640,10 @@ export class DatabaseManager {
   // Invoice methods
   public createInvoice(input: InvoiceInput): Invoice {
     const stmt = this.db.prepare(`
-      INSERT INTO invoices (invoice_number, invoice_date, type, status, total_amount, external_invoice_number, net_amount, gross_amount, notes, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      INSERT INTO invoices (invoice_number, invoice_date, type, status, total_amount, external_invoice_number, net_amount, gross_amount, tax_rate, is_small_business, tax_amount, service_period_start, service_period_end, service_period_manually_set, service_period_start_auto, service_period_end_auto, notes, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `);
+    const taxRate = input.is_small_business ? 0 : (input.tax_rate ?? 0);
     const result = stmt.run(
       input.invoice_number,
       input.invoice_date,
@@ -652,6 +653,14 @@ export class DatabaseManager {
       input.external_invoice_number ?? null,
       input.net_amount ?? null,
       input.gross_amount ?? null,
+      taxRate,
+      input.is_small_business ?? 0,
+      input.tax_amount ?? 0,
+      input.service_period_start ?? null,
+      input.service_period_end ?? null,
+      input.service_period_manually_set ?? 0,
+      input.service_period_start_auto ?? 1,
+      input.service_period_end_auto ?? 1,
       input.notes
     );
     this.bumpDataVersion();
@@ -718,6 +727,47 @@ export class DatabaseManager {
       updates.push('cancellation_reason = ?');
       values.push(input.cancellation_reason);
     }
+    if (input.is_small_business !== undefined) {
+      updates.push('is_small_business = ?');
+      values.push(input.is_small_business);
+      // If small business is enabled, always force tax_rate to 0 and ignore any provided tax_rate
+      if (input.is_small_business) {
+        updates.push('tax_rate = ?');
+        values.push(0);
+      } else if (input.tax_rate !== undefined) {
+        // Only apply a provided tax_rate when not a small business
+        updates.push('tax_rate = ?');
+        values.push(input.tax_rate);
+      }
+    } else if (input.tax_rate !== undefined) {
+      // When is_small_business is not provided, allow updating tax_rate directly
+      updates.push('tax_rate = ?');
+      values.push(input.tax_rate);
+    }
+    if (input.tax_amount !== undefined) {
+      updates.push('tax_amount = ?');
+      values.push(input.tax_amount);
+    }
+    if (input.service_period_start !== undefined) {
+      updates.push('service_period_start = ?');
+      values.push(input.service_period_start);
+    }
+    if (input.service_period_end !== undefined) {
+      updates.push('service_period_end = ?');
+      values.push(input.service_period_end);
+    }
+    if (input.service_period_manually_set !== undefined) {
+      updates.push('service_period_manually_set = ?');
+      values.push(input.service_period_manually_set);
+    }
+    if (input.service_period_start_auto !== undefined) {
+      updates.push('service_period_start_auto = ?');
+      values.push(input.service_period_start_auto);
+    }
+    if (input.service_period_end_auto !== undefined) {
+      updates.push('service_period_end_auto = ?');
+      values.push(input.service_period_end_auto);
+    }
 
     updates.push("updated_at = datetime('now')");
     values.push(id);
@@ -726,6 +776,15 @@ export class DatabaseManager {
       UPDATE invoices SET ${updates.join(', ')} WHERE id = ?
     `);
     stmt.run(...values);
+
+    // Recalculate tax amounts when tax-related fields change on internal invoices
+    if (input.tax_rate !== undefined || input.is_small_business !== undefined) {
+      const invoice = this.getInvoiceById(id);
+      if (invoice && invoice.type === 'internal') {
+        this.recalculateInvoiceTotal(id);
+      }
+    }
+
     this.bumpDataVersion();
     return this.getInvoiceById(id)!;
   }
@@ -949,10 +1008,56 @@ export class DatabaseManager {
     const result = stmt.get(invoiceId) as { total: number | null };
     const total = result.total || 0;
 
-    const updateStmt = this.db.prepare(`
-      UPDATE invoices SET total_amount = ?, updated_at = datetime('now') WHERE id = ?
-    `);
-    updateStmt.run(total, invoiceId);
+    // Get current invoice to read tax_rate and service_period_manually_set
+    const invoice = this.getInvoiceById(invoiceId);
+    if (!invoice) return;
+
+    if (invoice.type === 'internal') {
+      const taxRate = invoice.tax_rate || 0;
+      const taxAmount = Math.round(total * (taxRate / 100) * 100) / 100;
+      const grossAmount = Math.round((total + taxAmount) * 100) / 100;
+
+      const updateStmt = this.db.prepare(`
+        UPDATE invoices SET total_amount = ?, tax_amount = ?, gross_amount = ?, updated_at = datetime('now') WHERE id = ?
+      `);
+      updateStmt.run(total, taxAmount, grossAmount, invoiceId);
+    } else {
+      // For external invoices, only update total_amount (preserve user-entered net/gross/tax)
+      const updateStmt = this.db.prepare(`
+        UPDATE invoices SET total_amount = ?, updated_at = datetime('now') WHERE id = ?
+      `);
+      updateStmt.run(total, invoiceId);
+    }
+
+    // Update service period independently per auto flag
+    if (invoice.service_period_start_auto || invoice.service_period_end_auto) {
+      const periodStmt = this.db.prepare(`
+        SELECT MIN(te.date) as min_date, MAX(te.date) as max_date
+        FROM time_entries te
+        WHERE te.invoice_id = ?
+      `);
+      const periodResult = periodStmt.get(invoiceId) as { min_date: string | null; max_date: string | null };
+
+      const updates: string[] = [];
+      const vals: any[] = [];
+
+      if (invoice.service_period_start_auto) {
+        updates.push('service_period_start = ?');
+        vals.push(periodResult.min_date ?? null);
+      }
+      if (invoice.service_period_end_auto) {
+        updates.push('service_period_end = ?');
+        vals.push(periodResult.max_date ?? null);
+      }
+
+      if (updates.length > 0) {
+        vals.push(invoiceId);
+        const updatePeriodStmt = this.db.prepare(
+          `UPDATE invoices SET ${updates.join(', ')} WHERE id = ?`
+        );
+        updatePeriodStmt.run(...vals);
+      }
+    }
   }
 
   public close(): void {

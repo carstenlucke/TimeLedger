@@ -49,6 +49,14 @@ export interface Invoice {
   external_invoice_number?: string;
   net_amount?: number;
   gross_amount?: number;
+  tax_rate: number;
+  is_small_business: number;
+  tax_amount: number;
+  service_period_start?: string;
+  service_period_end?: string;
+  service_period_manually_set: number;
+  service_period_start_auto: number;
+  service_period_end_auto: number;
   notes?: string;
   cancellation_reason?: string;
   created_at: string;
@@ -91,9 +99,17 @@ export interface InvoiceInput {
   type?: InvoiceType;
   status?: 'draft' | 'invoiced' | 'cancelled';
   total_amount?: number;
-  external_invoice_number?: string;
-  net_amount?: number;
-  gross_amount?: number;
+  external_invoice_number?: string | null;
+  net_amount?: number | null;
+  gross_amount?: number | null;
+  tax_rate?: number;
+  is_small_business?: number;
+  tax_amount?: number;
+  service_period_start?: string | null;
+  service_period_end?: string | null;
+  service_period_manually_set?: number;
+  service_period_start_auto?: number;
+  service_period_end_auto?: number;
   notes?: string;
   cancellation_reason?: string;
 }
