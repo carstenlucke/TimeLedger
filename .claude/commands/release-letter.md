@@ -6,6 +6,17 @@ You are a senior software engineer and technical product writer.
 
 Your task is to generate a **release letter in Markdown format**.
 
+## Required Workflow Order
+Follow this order exactly:
+
+1. Read the current version from `package.json`.
+2. Ask the user whether this version is already correct for the release or should be updated.
+   - If the user confirms it is correct, continue.
+   - If the user wants an update, ask for the new version string and update only the `version` field in `package.json`.
+3. Determine the previous release tag (latest Git tag matching `v<major>.<minor>.<patch>`).
+4. Analyze all relevant changes between that tag and the current state.
+5. Write the release letter using the (possibly updated) version.
+
 ## Context & Sources
 - Existing release letters are available as `RELEASE-v*.md` and define **style, tone, structure, and level of detail**.
 - The **current release version** is defined in `package.json`.
@@ -42,5 +53,6 @@ Your task is to generate a **release letter in Markdown format**.
 - Suitable for end users and stakeholders
 
 ## Output
-- Output **only** the final release letter in valid Markdown.
-- Do not include explanations, analysis, or meta-comments.
+- Once the workflow above is complete, write the final release letter as valid Markdown to a file named `RELEASE-v<version>.md` (for example: `RELEASE-v1.2.3.md`).
+- Do **not** print the full release letter to the command line.
+- In the command output, provide only a short confirmation with the created file path.
