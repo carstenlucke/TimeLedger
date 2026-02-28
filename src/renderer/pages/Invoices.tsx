@@ -408,7 +408,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
 
   const getStatusBadge = (status: string) => {
     const statusColors: Record<string, string> = {
-      draft: 'var(--text-secondary)',
+      draft: 'var(--accent-orange, #f59e0b)',
       invoiced: 'var(--accent-green)',
       cancelled: 'var(--accent-red)',
     };
@@ -598,6 +598,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
               <div style={{ flex: 1 }}>
                 {isEditingFields || !selectedInvoice ? (
                   <div className="form-group" style={{ marginBottom: '8px' }}>
+                    {/* Invoice Number + Generate Button */}
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <input
                         type="text"
@@ -617,13 +618,8 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                         {t.invoices.generateNumber}
                       </button>
                     </div>
-                    <LocalizedDateInput
-                      value={formData.invoice_date}
-                      onChange={(value) => setFormData({ ...formData, invoice_date: value })}
-                      style={{ marginTop: '8px' }}
-                    />
-                    {/* External Invoice Toggle */}
-                    <div style={{ marginTop: '12px' }}>
+                    {/* External Invoice Toggle - grouped with invoice number */}
+                    <div style={{ marginTop: '8px' }}>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.9rem' }}>
                         <input
                           type="checkbox"
@@ -633,45 +629,53 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                         {t.invoices.externalInvoice}
                       </label>
                     </div>
-                    {/* External Invoice Fields */}
+                    {/* External Invoice Number - shown when external */}
                     {formData.type === 'external' && (
-                      <div style={{ marginTop: '12px', padding: '12px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px' }}>
-                        <div className="form-group" style={{ marginBottom: '8px' }}>
-                          <label>{t.invoices.externalInvoiceNumber}</label>
+                      <div className="form-group" style={{ marginTop: '8px', marginBottom: 0 }}>
+                        <input
+                          type="text"
+                          value={formData.external_invoice_number}
+                          onChange={(e) => setFormData({ ...formData, external_invoice_number: e.target.value })}
+                          placeholder={t.invoices.externalInvoiceNumber}
+                        />
+                      </div>
+                    )}
+                    {/* Invoice Date */}
+                    <div className="form-group" style={{ marginTop: '8px', marginBottom: 0 }}>
+                      <label>{t.invoices.invoiceDate}</label>
+                      <LocalizedDateInput
+                        value={formData.invoice_date}
+                        onChange={(value) => setFormData({ ...formData, invoice_date: value })}
+                      />
+                    </div>
+                    {/* External Invoice Amount Fields */}
+                    {formData.type === 'external' && (
+                      <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>{t.invoices.netAmount}</label>
                           <input
-                            type="text"
-                            value={formData.external_invoice_number}
-                            onChange={(e) => setFormData({ ...formData, external_invoice_number: e.target.value })}
-                            placeholder={t.invoices.externalInvoiceNumber}
+                            type="number"
+                            step="0.01"
+                            value={formData.net_amount}
+                            onChange={(e) => setFormData({ ...formData, net_amount: e.target.value })}
+                            placeholder="0.00"
                           />
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                          <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label>{t.invoices.netAmount}</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={formData.net_amount}
-                              onChange={(e) => setFormData({ ...formData, net_amount: e.target.value })}
-                              placeholder="0.00"
-                            />
-                          </div>
-                          <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label>{t.invoices.grossAmount}</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={formData.gross_amount}
-                              onChange={(e) => setFormData({ ...formData, gross_amount: e.target.value })}
-                              placeholder="0.00"
-                            />
-                          </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>{t.invoices.grossAmount}</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={formData.gross_amount}
+                            onChange={(e) => setFormData({ ...formData, gross_amount: e.target.value })}
+                            placeholder="0.00"
+                          />
                         </div>
                       </div>
                     )}
-                    {/* Tax fields for internal invoices */}
+                    {/* Tax fields for internal invoices - full width */}
                     {formData.type === 'internal' && (
-                      <div style={{ marginTop: '12px', padding: '12px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px' }}>
+                      <div style={{ marginTop: '12px' }}>
                         <div style={{ marginBottom: '8px' }}>
                           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.9rem' }}>
                             <input
@@ -697,8 +701,8 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                         )}
                       </div>
                     )}
-                    {/* Service Period */}
-                    <div style={{ marginTop: '12px', padding: '12px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px' }}>
+                    {/* Service Period - full width */}
+                    <div style={{ marginTop: '12px' }}>
                       <label style={{ fontSize: '0.9rem', fontWeight: '500', marginBottom: '8px', display: 'block' }}>
                         {t.invoices.servicePeriod}
                       </label>
@@ -757,35 +761,6 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                   >
                     {t.common.edit}
                   </button>
-                )}
-                {isEditingFields && (
-                  <>
-                    <button className="btn btn-secondary btn-sm" onClick={() => {
-                      if (selectedInvoice) {
-                        setFormData({
-                          invoice_number: selectedInvoice.invoice_number,
-                          invoice_date: selectedInvoice.invoice_date,
-                          notes: selectedInvoice.notes || '',
-                          type: selectedInvoice.type ?? 'internal',
-                          external_invoice_number: selectedInvoice.external_invoice_number ?? '',
-                          net_amount: selectedInvoice.net_amount != null ? String(selectedInvoice.net_amount) : '',
-                          gross_amount: selectedInvoice.gross_amount != null ? String(selectedInvoice.gross_amount) : '',
-                          tax_rate: String(selectedInvoice.tax_rate ?? 0),
-                          is_small_business: !!selectedInvoice.is_small_business,
-                          service_period_start: selectedInvoice.service_period_start ?? '',
-                          service_period_end: selectedInvoice.service_period_end ?? '',
-                        });
-                        setIsEditingFields(false);
-                      } else {
-                        handleCloseInvoiceModal();
-                      }
-                    }}>
-                      {t.common.cancel}
-                    </button>
-                    <button className="btn btn-primary btn-sm" onClick={handleSaveFields}>
-                      {t.common.save}
-                    </button>
-                  </>
                 )}
               </div>
             </div>
@@ -1030,26 +1005,71 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
             )}
 
             {/* Footer Actions */}
-            <div className="form-actions" style={{ marginTop: '20px' }}>
-              {selectedInvoice && selectedInvoice.status === 'draft' && (
-                <button
-                  className="btn btn-success"
-                  onClick={() => handleFinalize(selectedInvoice)}
-                >
-                  {t.invoices.finalize}
-                </button>
-              )}
-              {selectedInvoice && (selectedInvoice.status === 'invoiced' || selectedInvoice.status === 'draft') && (
-                <button
-                  className="btn btn-danger"
-                  onClick={() => setShowCancelModal(true)}
-                >
-                  {t.invoices.cancelInvoice}
-                </button>
-              )}
-              <button className="btn btn-secondary" onClick={handleCloseInvoiceModal}>
-                {t.common.close}
-              </button>
+            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {selectedInvoice && selectedInvoice.status === 'draft' && (
+                  <button
+                    className="btn btn-success"
+                    onClick={() => handleFinalize(selectedInvoice)}
+                  >
+                    {t.invoices.finalize}
+                  </button>
+                )}
+                {selectedInvoice && (selectedInvoice.status === 'invoiced' || selectedInvoice.status === 'draft') && (
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => setShowCancelModal(true)}
+                  >
+                    {t.invoices.cancelInvoice}
+                  </button>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {isEditingFields && (
+                  <>
+                    <button className="btn btn-secondary" onClick={() => {
+                      if (selectedInvoice) {
+                        setFormData({
+                          invoice_number: selectedInvoice.invoice_number,
+                          invoice_date: selectedInvoice.invoice_date,
+                          notes: selectedInvoice.notes || '',
+                          type: selectedInvoice.type ?? 'internal',
+                          external_invoice_number: selectedInvoice.external_invoice_number ?? '',
+                          net_amount: selectedInvoice.net_amount != null ? String(selectedInvoice.net_amount) : '',
+                          gross_amount: selectedInvoice.gross_amount != null ? String(selectedInvoice.gross_amount) : '',
+                          tax_rate: String(selectedInvoice.tax_rate ?? 0),
+                          is_small_business: !!selectedInvoice.is_small_business,
+                          service_period_start: selectedInvoice.service_period_start ?? '',
+                          service_period_end: selectedInvoice.service_period_end ?? '',
+                        });
+                        setIsEditingFields(false);
+                      } else {
+                        handleCloseInvoiceModal();
+                      }
+                    }}>
+                      {t.common.cancel}
+                    </button>
+                    <button className="btn btn-primary" onClick={handleSaveFields}>
+                      {t.common.save}
+                    </button>
+                  </>
+                )}
+                {!isEditingFields && !selectedInvoice && (
+                  <>
+                    <button className="btn btn-secondary" onClick={handleCloseInvoiceModal}>
+                      {t.common.cancel}
+                    </button>
+                    <button className="btn btn-primary" onClick={handleSaveFields}>
+                      {t.common.save}
+                    </button>
+                  </>
+                )}
+                {!isEditingFields && selectedInvoice && (
+                  <button className="btn btn-secondary" onClick={handleCloseInvoiceModal}>
+                    {t.common.close}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
