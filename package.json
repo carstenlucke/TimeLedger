@@ -17,8 +17,12 @@
     "build:main": "tsc -p tsconfig.main.json",
     "start": "electron .",
     "pack": "electron-builder --dir",
-    "dist": "node scripts/run-dist.js --mac --arm64 --publish never",
+    "dist": "node scripts/run-dist.js --mac --arm64 --win --x64 --publish never",
+    "dist:mac": "node scripts/run-dist.js --mac --arm64 --publish never",
     "dist:universal": "node scripts/run-dist.js --mac --universal --publish never",
+    "dist:windows": "node scripts/run-dist.js --win --x64 --publish never",
+    "dist:linux": "node scripts/run-dist.js --linux --x64 --publish never",
+    "dist:all": "node scripts/run-dist.js --mac --win --linux --publish never",
     "postdist": "node scripts/postdist.js",
     "clean": "rimraf dist",
     "clean:release": "rimraf release",
@@ -65,12 +69,7 @@
         {
           "target": "dmg",
           "arch": [
-            "universal"
-          ]
-        },
-        {
-          "target": "zip",
-          "arch": [
+            "arm64",
             "universal"
           ]
         }
@@ -104,7 +103,7 @@
           ]
         }
       ],
-      "icon": "assets/icons/icon_512x512.png"
+      "icon": "assets/icons/app_icon.ico"
     }
   }
 }

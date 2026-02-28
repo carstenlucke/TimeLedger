@@ -1,111 +1,116 @@
-name: Build and Release Multi-Platform
+name: Release
 
 on:
   push:
     tags:
-      - 'v*.*.*'  # Triggers on version tags like v1.0.0, v1.2.3, etc.
+      - 'v*'
 
 permissions:
   contents: write
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        include:
-          - os: macos-latest
-            platform: mac
-            arch: x64,arm64
-            artifact_name: macos
-          - os: windows-latest
-            platform: win
-            arch: x64
-            artifact_name: windows
-          - os: ubuntu-latest
-            platform: linux
-            arch: x64
-            artifact_name: linux
-
-    runs-on: ${{ matrix.os }}
-
+  build-mac:
+    runs-on: macos-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: 20
+          cache: npm
 
-      - name: Install dependencies
-        run: npm ci
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+      - run: npm ci
 
-      - name: Build application
-        run: npm run build
+      - run: npm run build
 
-      - name: Package application
-        run: |
-          if [ "${{ matrix.platform }}" = "mac" ]; then
-            npm run dist:universal
-          elif [ "${{ matrix.platform }}" = "win" ]; then
-            npm run build && npx electron-builder --win --publish never
-          elif [ "${{ matrix.platform }}" = "linux" ]; then
-            npm run build && npx electron-builder --linux --publish never
-          fi
-        shell: bash
-        env:
-          GH_TOKEN: ""
-          GITHUB_TOKEN: ""
-          ELECTRON_BUILDER_PUBLISH: never
-          # If you want to sign the app, add your Apple credentials here:
-          # APPLE_ID: ${{ secrets.APPLE_ID }}
-          # APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
-          # TEAM_ID: ${{ secrets.TEAM_ID }}
+      - run: npx electron-builder --mac --arm64 --universal --publish never
 
-      - name: Clean up auto-update files and temporary artifacts
-        run: |
-          rm -f release/*.blockmap
-          rm -f release/*.yml
-          rm -f release/elevate.exe
-          rm -f release/builder-*.yml
-          rm -rf release/win-unpacked
-          rm -rf release/mac
-          rm -rf release/mac-arm64
-          rm -rf release/linux-unpacked
-        shell: bash
-
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}-build
+          name: mac-artifacts
           path: |
-            release/*
-          retention-days: 30
+            release/*.dmg
+          if-no-files-found: error
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - run: npx electron-builder --win --x64 --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: |
+            release/*.exe
+          if-no-files-found: error
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - run: npx electron-builder --linux --x64 --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: |
+            release/*.AppImage
+          if-no-files-found: error
 
   release:
-    needs: build
+    needs: [build-mac, build-windows, build-linux]
     runs-on: ubuntu-latest
-
     steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
         with:
           path: artifacts
+          merge-multiple: true
 
-      - name: Display structure of downloaded files
-        run: ls -R artifacts
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
-      - name: Create Release and Upload Assets
-        uses: softprops/action-gh-release@v1
+      - name: Check for release notes
+        id: notes
+        run: |
+          RELEASE_FILE="RELEASE-${GITHUB_REF_NAME}.md"
+          if [ -f "$RELEASE_FILE" ]; then
+            echo "file=$RELEASE_FILE" >> "$GITHUB_OUTPUT"
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
+          name: TimeLedger v${{ steps.version.outputs.version }}
+          body_path: ${{ steps.notes.outputs.found == 'true' && steps.notes.outputs.file || '' }}
+          generate_release_notes: ${{ steps.notes.outputs.found != 'true' }}
           files: |
-            artifacts/**/*.dmg
-            artifacts/**/*.zip
-            artifacts/**/*.exe
-            artifacts/**/*.AppImage
-            artifacts/**/*.deb
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            artifacts/*.dmg
+            artifacts/*.exe
+            artifacts/*.AppImage
