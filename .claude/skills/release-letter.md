@@ -20,7 +20,7 @@ Ask the user for the new version string using AskUserQuestion with a free-text p
 Once received, update the `"version"` field in `package.json` using the Edit tool. Only change the version value, nothing else.
 
 ### Step 3: Generate release letter
-Run the slash command `/generate-release-letter` using the Skill tool to generate the release letter based on the current state and the (potentially updated) version.
+Run the slash command `/rl-create` using the Skill tool to generate the release letter based on the current state and the (potentially updated) version.
 
 ## Dependencies
-- **Command:** `.claude/commands/generate-release-letter.md` — contains the prompt and guidelines used by the `/generate-release-letter` slash command invoked in Step 3.
+- **Command:** `.claude/commands/rl-create.md` — contains the prompt and guidelines used by the `/generate-release-letter` slash command invoked in Step 3.
