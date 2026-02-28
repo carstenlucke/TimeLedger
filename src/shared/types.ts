@@ -97,9 +97,9 @@ export interface InvoiceInput {
   type?: InvoiceType;
   status?: 'draft' | 'invoiced' | 'cancelled';
   total_amount?: number;
-  external_invoice_number?: string;
-  net_amount?: number;
-  gross_amount?: number;
+  external_invoice_number?: string | null;
+  net_amount?: number | null;
+  gross_amount?: number | null;
   tax_rate?: number;
   is_small_business?: number;
   tax_amount?: number;

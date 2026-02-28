@@ -235,9 +235,29 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
 
       const taxRate = formData.is_small_business ? 0 : parseFloat(formData.tax_rate) || 0;
 
-      // Determine if service period has been manually set
-      const hasManualServicePeriod = formData.service_period_start || formData.service_period_end;
-      const servicePeriodManuallySet = hasManualServicePeriod ? 1 : 0;
+      // Determine if service period has been manually set.
+      // For existing invoices, preserve the original flag unless the dates have changed.
+      let servicePeriodManuallySet: number;
+      if (selectedInvoice) {
+        const originalStart = selectedInvoice.service_period_start || null;
+        const originalEnd = selectedInvoice.service_period_end || null;
+        const currentStart = formData.service_period_start || null;
+        const currentEnd = formData.service_period_end || null;
+
+        const servicePeriodChanged =
+          originalStart !== currentStart ||
+          originalEnd !== currentEnd;
+
+        if (servicePeriodChanged) {
+          const hasManualServicePeriod = currentStart || currentEnd;
+          servicePeriodManuallySet = hasManualServicePeriod ? 1 : 0;
+        } else {
+          servicePeriodManuallySet = selectedInvoice.service_period_manually_set ?? 0;
+        }
+      } else {
+        const hasManualServicePeriod = formData.service_period_start || formData.service_period_end;
+        servicePeriodManuallySet = hasManualServicePeriod ? 1 : 0;
+      }
 
       const invoiceData: Partial<InvoiceInput> & { invoice_number: string; invoice_date: string } = {
         invoice_number: formData.invoice_number,
@@ -245,10 +265,14 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
         notes: formData.notes,
         type: formData.type,
         external_invoice_number: formData.type === 'external'
-          ? (formData.external_invoice_number || undefined)
+          ? (formData.external_invoice_number?.trim() || null)
           : undefined,
-        net_amount: parsedNet !== null && Number.isFinite(parsedNet) ? parsedNet : undefined,
-        gross_amount: parsedGross !== null && Number.isFinite(parsedGross) ? parsedGross : undefined,
+        net_amount: formData.type === 'external'
+          ? (parsedNet !== null && Number.isFinite(parsedNet) ? parsedNet : null)
+          : undefined,
+        gross_amount: formData.type === 'external'
+          ? (parsedGross !== null && Number.isFinite(parsedGross) ? parsedGross : null)
+          : undefined,
         tax_rate: taxRate,
         is_small_business: formData.is_small_business ? 1 : 0,
         service_period_start: formData.service_period_start || null,
@@ -829,7 +853,9 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                         <p style={{ fontSize: '1rem', fontWeight: '500', margin: 0 }}>
                           {selectedInvoice.service_period_start && selectedInvoice.service_period_end
                             ? `${formatDate(selectedInvoice.service_period_start)} ${t.invoices.servicePeriodTo} ${formatDate(selectedInvoice.service_period_end)}`
-                            : t.invoices.servicePeriodNone}
+                            : selectedInvoice.service_period_start
+                              ? formatDate(selectedInvoice.service_period_start)
+                              : formatDate(selectedInvoice.service_period_end as string)}
                         </p>
                       </div>
                     )}
@@ -892,8 +918,12 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                         {t.invoices.servicePeriod}
                       </p>
                       <p style={{ fontSize: '1rem', fontWeight: '500', margin: 0 }}>
-                        {selectedInvoice.service_period_start && selectedInvoice.service_period_end
-                          ? `${formatDate(selectedInvoice.service_period_start)} ${t.invoices.servicePeriodTo} ${formatDate(selectedInvoice.service_period_end)}`
+                        {selectedInvoice.service_period_start || selectedInvoice.service_period_end
+                          ? selectedInvoice.service_period_start && selectedInvoice.service_period_end
+                            ? `${formatDate(selectedInvoice.service_period_start)} ${t.invoices.servicePeriodTo} ${formatDate(selectedInvoice.service_period_end)}`
+                            : selectedInvoice.service_period_start
+                              ? formatDate(selectedInvoice.service_period_start)
+                              : formatDate(selectedInvoice.service_period_end as string)
                           : t.invoices.servicePeriodNone}
                       </p>
                     </div>
