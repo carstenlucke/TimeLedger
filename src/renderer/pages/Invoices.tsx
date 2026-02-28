@@ -44,6 +44,8 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
     is_small_business: false,
     service_period_start: '',
     service_period_end: '',
+    service_period_start_auto: true,
+    service_period_end_auto: true,
   });
 
   useEffect(() => {
@@ -195,6 +197,8 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
         is_small_business: !!data.is_small_business,
         service_period_start: data.service_period_start ?? '',
         service_period_end: data.service_period_end ?? '',
+        service_period_start_auto: !!data.service_period_start_auto,
+        service_period_end_auto: !!data.service_period_end_auto,
       });
       setIsEditingFields(false);
       setShowInvoiceModal(true);
@@ -219,6 +223,8 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
       is_small_business: false,
       service_period_start: '',
       service_period_end: '',
+      service_period_start_auto: true,
+      service_period_end_auto: true,
     });
     setIsEditingFields(true);
     setShowInvoiceModal(true);
@@ -235,29 +241,8 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
 
       const taxRate = formData.is_small_business ? 0 : parseFloat(formData.tax_rate) || 0;
 
-      // Determine if service period has been manually set.
-      // For existing invoices, preserve the original flag unless the dates have changed.
-      let servicePeriodManuallySet: number;
-      if (selectedInvoice) {
-        const originalStart = selectedInvoice.service_period_start || null;
-        const originalEnd = selectedInvoice.service_period_end || null;
-        const currentStart = formData.service_period_start || null;
-        const currentEnd = formData.service_period_end || null;
-
-        const servicePeriodChanged =
-          originalStart !== currentStart ||
-          originalEnd !== currentEnd;
-
-        if (servicePeriodChanged) {
-          const hasManualServicePeriod = currentStart || currentEnd;
-          servicePeriodManuallySet = hasManualServicePeriod ? 1 : 0;
-        } else {
-          servicePeriodManuallySet = selectedInvoice.service_period_manually_set ?? 0;
-        }
-      } else {
-        const hasManualServicePeriod = formData.service_period_start || formData.service_period_end;
-        servicePeriodManuallySet = hasManualServicePeriod ? 1 : 0;
-      }
+      const startAuto = formData.service_period_start_auto ? 1 : 0;
+      const endAuto = formData.service_period_end_auto ? 1 : 0;
 
       const invoiceData: Partial<InvoiceInput> & { invoice_number: string; invoice_date: string } = {
         invoice_number: formData.invoice_number,
@@ -275,9 +260,10 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
           : undefined,
         tax_rate: taxRate,
         is_small_business: formData.is_small_business ? 1 : 0,
-        service_period_start: formData.service_period_start || null,
-        service_period_end: formData.service_period_end || null,
-        service_period_manually_set: servicePeriodManuallySet,
+        service_period_start: startAuto ? null : (formData.service_period_start || null),
+        service_period_end: endAuto ? null : (formData.service_period_end || null),
+        service_period_start_auto: startAuto,
+        service_period_end_auto: endAuto,
       };
       if (selectedInvoice) {
         await window.api.invoice.update(selectedInvoice.id, invoiceData);
@@ -431,10 +417,10 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusColors: Record<string, string> = {
-      draft: 'var(--accent-orange, #f59e0b)',
-      invoiced: 'var(--accent-green)',
-      cancelled: 'var(--accent-red)',
+    const statusStyles: Record<string, { bg: string; color: string }> = {
+      draft: { bg: 'var(--accent-orange, #f59e0b)', color: '#fff' },
+      invoiced: { bg: 'var(--accent-green)', color: '#fff' },
+      cancelled: { bg: 'var(--accent-red)', color: '#fff' },
     };
 
     const statusLabels: Record<string, string> = {
@@ -443,15 +429,18 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
       cancelled: t.invoices.statusCancelled,
     };
 
+    const style = statusStyles[status] ?? { bg: 'var(--bg-tertiary)', color: 'var(--text-primary)' };
+
     return (
       <span
         style={{
           padding: '4px 12px',
           borderRadius: '12px',
-          backgroundColor: `${statusColors[status]}20`,
-          color: statusColors[status],
-          fontSize: '0.85rem',
-          fontWeight: '500',
+          backgroundColor: style.bg,
+          color: style.color,
+          fontSize: '0.8rem',
+          fontWeight: '600',
+          whiteSpace: 'nowrap',
         }}
       >
         {statusLabels[status]}
@@ -617,8 +606,14 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
       {showInvoiceModal && (
         <div className="modal-overlay" onClick={handleCloseInvoiceModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
+            {/* Status badge row - shown in edit mode above the form */}
+            {selectedInvoice && (isEditingFields || !selectedInvoice) && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+                {getStatusBadge(selectedInvoice.status)}
+              </div>
+            )}
             {/* Header with invoice number/date and edit button */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
               <div style={{ flex: 1 }}>
                 {isEditingFields || !selectedInvoice ? (
                   <div className="form-group" style={{ marginBottom: '8px' }}>
@@ -648,7 +643,15 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                         <input
                           type="checkbox"
                           checked={formData.type === 'external'}
-                          onChange={(e) => setFormData({ ...formData, type: e.target.checked ? 'external' : 'internal' })}
+                          onChange={(e) => {
+                            const newType = e.target.checked ? 'external' : 'internal';
+                            setFormData({
+                              ...formData,
+                              type: newType,
+                              // External invoices have no linked time entries, so disable auto
+                              ...(newType === 'external' ? { service_period_start_auto: false, service_period_end_auto: false } : {}),
+                            });
+                          }}
                         />
                         {t.invoices.externalInvoice}
                       </label>
@@ -733,17 +736,49 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                         <div className="form-group" style={{ marginBottom: 0 }}>
                           <label>{t.invoices.servicePeriodStart}</label>
-                          <LocalizedDateInput
-                            value={formData.service_period_start}
-                            onChange={(value) => setFormData({ ...formData, service_period_start: value })}
-                          />
+                          {formData.type === 'internal' && (
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.8rem', marginBottom: '4px', color: 'var(--text-secondary)' }}>
+                              <input
+                                type="checkbox"
+                                checked={formData.service_period_start_auto}
+                                onChange={(e) => setFormData({ ...formData, service_period_start_auto: e.target.checked })}
+                              />
+                              {t.invoices.servicePeriodFromEntries}
+                            </label>
+                          )}
+                          {formData.service_period_start_auto && formData.type === 'internal' ? (
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                              {selectedInvoice?.service_period_start ? formatDate(selectedInvoice.service_period_start) : '—'}
+                            </span>
+                          ) : (
+                            <LocalizedDateInput
+                              value={formData.service_period_start}
+                              onChange={(value) => setFormData({ ...formData, service_period_start: value })}
+                            />
+                          )}
                         </div>
                         <div className="form-group" style={{ marginBottom: 0 }}>
                           <label>{t.invoices.servicePeriodEnd}</label>
-                          <LocalizedDateInput
-                            value={formData.service_period_end}
-                            onChange={(value) => setFormData({ ...formData, service_period_end: value })}
-                          />
+                          {formData.type === 'internal' && (
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.8rem', marginBottom: '4px', color: 'var(--text-secondary)' }}>
+                              <input
+                                type="checkbox"
+                                checked={formData.service_period_end_auto}
+                                onChange={(e) => setFormData({ ...formData, service_period_end_auto: e.target.checked })}
+                              />
+                              {t.invoices.servicePeriodFromEntries}
+                            </label>
+                          )}
+                          {formData.service_period_end_auto && formData.type === 'internal' ? (
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                              {selectedInvoice?.service_period_end ? formatDate(selectedInvoice.service_period_end) : '—'}
+                            </span>
+                          ) : (
+                            <LocalizedDateInput
+                              value={formData.service_period_end}
+                              onChange={(value) => setFormData({ ...formData, service_period_end: value })}
+                            />
+                          )}
                         </div>
                       </div>
                     </div>
@@ -776,8 +811,8 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                   </>
                 )}
               </div>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                {selectedInvoice && getStatusBadge(selectedInvoice.status)}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+                {selectedInvoice && !isEditingFields && getStatusBadge(selectedInvoice.status)}
                 {selectedInvoice && selectedInvoice.status === 'draft' && !isEditingFields && (
                   <button
                     className="btn btn-secondary btn-sm"
@@ -844,8 +879,8 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                         {formatDuration(selectedInvoice.entries.reduce((sum: number, e: any) => sum + e.duration_minutes, 0))}
                       </p>
                     </div>
-                    {/* Service Period for external invoices */}
-                    {(selectedInvoice.service_period_start || selectedInvoice.service_period_end) && (
+                    {/* Service Period for external invoices - only in view mode */}
+                    {!isEditingFields && (selectedInvoice.service_period_start || selectedInvoice.service_period_end) && (
                       <div style={{ gridColumn: '1 / -1' }}>
                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
                           {t.invoices.servicePeriod}
@@ -912,21 +947,23 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                         </div>
                       </>
                     )}
-                    {/* Service Period */}
-                    <div style={{ gridColumn: '1 / -1' }}>
-                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
-                        {t.invoices.servicePeriod}
-                      </p>
-                      <p style={{ fontSize: '1rem', fontWeight: '500', margin: 0 }}>
-                        {selectedInvoice.service_period_start || selectedInvoice.service_period_end
-                          ? selectedInvoice.service_period_start && selectedInvoice.service_period_end
-                            ? `${formatDate(selectedInvoice.service_period_start)} ${t.invoices.servicePeriodTo} ${formatDate(selectedInvoice.service_period_end)}`
-                            : selectedInvoice.service_period_start
-                              ? formatDate(selectedInvoice.service_period_start)
-                              : formatDate(selectedInvoice.service_period_end as string)
-                          : t.invoices.servicePeriodNone}
-                      </p>
-                    </div>
+                    {/* Service Period - only show in view mode (edit mode has it in the form above) */}
+                    {!isEditingFields && (
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                          {t.invoices.servicePeriod}
+                        </p>
+                        <p style={{ fontSize: '1rem', fontWeight: '500', margin: 0 }}>
+                          {selectedInvoice.service_period_start || selectedInvoice.service_period_end
+                            ? selectedInvoice.service_period_start && selectedInvoice.service_period_end
+                              ? `${formatDate(selectedInvoice.service_period_start)} ${t.invoices.servicePeriodTo} ${formatDate(selectedInvoice.service_period_end)}`
+                              : selectedInvoice.service_period_start
+                                ? formatDate(selectedInvoice.service_period_start)
+                                : formatDate(selectedInvoice.service_period_end as string)
+                            : t.invoices.servicePeriodNone}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1071,6 +1108,8 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialInvoiceId }) => {
                           is_small_business: !!selectedInvoice.is_small_business,
                           service_period_start: selectedInvoice.service_period_start ?? '',
                           service_period_end: selectedInvoice.service_period_end ?? '',
+                          service_period_start_auto: !!selectedInvoice.service_period_start_auto,
+                          service_period_end_auto: !!selectedInvoice.service_period_end_auto,
                         });
                         setIsEditingFields(false);
                       } else {

@@ -14,6 +14,7 @@ import { migration004 } from './004_add_project_status';
 import { migration005 } from './005_add_customers_table';
 import { migration006 } from './006_add_external_invoices';
 import { migration007 } from './007_add_tax_and_service_period';
+import { migration008 } from './008_refactor_service_period_auto';
 
 // Register all migrations in order
 export const migrations: Migration[] = [
@@ -24,6 +25,7 @@ export const migrations: Migration[] = [
   migration005,
   migration006,
   migration007,
+  migration008,
 ];
 
 export class MigrationRunner {

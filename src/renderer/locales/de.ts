@@ -270,6 +270,7 @@ export const de: TranslationKeys = {
     servicePeriodEnd: 'Ende',
     servicePeriodNone: 'Kein Leistungszeitraum festgelegt',
     servicePeriodTo: 'bis',
+    servicePeriodFromEntries: 'Aus Zeiteinträgen',
   },
 
   // Settings

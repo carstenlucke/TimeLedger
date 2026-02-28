@@ -268,6 +268,7 @@ export const en = {
     servicePeriodEnd: 'End',
     servicePeriodNone: 'No service period set',
     servicePeriodTo: 'to',
+    servicePeriodFromEntries: 'From time entries',
   },
 
   // Settings

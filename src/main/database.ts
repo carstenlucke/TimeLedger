@@ -640,8 +640,8 @@ export class DatabaseManager {
   // Invoice methods
   public createInvoice(input: InvoiceInput): Invoice {
     const stmt = this.db.prepare(`
-      INSERT INTO invoices (invoice_number, invoice_date, type, status, total_amount, external_invoice_number, net_amount, gross_amount, tax_rate, is_small_business, tax_amount, service_period_start, service_period_end, service_period_manually_set, notes, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      INSERT INTO invoices (invoice_number, invoice_date, type, status, total_amount, external_invoice_number, net_amount, gross_amount, tax_rate, is_small_business, tax_amount, service_period_start, service_period_end, service_period_manually_set, service_period_start_auto, service_period_end_auto, notes, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `);
     const taxRate = input.is_small_business ? 0 : (input.tax_rate ?? 0);
     const result = stmt.run(
@@ -659,6 +659,8 @@ export class DatabaseManager {
       input.service_period_start ?? null,
       input.service_period_end ?? null,
       input.service_period_manually_set ?? 0,
+      input.service_period_start_auto ?? 1,
+      input.service_period_end_auto ?? 1,
       input.notes
     );
     this.bumpDataVersion();
@@ -757,6 +759,14 @@ export class DatabaseManager {
     if (input.service_period_manually_set !== undefined) {
       updates.push('service_period_manually_set = ?');
       values.push(input.service_period_manually_set);
+    }
+    if (input.service_period_start_auto !== undefined) {
+      updates.push('service_period_start_auto = ?');
+      values.push(input.service_period_start_auto);
+    }
+    if (input.service_period_end_auto !== undefined) {
+      updates.push('service_period_end_auto = ?');
+      values.push(input.service_period_end_auto);
     }
 
     updates.push("updated_at = datetime('now')");
@@ -1019,24 +1029,34 @@ export class DatabaseManager {
       updateStmt.run(total, invoiceId);
     }
 
-    // Update service period if not manually set
-    if (!invoice.service_period_manually_set) {
+    // Update service period independently per auto flag
+    if (invoice.service_period_start_auto || invoice.service_period_end_auto) {
       const periodStmt = this.db.prepare(`
         SELECT MIN(te.date) as min_date, MAX(te.date) as max_date
         FROM time_entries te
         WHERE te.invoice_id = ?
       `);
       const periodResult = periodStmt.get(invoiceId) as { min_date: string | null; max_date: string | null };
-      let servicePeriodStart: string | null = null;
-      let servicePeriodEnd: string | null = null;
-      if (periodResult.min_date && periodResult.max_date) {
-        servicePeriodStart = periodResult.min_date;
-        servicePeriodEnd = periodResult.max_date;
+
+      const updates: string[] = [];
+      const vals: any[] = [];
+
+      if (invoice.service_period_start_auto) {
+        updates.push('service_period_start = ?');
+        vals.push(periodResult.min_date ?? null);
       }
-      const updatePeriodStmt = this.db.prepare(`
-        UPDATE invoices SET service_period_start = ?, service_period_end = ? WHERE id = ?
-      `);
-      updatePeriodStmt.run(servicePeriodStart, servicePeriodEnd, invoiceId);
+      if (invoice.service_period_end_auto) {
+        updates.push('service_period_end = ?');
+        vals.push(periodResult.max_date ?? null);
+      }
+
+      if (updates.length > 0) {
+        vals.push(invoiceId);
+        const updatePeriodStmt = this.db.prepare(
+          `UPDATE invoices SET ${updates.join(', ')} WHERE id = ?`
+        );
+        updatePeriodStmt.run(...vals);
+      }
     }
   }
 

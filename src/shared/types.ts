@@ -55,6 +55,8 @@ export interface Invoice {
   service_period_start?: string;
   service_period_end?: string;
   service_period_manually_set: number;
+  service_period_start_auto: number;
+  service_period_end_auto: number;
   notes?: string;
   cancellation_reason?: string;
   created_at: string;
@@ -106,6 +108,8 @@ export interface InvoiceInput {
   service_period_start?: string | null;
   service_period_end?: string | null;
   service_period_manually_set?: number;
+  service_period_start_auto?: number;
+  service_period_end_auto?: number;
   notes?: string;
   cancellation_reason?: string;
 }
